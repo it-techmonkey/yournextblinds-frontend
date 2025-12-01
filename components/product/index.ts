@@ -1,0 +1,11 @@
+export { default as ProductGallery } from './ProductGallery';
+export { default as ProductHeader } from './ProductHeader';
+export { default as ProductDescription } from './ProductDescription';
+export { default as ProductPricing } from './ProductPricing';
+export { default as ProductReviews } from './ProductReviews';
+export { default as RelatedProducts } from './RelatedProducts';
+export { default as StickyBottomBar } from './StickyBottomBar';
+export { default as ProductConfigurator } from './ProductConfigurator';
+export { default as ProductPage } from './ProductPage';
+export { default as CustomizationModal } from './CustomizationModal';
+export * from './customization';
