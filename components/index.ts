@@ -1,14 +1,9 @@
 // Barrel export for all components
-export { default as TopBar } from './TopBar';
-export { default as Header } from './Header';
-export { default as NavBar } from './NavBar';
-export { default as Hero } from './Hero';
-export { default as WindowTypes } from './WindowTypes';
-export { default as Categories } from './Categories';
-export { default as Installation } from './Installation';
-export { default as BestSelling } from './BestSelling';
-export { default as Craftsmanship } from './Craftsmanship';
-export { default as FreeSamples } from './FreeSamples';
-export { default as FlashSale } from './FlashSale';
-export { default as FAQ } from './FAQ';
-export { default as Footer } from './Footer';
+// Layout components
+export { TopBar, Header, NavBar, Footer } from './layout';
+
+// Home page sections
+export { Hero, WindowTypes, Categories, Installation, BestSelling, Craftsmanship, FreeSamples, FlashSale, FAQ } from './home';
+
+// Product components
+export * from './product';

@@ -1,10 +1,10 @@
 'use client';
 
 import { useMemo } from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
-import { Product, Room, MountOption, ProductConfiguration } from '@/types/product';
+import { Product, ProductConfiguration } from '@/types/product';
 import ProductGallery from './ProductGallery';
+import StarRating from './StarRating';
 import {
   SizeSelector,
   RoomSelector,
@@ -21,11 +21,27 @@ import {
   BottomBarSelector,
   LiftSelector,
 } from './customization';
+import {
+  ROOM_OPTIONS,
+  MOUNT_OPTIONS,
+  CONTROL_OPTIONS,
+  CONTROL_POSITION_OPTIONS,
+  LIFT_OPTIONS,
+  LIFT_POSITION_OPTIONS,
+  VALANCE_OPTIONS,
+  HEADRAIL_OPTIONS,
+  WAND_POSITION_OPTIONS,
+  OPEN_STYLE_OPTIONS,
+  ROLLER_STYLE_OPTIONS,
+  BOTTOM_BAR_OPTIONS,
+  COLOUR_OPTIONS,
+  FABRIC_TYPE_OPTIONS,
+  BOTTOM_CHAIN_OPTIONS,
+  BRACKET_OPTIONS,
+} from '@/data/customizations';
 
 interface CustomizationModalProps {
   product: Product;
-  rooms: Room[];
-  mountOptions: MountOption[];
   config: ProductConfiguration;
   setConfig: React.Dispatch<React.SetStateAction<ProductConfiguration>>;
   onClose: () => void;
@@ -33,8 +49,6 @@ interface CustomizationModalProps {
 
 const CustomizationModal = ({
   product,
-  rooms,
-  mountOptions,
   config,
   setConfig,
   onClose,
@@ -42,59 +56,44 @@ const CustomizationModal = ({
   // Calculate additional cost based on selected options
   const additionalCost = useMemo(() => {
     let cost = 0;
-    const { customization } = product;
 
-    if (config.headrail && customization.headrailOptions) {
-      const option = customization.headrailOptions.find((o) => o.id === config.headrail);
+    if (config.headrail && product.features.hasHeadrail) {
+      const option = HEADRAIL_OPTIONS.find((o) => o.id === config.headrail);
       cost += option?.price || 0;
     }
-    if (config.openStyle && customization.openStyleOptions) {
-      const option = customization.openStyleOptions.find((o) => o.id === config.openStyle);
+    if (config.openStyle && product.features.hasOpenStyle) {
+      const option = OPEN_STYLE_OPTIONS.find((o) => o.id === config.openStyle);
       cost += option?.price || 0;
     }
-    if (config.valance && customization.valanceOptions) {
-      const option = customization.valanceOptions.find((o) => o.id === config.valance);
+    if (config.valance && product.features.hasValance) {
+      const option = VALANCE_OPTIONS.find((o) => o.id === config.valance);
       cost += option?.price || 0;
     }
-    if (config.control && customization.controlOptions) {
-      const option = customization.controlOptions.find((o) => o.id === config.control);
+    if (config.control && product.features.hasControl) {
+      const option = CONTROL_OPTIONS.find((o) => o.id === config.control);
       cost += option?.price || 0;
     }
-    if (config.rollerStyle && customization.rollerStyleOptions) {
-      const option = customization.rollerStyleOptions.find((o) => o.id === config.rollerStyle);
+    if (config.rollerStyle && product.features.hasRollerStyle) {
+      const option = ROLLER_STYLE_OPTIONS.find((o) => o.id === config.rollerStyle);
       cost += option?.price || 0;
     }
-    if (config.fabricType && customization.fabricTypeOptions) {
-      const option = customization.fabricTypeOptions.find((o) => o.id === config.fabricType);
+    if (config.fabricType && product.features.hasFabricType) {
+      const option = FABRIC_TYPE_OPTIONS.find((o) => o.id === config.fabricType);
       cost += option?.price || 0;
     }
-    if (config.bottomBar && customization.bottomBarOptions) {
-      const option = customization.bottomBarOptions.find((o) => o.id === config.bottomBar);
+    if (config.bottomBar && product.features.hasBottomBar) {
+      const option = BOTTOM_BAR_OPTIONS.find((o) => o.id === config.bottomBar);
       cost += option?.price || 0;
     }
-    if (config.lift && customization.liftOptions) {
-      const option = customization.liftOptions.find((o) => o.id === config.lift);
+    if (config.lift && product.features.hasLift) {
+      const option = LIFT_OPTIONS.find((o) => o.id === config.lift);
       cost += option?.price || 0;
     }
 
     return cost;
-  }, [config, product.customization]);
+  }, [config, product.features]);
 
   const totalPrice = product.price + additionalCost;
-
-  // Generate star rating
-  const renderStars = (rating: number) => {
-    return Array.from({ length: 5 }, (_, i) => (
-      <svg
-        key={i}
-        className={`w-4 h-4 ${i < rating ? 'text-[#00473c]' : 'text-gray-300'}`}
-        fill="currentColor"
-        viewBox="0 0 20 20"
-      >
-        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-      </svg>
-    ));
-  };
 
   const handleBuyNow = () => {
     console.log('Buy now with config:', config);
@@ -108,9 +107,9 @@ const CustomizationModal = ({
         <div className="max-w-[1200px] mx-auto">
           <nav className="flex items-center gap-2 text-sm text-gray-500">
             <Link href="/" className="hover:text-[#00473c]">{product.category}</Link>
-            <span>›</span>
+            <span>&gt;</span>
             <button onClick={onClose} className="hover:text-[#00473c]">{product.name}</button>
-            <span>›</span>
+            <span>&gt;</span>
             <span className="text-gray-900">Customize</span>
           </nav>
         </div>
@@ -128,174 +127,193 @@ const CustomizationModal = ({
             {/* Right - Configuration */}
             <div className="w-full lg:w-[55%]">
               {/* Product Title */}
-              <h1 className="text-2xl font-medium text-[#3a3a3a] mb-1">{product.name}</h1>
+              <h1 className="text-2xl lg:text-3xl font-medium text-[#3a3a3a] mb-2">{product.name}</h1>
               <p className="text-sm text-gray-500 mb-2">
                 Estimated Shipping Date: <span className="text-[#00473c] font-medium">{product.estimatedDelivery}</span>
               </p>
               <div className="flex items-center gap-1 mb-6">
-                {renderStars(product.rating)}
+                <StarRating rating={product.rating} />
               </div>
 
-              {/* Configuration Section */}
-              <div className="bg-[#00473c] text-white px-4 py-3 rounded-t-lg">
-                <h2 className="text-lg font-medium">Configure Your Window Treatment</h2>
-              </div>
+              {/* Configuration Title */}
+              <h2 className="text-xl font-medium text-[#3a3a3a] mb-6 mt-8">Configure Your Window Treatment</h2>
 
-              <div className="border border-gray-200 border-t-0 rounded-b-lg p-6 space-y-8">
+              <div className="space-y-8 divide-y divide-gray-100">
                 {/* Size Selector */}
                 {product.features.hasSize && (
-                  <SizeSelector
-                    width={config.width}
-                    widthFraction={config.widthFraction}
-                    height={config.height}
-                    heightFraction={config.heightFraction}
-                    onWidthChange={(value) => setConfig({ ...config, width: value })}
-                    onWidthFractionChange={(value) => setConfig({ ...config, widthFraction: value })}
-                    onHeightChange={(value) => setConfig({ ...config, height: value })}
-                    onHeightFractionChange={(value) => setConfig({ ...config, heightFraction: value })}
-                  />
+                  <div className="pt-6 first:pt-0">
+                    <SizeSelector
+                      width={config.width}
+                      widthFraction={config.widthFraction}
+                      height={config.height}
+                      heightFraction={config.heightFraction}
+                      onWidthChange={(value) => setConfig({ ...config, width: value })}
+                      onWidthFractionChange={(value) => setConfig({ ...config, widthFraction: value })}
+                      onHeightChange={(value) => setConfig({ ...config, height: value })}
+                      onHeightFractionChange={(value) => setConfig({ ...config, heightFraction: value })}
+                    />
+                  </div>
                 )}
 
                 {/* Room Selector */}
                 {product.features.hasRoom && (
-                  <RoomSelector
-                    rooms={rooms}
-                    selectedRoom={config.room}
-                    onRoomChange={(roomId) => setConfig({ ...config, room: roomId })}
-                  />
+                  <div className="pt-6">
+                    <RoomSelector
+                      rooms={ROOM_OPTIONS}
+                      selectedRoom={config.room}
+                      onRoomChange={(roomId) => setConfig({ ...config, room: roomId })}
+                    />
+                  </div>
                 )}
 
                 {/* Mount Selector */}
                 {product.features.hasMount && (
-                  <MountSelector
-                    options={mountOptions}
-                    selectedMount={config.mount}
-                    onMountChange={(mountId) => setConfig({ ...config, mount: mountId })}
-                  />
+                  <div className="pt-6">
+                    <MountSelector
+                      options={MOUNT_OPTIONS}
+                      selectedMount={config.mount}
+                      onMountChange={(mountId) => setConfig({ ...config, mount: mountId })}
+                    />
+                  </div>
                 )}
 
                 {/* Fabric Type Selector */}
-                {product.features.hasFabricType && product.customization.fabricTypeOptions && (
-                  <FabricTypeSelector
-                    options={product.customization.fabricTypeOptions}
-                    selectedType={config.fabricType}
-                    onTypeChange={(typeId) => setConfig({ ...config, fabricType: typeId })}
-                  />
+                {product.features.hasFabricType && (
+                  <div className="pt-6">
+                    <FabricTypeSelector
+                      options={FABRIC_TYPE_OPTIONS}
+                      selectedType={config.fabricType}
+                      onTypeChange={(typeId) => setConfig({ ...config, fabricType: typeId })}
+                    />
+                  </div>
                 )}
 
                 {/* Colour Selector */}
-                {product.features.hasColour && product.customization.colourOptions && (
-                  <ColourSelector
-                    options={product.customization.colourOptions}
-                    selectedColour={config.colour}
-                    onColourChange={(colourId) => setConfig({ ...config, colour: colourId })}
-                  />
+                {product.features.hasColour && (
+                  <div className="pt-6">
+                    <ColourSelector
+                      options={COLOUR_OPTIONS}
+                      selectedColour={config.colour}
+                      onColourChange={(colourId) => setConfig({ ...config, colour: colourId })}
+                    />
+                  </div>
                 )}
 
                 {/* Headrail Selector */}
-                {product.features.hasHeadrail && product.customization.headrailOptions && (
-                  <HeadrailSelector
-                    options={product.customization.headrailOptions}
-                    selectedHeadrail={config.headrail}
-                    onHeadrailChange={(headrailId) => setConfig({ ...config, headrail: headrailId })}
-                  />
+                {product.features.hasHeadrail && (
+                  <div className="pt-6">
+                    <HeadrailSelector
+                      options={HEADRAIL_OPTIONS}
+                      selectedHeadrail={config.headrail}
+                      onHeadrailChange={(headrailId) => setConfig({ ...config, headrail: headrailId })}
+                    />
+                  </div>
                 )}
 
                 {/* Open Style Selector */}
-                {product.features.hasOpenStyle && product.customization.openStyleOptions && (
+                {product.features.hasOpenStyle && (
                   <>
-                    <OpenStyleSelector
-                      options={product.customization.openStyleOptions}
-                      selectedStyle={config.openStyle}
-                      onStyleChange={(styleId) => setConfig({ ...config, openStyle: styleId })}
-                    />
+                    <div className="pt-6">
+                      <OpenStyleSelector
+                        options={OPEN_STYLE_OPTIONS}
+                        selectedStyle={config.openStyle}
+                        onStyleChange={(styleId) => setConfig({ ...config, openStyle: styleId })}
+                      />
+                    </div>
                     {/* Wand Position */}
                     {product.features.hasWandPosition &&
-                      product.customization.wandPositionOptions &&
                       config.openStyle === 'wand' && (
-                        <WandPositionSelector
-                          options={product.customization.wandPositionOptions}
-                          selectedPosition={config.wandPosition}
-                          onPositionChange={(positionId) =>
-                            setConfig({ ...config, wandPosition: positionId })
-                          }
-                        />
+                        <div className="pt-6">
+                          <WandPositionSelector
+                            options={WAND_POSITION_OPTIONS}
+                            selectedPosition={config.wandPosition}
+                            onPositionChange={(positionId) =>
+                              setConfig({ ...config, wandPosition: positionId })}
+                          />
+                        </div>
                       )}
                   </>
                 )}
 
                 {/* Control Selector */}
-                {product.features.hasControl && product.customization.controlOptions && (
-                  <ControlSelector
-                    options={product.customization.controlOptions}
-                    selectedControl={config.control}
-                    onControlChange={(controlId) => setConfig({ ...config, control: controlId })}
-                    positionOptions={product.customization.controlPositionOptions}
-                    selectedPosition={config.controlPosition}
-                    onPositionChange={(positionId) =>
-                      setConfig({ ...config, controlPosition: positionId })
-                    }
-                  />
+                {product.features.hasControl && (
+                  <div className="pt-6">
+                    <ControlSelector
+                      options={CONTROL_OPTIONS}
+                      selectedControl={config.control}
+                      onControlChange={(controlId) => setConfig({ ...config, control: controlId })}
+                      positionOptions={CONTROL_POSITION_OPTIONS}
+                      selectedPosition={config.controlPosition}
+                      onPositionChange={(positionId) =>
+                        setConfig({ ...config, controlPosition: positionId })}
+                    />
+                  </div>
                 )}
 
                 {/* Lift Selector */}
-                {product.features.hasLift && product.customization.liftOptions && (
-                  <LiftSelector
-                    options={product.customization.liftOptions}
-                    selectedLift={config.lift}
-                    onLiftChange={(liftId) => setConfig({ ...config, lift: liftId })}
-                    positionOptions={product.customization.liftPositionOptions}
-                    selectedPosition={config.liftPosition}
-                    onPositionChange={(positionId) =>
-                      setConfig({ ...config, liftPosition: positionId })
-                    }
-                  />
+                {product.features.hasLift && (
+                  <div className="pt-6">
+                    <LiftSelector
+                      options={LIFT_OPTIONS}
+                      selectedLift={config.lift}
+                      onLiftChange={(liftId) => setConfig({ ...config, lift: liftId })}
+                      positionOptions={LIFT_POSITION_OPTIONS}
+                      selectedPosition={config.liftPosition}
+                      onPositionChange={(positionId) =>
+                        setConfig({ ...config, liftPosition: positionId })}
+                    />
+                  </div>
                 )}
 
                 {/* Roller Style Selector */}
-                {product.features.hasRollerStyle && product.customization.rollerStyleOptions && (
-                  <RollerStyleSelector
-                    options={product.customization.rollerStyleOptions}
-                    selectedStyle={config.rollerStyle}
-                    onStyleChange={(styleId) => setConfig({ ...config, rollerStyle: styleId })}
-                  />
+                {product.features.hasRollerStyle && (
+                  <div className="pt-6">
+                    <RollerStyleSelector
+                      options={ROLLER_STYLE_OPTIONS}
+                      selectedStyle={config.rollerStyle}
+                      onStyleChange={(styleId) => setConfig({ ...config, rollerStyle: styleId })}
+                    />
+                  </div>
                 )}
-
                 {/* Valance Selector */}
-                {product.features.hasValance && product.customization.valanceOptions && (
-                  <ValanceSelector
-                    options={product.customization.valanceOptions}
-                    selectedValance={config.valance}
-                    onValanceChange={(valanceId) => setConfig({ ...config, valance: valanceId })}
-                  />
+                {product.features.hasValance && (
+                  <div className="pt-6">
+                    <ValanceSelector
+                      options={VALANCE_OPTIONS}
+                      selectedValance={config.valance}
+                      onValanceChange={(valanceId) => setConfig({ ...config, valance: valanceId })}
+                    />
+                  </div>
                 )}
 
                 {/* Bottom Bar Selector */}
-                {product.features.hasBottomBar && product.customization.bottomBarOptions && (
-                  <BottomBarSelector
-                    options={product.customization.bottomBarOptions}
-                    selectedBar={config.bottomBar}
-                    onBarChange={(barId) => setConfig({ ...config, bottomBar: barId })}
-                  />
+                {product.features.hasBottomBar && (
+                  <div className="pt-6">
+                    <BottomBarSelector
+                      options={BOTTOM_BAR_OPTIONS}
+                      selectedBar={config.bottomBar}
+                      onBarChange={(barId) => setConfig({ ...config, bottomBar: barId })}
+                    />
+                  </div>
                 )}
 
                 {/* Dropdown Selectors - Side by Side */}
                 {(product.features.hasBottomChain || product.features.hasBracketType) && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {product.features.hasBottomChain && product.customization.bottomChainOptions && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-6">
+                    {product.features.hasBottomChain && (
                       <DropdownSelector
                         label="Select Bottom Weight Chain"
-                        options={product.customization.bottomChainOptions}
+                        options={BOTTOM_CHAIN_OPTIONS}
                         selectedValue={config.bottomChain}
                         onValueChange={(value) => setConfig({ ...config, bottomChain: value })}
                         placeholder="Select Bottom Weight Chain"
                       />
                     )}
 
-                    {product.features.hasBracketType && product.customization.bracketOptions && (
+                    {product.features.hasBracketType && (
                       <DropdownSelector
                         label="Bracket Type"
-                        options={product.customization.bracketOptions}
+                        options={BRACKET_OPTIONS}
                         selectedValue={config.bracketType}
                         onValueChange={(value) => setConfig({ ...config, bracketType: value })}
                         placeholder="Select Bracket Type"

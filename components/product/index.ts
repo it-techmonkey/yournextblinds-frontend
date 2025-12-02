@@ -5,7 +5,7 @@ export { default as ProductPricing } from './ProductPricing';
 export { default as ProductReviews } from './ProductReviews';
 export { default as RelatedProducts } from './RelatedProducts';
 export { default as StickyBottomBar } from './StickyBottomBar';
-export { default as ProductConfigurator } from './ProductConfigurator';
 export { default as ProductPage } from './ProductPage';
 export { default as CustomizationModal } from './CustomizationModal';
+export { default as StarRating } from './StarRating';
 export * from './customization';

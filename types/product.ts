@@ -18,7 +18,7 @@ export interface ProductReview {
 export interface PriceOption {
   id: string;
   name: string;
-  price: number;
+  price?: number;
   image?: string;
   description?: string;
   hex?: string;
@@ -42,23 +42,6 @@ export interface ProductFeatures {
   hasLift: boolean;
 }
 
-export interface ProductCustomization {
-  headrailOptions?: PriceOption[];
-  openStyleOptions?: PriceOption[];
-  wandPositionOptions?: PriceOption[];
-  valanceOptions?: PriceOption[];
-  bottomChainOptions?: PriceOption[];
-  bracketOptions?: PriceOption[];
-  controlOptions?: PriceOption[];
-  controlPositionOptions?: PriceOption[];
-  colourOptions?: PriceOption[];
-  rollerStyleOptions?: PriceOption[];
-  fabricTypeOptions?: PriceOption[];
-  bottomBarOptions?: PriceOption[];
-  liftOptions?: PriceOption[];
-  liftPositionOptions?: PriceOption[];
-}
-
 export interface Product {
   id: string;
   name: string;
@@ -72,7 +55,6 @@ export interface Product {
   description: string;
   images: string[];
   features: ProductFeatures;
-  customization: ProductCustomization;
   reviews: ProductReview[];
   relatedProducts: string[];
 }

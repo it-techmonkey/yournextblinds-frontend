@@ -1,22 +1,20 @@
 'use client';
 
 import { useState } from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
-import { Product, Room, MountOption, ProductConfiguration, defaultConfiguration } from '@/types/product';
+import { Product, ProductConfiguration, defaultConfiguration } from '@/types/product';
 import ProductGallery from './ProductGallery';
 import ProductReviews from './ProductReviews';
 import RelatedProducts from './RelatedProducts';
 import CustomizationModal from './CustomizationModal';
+import StarRating from './StarRating';
 
 interface ProductPageProps {
   product: Product;
   relatedProducts: Product[];
-  rooms: Room[];
-  mountOptions: MountOption[];
 }
 
-const ProductPage = ({ product, relatedProducts, rooms, mountOptions }: ProductPageProps) => {
+const ProductPage = ({ product, relatedProducts }: ProductPageProps) => {
   const [showCustomization, setShowCustomization] = useState(false);
   const [config, setConfig] = useState<ProductConfiguration>({
     ...defaultConfiguration,
@@ -25,20 +23,6 @@ const ProductPage = ({ product, relatedProducts, rooms, mountOptions }: ProductP
     height: 24,
     heightFraction: '0',
   });
-
-  // Generate star rating
-  const renderStars = (rating: number) => {
-    return Array.from({ length: 5 }, (_, i) => (
-      <svg
-        key={i}
-        className={`w-4 h-4 ${i < rating ? 'text-[#00473c]' : 'text-gray-300'}`}
-        fill="currentColor"
-        viewBox="0 0 20 20"
-      >
-        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-      </svg>
-    ));
-  };
 
   // Calculate discount percentage
   const discountPercentage = product.originalPrice
@@ -49,8 +33,6 @@ const ProductPage = ({ product, relatedProducts, rooms, mountOptions }: ProductP
     return (
       <CustomizationModal
         product={product}
-        rooms={rooms}
-        mountOptions={mountOptions}
         config={config}
         setConfig={setConfig}
         onClose={() => setShowCustomization(false)}
@@ -77,41 +59,7 @@ const ProductPage = ({ product, relatedProducts, rooms, mountOptions }: ProductP
           <div className="flex flex-col lg:flex-row gap-8 lg:gap-12">
             {/* Left - Gallery with Thumbnails on Left */}
             <div className="w-full lg:w-1/2">
-              <div className="flex gap-4">
-                {/* Thumbnails Column */}
-                <div className="hidden md:flex flex-col gap-2 w-20">
-                  {product.images.slice(0, 6).map((image, index) => (
-                    <div
-                      key={index}
-                      className={`relative w-20 h-[72px] rounded-lg overflow-hidden cursor-pointer border-2 ${
-                        index === 0 ? 'border-[#00473c]' : 'border-gray-200'
-                      }`}
-                    >
-                      <Image
-                        src={image}
-                        alt={`${product.name} thumbnail ${index + 1}`}
-                        fill
-                        className="object-cover"
-                      />
-                      {index === 5 && product.images.length > 6 && (
-                        <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                          <span className="text-white font-medium">+{product.images.length - 6}</span>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-                {/* Main Image */}
-                <div className="flex-1 relative aspect-square rounded-lg overflow-hidden bg-gray-100">
-                  <Image
-                    src={product.images[0]}
-                    alt={product.name}
-                    fill
-                    className="object-cover"
-                    priority
-                  />
-                </div>
-              </div>
+              <ProductGallery images={product.images} productName={product.name} />
             </div>
 
             {/* Right - Product Info */}
@@ -128,7 +76,7 @@ const ProductPage = ({ product, relatedProducts, rooms, mountOptions }: ProductP
 
               {/* Rating */}
               <div className="flex items-center gap-1 mb-6">
-                <div className="flex">{renderStars(product.rating)}</div>
+                <StarRating rating={product.rating} />
               </div>
 
               {/* Discount & Shipping Info Box */}
@@ -203,11 +151,11 @@ const ProductPage = ({ product, relatedProducts, rooms, mountOptions }: ProductP
                               >
                                 <option value="0">0</option>
                                 <option value="1/8">1/8</option>
-                                <option value="1/4">2/8</option>
+                                <option value="1/4">1/4</option>
                                 <option value="3/8">3/8</option>
-                                <option value="1/2">4/8</option>
+                                <option value="1/2">1/2</option>
                                 <option value="5/8">5/8</option>
-                                <option value="3/4">6/8</option>
+                                <option value="3/4">3/4</option>
                                 <option value="7/8">7/8</option>
                               </select>
                               <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -258,11 +206,11 @@ const ProductPage = ({ product, relatedProducts, rooms, mountOptions }: ProductP
                               >
                                 <option value="0">0</option>
                                 <option value="1/8">1/8</option>
-                                <option value="1/4">2/8</option>
+                                <option value="1/4">1/4</option>
                                 <option value="3/8">3/8</option>
-                                <option value="1/2">4/8</option>
+                                <option value="1/2">1/2</option>
                                 <option value="5/8">5/8</option>
-                                <option value="3/4">6/8</option>
+                                <option value="3/4">3/4</option>
                                 <option value="7/8">7/8</option>
                               </select>
                               <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -318,10 +266,10 @@ const ProductPage = ({ product, relatedProducts, rooms, mountOptions }: ProductP
                 <h3 className="text-lg font-medium text-black">Product Details</h3>
                 <div className="text-sm text-[#141414] leading-[1.3]">
                   <p className="mb-3">
-                    Textured Vinyl Vertical Blinds give large windows and sliding glass doors a high-design style not often found in vertical blinds products. Featuring 3 1/2" wide slats that come in an alluring assortment of soft pastels and richly-tinted jewel tones, their hues are enhanced by textural appeal.
+                    Textured Vinyl Vertical Blinds give large windows and sliding glass doors a high-design style not often found in vertical blinds products. Featuring 3 1/2&quot; wide slats that come in an alluring assortment of soft pastels and richly-tinted jewel tones, their hues are enhanced by textural appeal.
                   </p>
                   <p className="mb-3">
-                    These blinds' beauty is matched with durability, too. They include a deluxe track with self-aligning carriers, a heavy-duty aluminum channel designed to ensure equal spacing, and synchronized slats action. It all adds up to functionality and aesthetics you'll love to live with every day.
+                    These blinds&apos; beauty is matched with durability, too. They include a deluxe track with self-aligning carriers, a heavy-duty aluminum channel designed to ensure equal spacing, and synchronized slats action. It all adds up to functionality and aesthetics you&apos;ll love to live with every day.
                   </p>
                   <p>
                     <span className="font-bold">Install Time:</span> 20 - 25 minutes

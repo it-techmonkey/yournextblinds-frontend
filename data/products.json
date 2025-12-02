@@ -34,32 +34,6 @@
         "hasBottomBar": false,
         "hasLift": false
       },
-      "customization": {
-        "headrailOptions": [
-          { "id": "slim", "name": "Standard white slim Headrail (free)", "price": 0, "image": "/products/options/headrail-slim.jpg" },
-          { "id": "premium", "name": "Premium headrail", "price": 25, "image": "/products/options/headrail-premium.jpg" }
-        ],
-        "openStyleOptions": [
-          { "id": "wand", "name": "Wand", "price": 0, "image": "/products/options/wand.jpg" },
-          { "id": "chain-chord", "name": "Chain Chord", "price": 15, "image": "/products/options/chain-chord.jpg" }
-        ],
-        "wandPositionOptions": [
-          { "id": "left", "name": "Left Wand", "price": 0, "image": "/products/options/wand-left.jpg" },
-          { "id": "right", "name": "Right Wand", "price": 0, "image": "/products/options/wand-right.jpg" }
-        ],
-        "valanceOptions": [
-          { "id": "no-valance", "name": "No Valance", "price": 0, "image": "/products/options/no-valance.jpg" },
-          { "id": "platinum", "name": "Platinum Valance", "price": 35, "image": "/products/options/platinum-valance.jpg" }
-        ],
-        "bottomChainOptions": [
-          { "id": "standard", "name": "Standard Chain", "price": 0 },
-          { "id": "premium", "name": "Premium Chain", "price": 15 }
-        ],
-        "bracketOptions": [
-          { "id": "standard", "name": "Standard Bracket", "price": 0 },
-          { "id": "extended", "name": "Extended Bracket", "price": 20 }
-        ]
-      },
       "reviews": [
         {
           "id": 1,
@@ -72,7 +46,7 @@
         },
         {
           "id": 2,
-          "author": "Amy K",
+          "author": "Sarah M",
           "rating": 4,
           "date": "5 days ago",
           "title": "Great blinds, minor issue with delivery",
@@ -89,22 +63,23 @@
           "verified": true
         }
       ],
-      "relatedProducts": ["vertical-blinds-white", "vertical-blinds-grey", "vertical-blinds-beige", "vertical-blinds-cream"]
+      "relatedProducts": ["unity-polaris-thunder-roller-blind", "roller-shades", "premium-blackout-roller"]
     },
     {
       "id": "unity-polaris-thunder-roller-blind",
       "name": "Unity Polaris Thunder Roller Blind",
       "slug": "unity-polaris-thunder-roller-blind",
       "category": "Roller Blinds",
-      "price": 234,
-      "originalPrice": 289,
-      "rating": 5,
+      "price": 189,
+      "originalPrice": 245,
+      "rating": 4.5,
       "reviewCount": 32,
-      "estimatedDelivery": "22 December 2025",
+      "estimatedDelivery": "20 December 2025",
       "description": "The Unity Polaris Thunder Roller Blind offers a modern, sleek design perfect for any contemporary home. Made with premium materials, these blinds provide excellent light control and privacy.",
       "images": [
         "/home/products/vertical-blinds-2.jpg",
-        "/home/products/vertical-blinds-3.jpg"
+        "/home/products/vertical-blinds-3.jpg",
+        "/home/products/vertical-blinds-1.jpg"
       ],
       "features": {
         "hasSize": true,
@@ -123,54 +98,43 @@
         "hasBottomBar": true,
         "hasLift": false
       },
-      "customization": {
-        "controlOptions": [
-          { "id": "manual", "name": "Manual", "price": 0 },
-          { "id": "motor-wand", "name": "Rechargeable Motor (Wand)", "price": 75 },
-          { "id": "motor-remote", "name": "Rechargeable Motor (Remote)", "price": 95 }
-        ],
-        "controlPositionOptions": [
-          { "id": "left", "name": "Left Lift", "price": 0, "image": "/products/options/lift-left.jpg" },
-          { "id": "right", "name": "Right Lift", "price": 0, "image": "/products/options/lift-right.jpg" }
-        ],
-        "colourOptions": [
-          { "id": "white", "name": "White", "hex": "#FFFFFF" },
-          { "id": "black", "name": "Black", "hex": "#1a1a1a" },
-          { "id": "grey", "name": "Grey", "hex": "#808080" },
-          { "id": "chrome", "name": "Chrome", "hex": "#C0C0C0" }
-        ],
-        "rollerStyleOptions": [
-          { "id": "standard", "name": "Standard Roll", "price": 0, "image": "/products/options/standard-roll.jpg" },
-          { "id": "reverse", "name": "Reverse Roll", "price": 10, "image": "/products/options/reverse-roll.jpg" }
-        ],
-        "valanceOptions": [
-          { "id": "no-valance", "name": "No Valance", "price": 0, "image": "/products/options/no-valance.jpg" },
-          { "id": "grey", "name": "Premium Grey Valance", "price": 35, "image": "/products/options/grey-valance.jpg" },
-          { "id": "black", "name": "Premium Black Valance", "price": 35, "image": "/products/options/black-valance.jpg" }
-        ],
-        "bottomBarOptions": [
-          { "id": "silver-round", "name": "Standard silver round bar", "price": 0, "image": "/products/options/bar-silver.jpg" },
-          { "id": "white-round", "name": "Standard white round bar", "price": 0, "image": "/products/options/bar-white.jpg" },
-          { "id": "fabric-wrapped", "name": "Premium fabric wrapped bar", "price": 25, "image": "/products/options/bar-fabric.jpg" }
-        ]
-      },
-      "reviews": [],
-      "relatedProducts": ["roller-blinds-white", "roller-blinds-grey"]
+      "reviews": [
+        {
+          "id": 1,
+          "author": "Jessica L",
+          "rating": 5,
+          "date": "3 days ago",
+          "title": "Love the motorized option!",
+          "content": "The motorized feature is absolutely game-changing. Perfect for hard-to-reach windows in my living room. Installation was straightforward and the quality is outstanding.",
+          "verified": true
+        },
+        {
+          "id": 2,
+          "author": "David R",
+          "rating": 4,
+          "date": "1 week ago",
+          "title": "Great product, worth the investment",
+          "content": "These roller blinds exceeded my expectations. The fabric quality is excellent and the reverse roll option was perfect for my needs.",
+          "verified": true
+        }
+      ],
+      "relatedProducts": ["roller-shades", "vinyl-vertical-blinds", "premium-blackout-roller"]
     },
     {
       "id": "roller-shades",
       "name": "Roller Shades",
       "slug": "roller-shades",
       "category": "Roller Blinds",
-      "price": 234,
-      "originalPrice": 289,
-      "rating": 5,
+      "price": 156,
+      "originalPrice": 199,
+      "rating": 4.8,
       "reviewCount": 28,
-      "estimatedDelivery": "22 December 2025",
+      "estimatedDelivery": "18 December 2025",
       "description": "Our premium Roller Shades offer the perfect blend of style and functionality. Available in multiple fabric types and colors to match any decor.",
       "images": [
         "/home/products/vertical-blinds-4.jpg",
-        "/home/products/vertical-blinds-5.jpg"
+        "/home/products/vertical-blinds-5.jpg",
+        "/home/products/vertical-blinds-2.jpg"
       ],
       "features": {
         "hasSize": true,
@@ -189,70 +153,155 @@
         "hasBottomBar": true,
         "hasLift": true
       },
-      "customization": {
-        "fabricTypeOptions": [
-          { "id": "solid", "name": "Solid Fabric", "price": 0, "image": "/products/options/fabric-solid.jpg" },
-          { "id": "decorative", "name": "Decorative Blinds", "price": 25, "image": "/products/options/fabric-decorative.jpg" }
-        ],
-        "colourOptions": [
-          { "id": "white", "name": "White", "hex": "#FFFFFF" },
-          { "id": "black", "name": "Black", "hex": "#1a1a1a" },
-          { "id": "grey", "name": "Grey", "hex": "#808080" },
-          { "id": "chrome", "name": "Chrome", "hex": "#C0C0C0" }
-        ],
-        "liftOptions": [
-          { "id": "cord-loop", "name": "Continuous Cord Loop", "description": "Continuous cord loop is a looped cord that hangs at the bottom of your blinds. With child safety cordless blinds and keeps your window with new looks.", "price": 0, "image": "/products/options/cord-loop.jpg" },
-          { "id": "cordless", "name": "Cordless", "description": "Continuous cord loop is a looped cord that hangs at the bottom of your blinds. Makes child-friendly cordless blinds and keeps your window with new looks.", "price": 25, "image": "/products/options/cordless.jpg" },
-          { "id": "motorized", "name": "Motorized", "description": "Motorized shades allow you to adjust the height of your blinds, raising and lowering the window, with a spring up, without any pulling or choosing to move the shades by hand.", "price": 95, "image": "/products/options/motorized.jpg" }
-        ],
-        "liftPositionOptions": [
-          { "id": "left", "name": "Left Control", "price": 0, "image": "/products/options/control-left.jpg" },
-          { "id": "right", "name": "Right Control", "price": 0, "image": "/products/options/control-right.jpg" }
-        ],
-        "valanceOptions": [
-          { "id": "no-valance", "name": "No Valance", "price": 0, "image": "/products/options/no-valance.jpg" },
-          { "id": "grey", "name": "Premium Grey Valance", "price": 35, "image": "/products/options/grey-valance.jpg" },
-          { "id": "black", "name": "Premium Black Valance", "price": 35, "image": "/products/options/black-valance.jpg" }
-        ],
-        "bottomBarOptions": [
-          { "id": "aluminium", "name": "Heat Sealed Aluminium", "price": 0, "image": "/products/options/bar-aluminium.jpg" },
-          { "id": "fabric-wrapped", "name": "Fabric Wrapped External Hembar", "price": 25, "image": "/products/options/bar-fabric-external.jpg" }
-        ]
-      },
-      "reviews": [],
-      "relatedProducts": ["roller-blinds-white", "roller-blinds-grey"]
-    }
-  ],
-  "rooms": [
-    { "id": "living-room", "name": "Living Room", "icon": "/icons/rooms/living-room.svg" },
-    { "id": "bedroom", "name": "Bedroom Room", "icon": "/icons/rooms/bedroom.svg" },
-    { "id": "kitchen", "name": "Kitchen", "icon": "/icons/rooms/kitchen.svg" },
-    { "id": "dining-room", "name": "Dining Room", "icon": "/icons/rooms/dining-room.svg" },
-    { "id": "bathroom", "name": "Bathroom", "icon": "/icons/rooms/bathroom.svg" },
-    { "id": "office", "name": "Office", "icon": "/icons/rooms/office.svg" },
-    { "id": "kids-room", "name": "Kids Room", "icon": "/icons/rooms/kids-room.svg" },
-    { "id": "others", "name": "Others", "icon": "/icons/rooms/others.svg" }
-  ],
-  "mountOptions": [
-    {
-      "id": "inside",
-      "name": "Inside Mount",
-      "description": "Inside Mount Shutters fit within your window recess and sit in front of your glass on your wall. Your Product will be made with 1/4 Reduction.",
-      "image": "/products/options/mount-inside.jpg"
+      "reviews": [
+        {
+          "id": 1,
+          "author": "Linda P",
+          "rating": 5,
+          "date": "1 day ago",
+          "title": "Beautiful and functional",
+          "content": "The decorative fabric option looks stunning in my bedroom. The cordless lift is safe for my kids and the quality is top-notch.",
+          "verified": true
+        },
+        {
+          "id": 2,
+          "author": "Robert K",
+          "rating": 5,
+          "date": "4 days ago",
+          "title": "Excellent value for money",
+          "content": "Great quality at a reasonable price. The fabric wrapped bottom bar gives it a premium look.",
+          "verified": true
+        },
+        {
+          "id": 3,
+          "author": "Michelle S",
+          "rating": 4,
+          "date": "1 week ago",
+          "title": "Happy with my purchase",
+          "content": "Very pleased with these roller shades. Easy to install and operate. The only minor issue was the delivery took a day longer than expected.",
+          "verified": true
+        }
+      ],
+      "relatedProducts": ["unity-polaris-thunder-roller-blind", "vinyl-vertical-blinds", "premium-blackout-roller"]
     },
     {
-      "id": "outside",
-      "name": "Outside Mount",
-      "description": "Inside Mount Shutters fit within your window recess and sit in front of your glass on your wall. Your Product will be made with 3/8 Reduction.",
-      "image": "/products/options/mount-outside.jpg"
+      "id": "premium-blackout-roller",
+      "name": "Premium Blackout Roller Blinds",
+      "slug": "premium-blackout-roller",
+      "category": "Roller Blinds",
+      "price": 278,
+      "originalPrice": 349,
+      "rating": 5,
+      "reviewCount": 64,
+      "estimatedDelivery": "20 December 2025",
+      "description": "Experience complete darkness with our Premium Blackout Roller Blinds. Perfect for bedrooms, home theaters, and any space requiring maximum light control. These blinds block 100% of light while providing excellent insulation properties.",
+      "images": [
+        "/home/products/vertical-blinds-3.jpg",
+        "/home/products/vertical-blinds-1.jpg",
+        "/home/products/vertical-blinds-2.jpg"
+      ],
+      "features": {
+        "hasSize": true,
+        "hasRoom": true,
+        "hasMount": true,
+        "hasHeadrail": false,
+        "hasOpenStyle": false,
+        "hasWandPosition": false,
+        "hasValance": true,
+        "hasBottomChain": false,
+        "hasBracketType": false,
+        "hasControl": true,
+        "hasColour": true,
+        "hasRollerStyle": true,
+        "hasFabricType": false,
+        "hasBottomBar": true,
+        "hasLift": true
+      },
+      "reviews": [
+        {
+          "id": 1,
+          "author": "Thomas H",
+          "rating": 5,
+          "date": "1 day ago",
+          "title": "Perfect for my home theater!",
+          "content": "These blackout blinds are incredible. Zero light leakage and the motorized option works flawlessly. Best purchase for my home theater setup.",
+          "verified": true
+        },
+        {
+          "id": 2,
+          "author": "Emily W",
+          "rating": 5,
+          "date": "3 days ago",
+          "title": "Game changer for shift workers",
+          "content": "As a night shift nurse, these blinds have transformed my sleep quality. Complete darkness during the day. Highly recommend!",
+          "verified": true
+        },
+        {
+          "id": 3,
+          "author": "Chris B",
+          "rating": 5,
+          "date": "1 week ago",
+          "title": "Excellent quality and finish",
+          "content": "The premium fabric wrapped bar looks amazing and the reverse roll feature works perfectly. Worth every penny!",
+          "verified": true
+        }
+      ],
+      "relatedProducts": ["unity-polaris-thunder-roller-blind", "roller-shades", "vinyl-vertical-blinds"]
+    },
+    {
+      "id": "modern-wooden-venetian",
+      "name": "Modern Wooden Venetian Blinds",
+      "slug": "modern-wooden-venetian",
+      "category": "Venetian Blinds",
+      "price": 312,
+      "originalPrice": 389,
+      "rating": 4.7,
+      "reviewCount": 41,
+      "estimatedDelivery": "25 December 2025",
+      "description": "Add warmth and elegance to your home with our Modern Wooden Venetian Blinds. Crafted from premium sustainable wood, these blinds offer timeless style with modern functionality. Available in various wood stains to complement any interior design.",
+      "images": [
+        "/home/products/vertical-blinds-5.jpg",
+        "/home/products/vertical-blinds-4.jpg",
+        "/home/products/vertical-blinds-1.jpg"
+      ],
+      "features": {
+        "hasSize": true,
+        "hasRoom": true,
+        "hasMount": true,
+        "hasHeadrail": true,
+        "hasOpenStyle": false,
+        "hasWandPosition": false,
+        "hasValance": true,
+        "hasBottomChain": false,
+        "hasBracketType": true,
+        "hasControl": false,
+        "hasColour": true,
+        "hasRollerStyle": false,
+        "hasFabricType": false,
+        "hasBottomBar": false,
+        "hasLift": true
+      },
+      "reviews": [
+        {
+          "id": 1,
+          "author": "Patricia G",
+          "rating": 5,
+          "date": "2 days ago",
+          "title": "Beautiful natural look",
+          "content": "The wood finish is gorgeous and adds so much character to my dining room. The cordless lift makes them safe and easy to use.",
+          "verified": true
+        },
+        {
+          "id": 2,
+          "author": "Andrew M",
+          "rating": 4,
+          "date": "1 week ago",
+          "title": "High quality wooden blinds",
+          "content": "Very happy with the quality. The wood is solid and well-finished. Installation was straightforward.",
+          "verified": true
+        }
+      ],
+      "relatedProducts": ["vinyl-vertical-blinds", "roller-shades", "premium-blackout-roller"]
     }
-  ],
-  "sizeOptions": {
-    "widthUnits": ["inches", "cm"],
-    "heightUnits": ["inches", "cm"],
-    "minWidth": 12,
-    "maxWidth": 96,
-    "minHeight": 12,
-    "maxHeight": 120
-  }
+  ]
 }

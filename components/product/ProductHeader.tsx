@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import Link from 'next/link';
 
 interface ProductHeaderProps {
   name: string;
@@ -13,7 +14,7 @@ const ProductHeader = ({ name, category, rating, reviewCount, estimatedDelivery 
     <div className="flex flex-col gap-3">
       {/* Breadcrumb */}
       <nav className="flex items-center gap-2 text-sm text-[#666]">
-        <a href="/" className="hover:text-[#00473c] transition-colors">{category}</a>
+        <Link href="/" className="hover:text-[#00473c] transition-colors">{category}</Link>
         <span>›</span>
         <span className="text-[#3a3a3a]">{name}</span>
       </nav>

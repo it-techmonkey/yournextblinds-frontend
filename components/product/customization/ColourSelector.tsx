@@ -11,24 +11,24 @@ interface ColourSelectorProps {
 const ColourSelector = ({ options, selectedColour, onColourChange }: ColourSelectorProps) => {
   return (
     <div className="flex flex-col gap-4">
-      <h3 className="text-base font-medium text-[#3a3a3a]">Colour</h3>
+      <h3 className="text-lg font-medium text-black">Colour</h3>
       
-      <div className="flex flex-wrap gap-3">
+      <div className="grid grid-cols-4 gap-3">
         {options.map((option) => (
           <button
             key={option.id}
             onClick={() => onColourChange(option.id)}
-            className={`flex flex-col items-center gap-2 p-3 rounded border transition-all ${
+            className={`flex flex-col items-center gap-2 p-3 border border-solid transition-all ${
               selectedColour === option.id
-                ? 'border-[#00473c] ring-1 ring-[#00473c]'
-                : 'border-[#e0e0e0] hover:border-[#00473c]'
+                ? 'border-[#00473c] bg-[#f6fffd]'
+                : 'border-[#d9d9d9] hover:border-[#00473c]/50 bg-white'
             }`}
           >
             <div 
-              className="w-12 h-12 rounded border border-[#e0e0e0]"
+              className="w-full aspect-square border border-[#d9d9d9]"
               style={{ backgroundColor: option.hex }}
             />
-            <span className="text-xs text-[#3a3a3a]">{option.name}</span>
+            <span className="text-xs text-black font-medium">{option.name}</span>
           </button>
         ))}
       </div>

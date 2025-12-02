@@ -1,8 +1,8 @@
 import { notFound } from 'next/navigation';
 import productsData from '@/data/products.json';
-import { Product, Room, MountOption } from '@/types/product';
+import { Product } from '@/types/product';
 import { ProductPage } from '@/components/product';
-import { TopBar, Header, FlashSale, FAQ, Footer } from '@/components';
+import { TopBar, Header, FlashSale, FAQ, Footer, NavBar } from '@/components';
 
 interface ProductPageProps {
   params: Promise<{
@@ -55,19 +55,15 @@ export default async function ProductPageRoute({ params }: ProductPageProps) {
     relatedProducts.push(...otherProducts);
   }
   
-  const rooms = productsData.rooms as Room[];
-  const mountOptions = productsData.mountOptions as MountOption[];
-  
   return (
     <>
       <TopBar />
       <Header />
+      <NavBar />
       <main className="bg-white min-h-screen">
         <ProductPage
           product={product}
           relatedProducts={relatedProducts}
-          rooms={rooms}
-          mountOptions={mountOptions}
         />
         <FlashSale />
         <FAQ />

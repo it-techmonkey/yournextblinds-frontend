@@ -22,19 +22,19 @@ const ControlSelector = ({
 }: ControlSelectorProps) => {
   return (
     <div className="flex flex-col gap-4">
-      <h3 className="text-base font-medium text-[#3a3a3a]">Control</h3>
+      <h3 className="text-lg font-medium text-black">Control</h3>
       
-      {/* Control Type Tabs */}
-      <div className="flex flex-wrap gap-2">
-        {options.map((option) => (
+      {/* Control Type Buttons */}
+      <div className="grid grid-cols-3 gap-0">
+        {options.map((option, index) => (
           <button
             key={option.id}
             onClick={() => onControlChange(option.id)}
-            className={`px-4 py-2 text-sm rounded border transition-all ${
+            className={`px-4 py-2.5 text-sm font-medium transition-all border border-solid ${
               selectedControl === option.id
-                ? 'border-[#00473c] bg-[#f5fffd] text-[#00473c]'
-                : 'border-[#e0e0e0] text-[#666] hover:border-[#00473c]'
-            }`}
+                ? 'bg-[#00473c] text-white border-[#00473c]'
+                : 'bg-white text-black border-[#d9d9d9] hover:border-[#00473c]/50'
+            } ${index > 0 ? '-ml-px' : ''}`}
           >
             {option.name}
           </button>
@@ -48,28 +48,30 @@ const ControlSelector = ({
             <button
               key={option.id}
               onClick={() => onPositionChange?.(option.id)}
-              className={`flex flex-col rounded border overflow-hidden transition-all ${
+              className={`flex flex-col border border-solid overflow-hidden transition-all ${
                 selectedPosition === option.id
-                  ? 'border-[#00473c] ring-1 ring-[#00473c]'
-                  : 'border-[#e0e0e0] hover:border-[#00473c]'
+                  ? 'border-[#00473c] bg-[#f6fffd]'
+                  : 'border-[#d9d9d9] hover:border-[#00473c]/50 bg-white'
               }`}
             >
-              <div className="p-3 bg-[#f5f5f5]">
-                <h4 className="text-sm font-medium text-[#3a3a3a]">{option.name}</h4>
+              <div className="p-3">
+                <div className="flex items-center justify-between mb-2">
+                  {option.price && option.price > 0 && (
+                    <span className="bg-gray-100 text-black text-xs px-2 py-1">
+                      Adds ${option.price.toFixed(2)}
+                    </span>
+                  )}
+                  <h4 className="text-sm font-medium text-black ml-auto">{option.name}</h4>
+                </div>
               </div>
               {option.image && (
-                <div className="relative h-[100px] bg-white">
+                <div className="relative h-[140px] bg-gray-50">
                   <Image
                     src={option.image}
                     alt={option.name}
                     fill
                     className="object-contain p-3"
                   />
-                  {selectedPosition === option.id && (
-                    <span className="absolute bottom-2 left-2 bg-[#00473c] text-white text-xs px-2 py-1 rounded">
-                      Adds $0.00
-                    </span>
-                  )}
                 </div>
               )}
             </button>
