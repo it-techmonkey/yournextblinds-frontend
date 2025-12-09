@@ -1,102 +1,19 @@
 'use client';
 
 import { useRef } from 'react';
-import Image from 'next/image';
-import Link from 'next/link';
-import { StarRating } from '@/components/product';
+import { ProductCard } from '@/components/product';
+import productsData from '@/data/products.json';
 
-// Product data - linked to actual product pages
-const products = [
-  {
-    id: 1,
-    name: 'Vinyl Vertical Blinds',
-    slug: 'vinyl-vertical-blinds',
-    price: 234,
-    originalPrice: 289,
-    rating: 5,
-    image: '/home/products/vertical-blinds-1.jpg',
-  },
-  {
-    id: 2,
-    name: 'Unity Polaris Thunder Roller Blind',
-    slug: 'unity-polaris-thunder-roller-blind',
-    price: 234,
-    originalPrice: 289,
-    rating: 5,
-    image: '/home/products/vertical-blinds-2.jpg',
-  },
-  {
-    id: 3,
-    name: 'Roller Shades',
-    slug: 'roller-shades',
-    price: 234,
-    originalPrice: 289,
-    rating: 5,
-    image: '/home/products/vertical-blinds-3.jpg',
-  },
-  {
-    id: 4,
-    name: 'Vinyl Vertical Blinds',
-    slug: 'vinyl-vertical-blinds',
-    price: 234,
-    originalPrice: 289,
-    rating: 5,
-    image: '/home/products/vertical-blinds-4.jpg',
-  },
-  {
-    id: 5,
-    name: 'Unity Polaris Thunder Roller Blind',
-    slug: 'unity-polaris-thunder-roller-blind',
-    price: 234,
-    originalPrice: 289,
-    rating: 5,
-    image: '/home/products/vertical-blinds-5.jpg',
-  },
-];
-
-// ProductCard component
-const ProductCard = ({ product }: { product: typeof products[0] }) => {
-  return (
-    <Link href={`/product/${product.slug}`} className="flex flex-col shrink-0 w-[250px] md:w-[280px] lg:w-[311px] group">
-      {/* Image */}
-      <div className="relative h-[220px] md:h-[250px] lg:h-[291px] overflow-hidden">
-        <Image
-          src={product.image}
-          alt={product.name}
-          fill
-          className="object-cover group-hover:scale-105 transition-transform duration-300"
-        />
-      </div>
-      
-      {/* Info */}
-      <div className="bg-white pt-3 md:pt-4 flex items-end justify-between gap-2">
-        <div className="flex flex-col gap-1.5 md:gap-2 flex-1">
-          <div className="flex flex-col gap-0.5">
-            <h3 className="text-base md:text-lg font-normal text-black capitalize line-clamp-2">
-              {product.name}
-            </h3>
-            <div className="flex gap-2 md:gap-3 items-end">
-              <span className="text-lg md:text-xl font-bold text-black">
-                € {product.price}
-              </span>
-              <span className="text-sm md:text-base text-[#474747] line-through">
-                € {product.originalPrice}
-              </span>
-            </div>
-          </div>
-          <StarRating rating={product.rating} size="sm" filledColor="text-[#00473c]" />
-        </div>
-        
-        <button 
-          onClick={(e) => e.preventDefault()}
-          className="hidden md:block border border-black bg-white px-2.5 py-2.5 text-base text-black hover:bg-black hover:text-white transition-colors shrink-0"
-        >
-          Add to Cart
-        </button>
-      </div>
-    </Link>
-  );
-};
+// Use actual products from JSON - use first 5 products
+const products = productsData.products.slice(0, 5).map((product) => ({
+  id: product.id,
+  name: product.name,
+  slug: product.slug,
+  price: product.price,
+  originalPrice: product.originalPrice,
+  rating: product.rating,
+  image: product.images[0], // Use first image from the images array
+}));
 
 // BestSelling - Best selling products section with horizontal scroll
 const BestSelling = () => {
@@ -146,7 +63,11 @@ const BestSelling = () => {
         <div ref={scrollRef} className="w-full overflow-x-auto scrollbar-hide">
           <div className="flex gap-4 pl-4 md:pl-6 lg:pl-20">
             {products.map((product) => (
-              <ProductCard key={product.id} product={product} />
+              <ProductCard 
+                key={product.id} 
+                product={product}
+                className="shrink-0 w-[250px] md:w-[280px] lg:w-[311px]"
+              />
             ))}
             {/* Spacer for right padding when scrolled to end */}
             <div className="shrink-0 w-4 md:w-6 lg:w-12 h-px" aria-hidden="true" />

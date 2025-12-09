@@ -7,3 +7,6 @@ export { Hero, WindowTypes, Categories, Installation, BestSelling, Craftsmanship
 
 // Product components
 export * from './product';
+
+// Collection components (includes CategoryHero, CollectionFilters, CollectionProductGrid)
+export * from './collection';
