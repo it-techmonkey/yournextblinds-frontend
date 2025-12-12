@@ -91,7 +91,7 @@ export default async function CategoryPage({
       </header>
 
       {/* Hero Section */}
-      <CategoryHero category={categoryName} productCount={filteredProducts.length} />
+      <CategoryHero category={categoryName || category} productCount={filteredProducts.length} />
 
       {/* Main Collection Page */}
       <div className="min-h-screen bg-gray-50">
