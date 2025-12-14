@@ -33,10 +33,10 @@ export default function ProductCard({ product, className = '' }: ProductCardProp
   return (
     <Link 
       href={`/product/${product.slug}`} 
-      className={`flex flex-col group w-full ${className}`}
+      className={`flex flex-col group w-full h-full ${className}`}
     >
       {/* Image */}
-      <div className="relative h-[220px] md:h-[250px] lg:h-[291px] overflow-hidden">
+      <div className="relative h-[220px] md:h-[250px] lg:h-[291px] overflow-hidden shrink-0">
         <Image
           src={imageUrl}
           alt={product.name}
@@ -46,7 +46,7 @@ export default function ProductCard({ product, className = '' }: ProductCardProp
       </div>
       
       {/* Info */}
-      <div className="bg-white pt-3 md:pt-4 pb-1 flex items-end justify-between gap-2">
+      <div className="bg-white pt-3 md:pt-4 pb-1 flex items-end justify-between gap-2 flex-1">
         <div className="flex flex-col gap-1.5 md:gap-2 flex-1 min-w-0">
           <div className="flex flex-col gap-0.5">
             <h3 className="text-base md:text-lg font-normal text-black capitalize line-clamp-2">
