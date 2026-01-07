@@ -57,7 +57,7 @@ export const navigationData: NavigationItem[] = [
       },
       {
         links: [
-          { label: 'Blackout Blinds', href: '/collections/blackout-blinds', icon: '/nav-icons/vertical-blinds.webp'},
+          { label: 'Blackout Blinds', href: '/collections/blackout-blinds', icon: '/nav-icons/vertical-blinds.webp' },
           { label: 'Skylight Blinds', href: '/collections/skylight-blinds', icon: '/nav-icons/skylight-blinds.webp' },
           { label: 'Wooden Blinds', href: '/collections/wooden-blinds', icon: '/nav-icons/wooden-blinds.webp' },
           { label: 'No Drill Blinds', href: '/collections/no-drill-blinds', icon: '/nav-icons/day-night-blinds.webp' },
@@ -65,7 +65,7 @@ export const navigationData: NavigationItem[] = [
       },
       {
         links: [
-          { label: 'Motorized Blinds', href: '/collections/motorized-blinds', icon: '/nav-icons/roller-blinds.webp'},
+          { label: 'Motorized Blinds', href: '/collections/motorized-blinds', icon: '/nav-icons/roller-blinds.webp' },
           { label: 'Pleated Blinds', href: '/collections/pleated-blinds', icon: '/nav-icons/pleated-blind.webp' },
           { label: 'All Collections', href: '/collections', icon: '/nav-icons/day-night-blinds.webp' },
         ]
@@ -105,13 +105,13 @@ export const navigationData: NavigationItem[] = [
     megaMenu: [
       {
         links: [
-          { label: 'Perfect Fit Shutter Blind', href: '/collections/perfect-fit-shutter-blinds', icon: '/nav-icons/shutter-blind.webp'},
+          { label: 'Perfect Fit Shutter Blind', href: '/collections/perfect-fit-shutter-blinds', icon: '/nav-icons/shutter-blind.webp' },
           { label: 'Perfect Fit - Pleated', href: '/collections/perfect-fit-pleated-blinds', icon: '/nav-icons/pleated-blind.webp' },
         ]
       },
       {
         links: [
-          { label: 'No Drill Rollers', href: '/collections/no-drill-roller-blinds', icon: '/nav-icons/no-drill-rollers.webp'},
+          { label: 'No Drill Rollers', href: '/collections/no-drill-roller-blinds', icon: '/nav-icons/no-drill-rollers.webp' },
           { label: 'Perfect Fit - Wooden', href: '/collections/perfect-fit-wooden-blinds', icon: '/nav-icons/vertical-blinds.webp' },
           { label: 'Perfect Fit - Metal', href: '/collections/perfect-fit-metal-blinds', icon: '/nav-icons/metal-blinds.webp' },
         ]
@@ -239,6 +239,22 @@ export const ALL_COLLECTION_SLUGS = [
   'living-room-blinds',
   'dining-room-blinds',
   'childrens-blinds',
+  // Custom Navigation Pages
+  'light-filtering-vertical-blinds',
+  'blackout-vertical-blinds',
+  'light-filtering-roller-shades',
+  'blackout-roller-shades',
+  'waterproof-blackout-roller-shades',
+  'dual-zebra-shades',
+  'motorised-roller-shades',
+  'motorised-dual-zebra-shades',
+  'motorised-eclipsecore',
+  'blackout-roller-shades-category',
+  'blackout-dual-zebra-shades',
+  'blackout-vertical-blinds-category',
+  'eclipsecore-shades',
+  'shop-by-feature',
+  'shop-by-room',
 ];
 
 // Display names for slugs (used when category not in backend)
@@ -296,6 +312,22 @@ export const COLLECTION_DISPLAY_NAMES: Record<string, string> = {
   'living-room-blinds': 'Living Room Blinds',
   'dining-room-blinds': 'Dining Room Blinds',
   'childrens-blinds': "Children's Blinds",
+  // Custom Navigation Pages
+  'light-filtering-vertical-blinds': 'Light filtering Vertical blinds',
+  'blackout-vertical-blinds': 'Blackout vertical blinds',
+  'light-filtering-roller-shades': 'Light filtering roller Shades',
+  'blackout-roller-shades': 'Blackout roller Shades',
+  'waterproof-blackout-roller-shades': 'Waterproof Blackout roller Shades',
+  'dual-zebra-shades': 'Dual zebra Shades',
+  'motorised-roller-shades': 'Motorised roller shades',
+  'motorised-dual-zebra-shades': 'Motorised Dual / zebra shades',
+  'motorised-eclipsecore': 'Motorised EclipseCore',
+  'blackout-roller-shades-category': 'Roller Shades',
+  'blackout-dual-zebra-shades': 'Dual/ zebra shades',
+  'blackout-vertical-blinds-category': 'Vertical blinds',
+  'eclipsecore-shades': 'EclipseCore shades',
+  'shop-by-feature': 'Shop by Feature',
+  'shop-by-room': 'Shop by room',
 };
 
 // ===========================
@@ -304,10 +336,12 @@ export const COLLECTION_DISPLAY_NAMES: Record<string, string> = {
 
 export interface NewNavigationLink {
   label: string;
+  href?: string;
 }
 
 export interface NewNavigationItem {
   label: string;
+  href?: string;
   submenu?: NewNavigationLink[];
 }
 
@@ -315,36 +349,36 @@ export const newNavigationData: NewNavigationItem[] = [
   {
     label: 'Blinds',
     submenu: [
-      { label: 'Light filtering Vertical blinds' },
-      { label: 'Blackout vertical blinds' },
-      { label: 'All blinds and shades' },
+      { label: 'Light filtering Vertical blinds', href: '/collections/light-filtering-vertical-blinds' },
+      { label: 'Blackout vertical blinds', href: '/collections/blackout-vertical-blinds' },
+      { label: 'All blinds and shades', href: '/collections' },
     ]
   },
   {
     label: 'Shades',
     submenu: [
-      { label: 'Light filtering roller Shades' },
-      { label: 'Blackout roller Shades' },
-      { label: 'Waterproof Blackout roller Shades' },
-      { label: 'Dual zebra Shades' },
-      { label: 'All blinds and shades' },
+      { label: 'Light filtering roller Shades', href: '/collections/light-filtering-roller-shades' },
+      { label: 'Blackout roller Shades', href: '/collections/blackout-roller-shades' },
+      { label: 'Waterproof Blackout roller Shades', href: '/collections/waterproof-blackout-roller-shades' },
+      { label: 'Dual zebra Shades', href: '/collections/dual-zebra-shades' },
+      { label: 'All blinds and shades', href: '/collections' },
     ]
   },
   {
     label: 'Motorization',
     submenu: [
-      { label: 'Motorised roller shades' },
-      { label: 'Motorised Dual / zebra shades' },
-      { label: 'Motorised EclipseCore' },
+      { label: 'Motorised roller shades', href: '/collections/motorised-roller-shades' },
+      { label: 'Motorised Dual / zebra shades', href: '/collections/motorised-dual-zebra-shades' },
+      { label: 'Motorised EclipseCore', href: '/collections/motorised-eclipsecore' },
     ]
   },
   {
     label: 'Blackout',
     submenu: [
-      { label: 'Roller Shades' },
-      { label: 'Dual/ zebra shades' },
-      { label: 'Vertical blinds' },
-      { label: 'EclipseCore shades' },
+      { label: 'Roller Shades', href: '/collections/blackout-roller-shades-category' },
+      { label: 'Dual/ zebra shades', href: '/collections/blackout-dual-zebra-shades' },
+      { label: 'Vertical blinds', href: '/collections/blackout-vertical-blinds-category' },
+      { label: 'EclipseCore shades', href: '/collections/eclipsecore-shades' },
     ]
   },
   {
@@ -361,3 +395,32 @@ export const newNavigationData: NewNavigationItem[] = [
     label: 'Measure/fit guides',
   },
 ];
+
+// Mapping of custom navigation slugs to their backend collection slugs
+// This allows custom page titles while fetching products from existing collections
+export const NAVIGATION_SLUG_MAPPING: Record<string, string> = {
+  // Blinds
+  'light-filtering-vertical-blinds': 'vertical-blinds',
+  'blackout-vertical-blinds': 'blackout-blinds',
+
+  // Shades
+  'light-filtering-roller-shades': 'roller-blinds',
+  'blackout-roller-shades': 'blackout-blinds',
+  'waterproof-blackout-roller-shades': 'waterproof-blinds',
+  'dual-zebra-shades': 'day-and-night-blinds',
+
+  // Motorization
+  'motorised-roller-shades': 'motorized-blinds',
+  'motorised-dual-zebra-shades': 'motorized-blinds',
+  'motorised-eclipsecore': 'motorized-blinds',
+
+  // Blackout
+  'blackout-roller-shades-category': 'blackout-blinds',
+  'blackout-dual-zebra-shades': 'day-and-night-blinds',
+  'blackout-vertical-blinds-category': 'vertical-blinds',
+  'eclipsecore-shades': 'blackout-blinds',
+
+  // Shop by
+  'shop-by-feature': 'thermal-blinds',
+  'shop-by-room': 'living-room-blinds',
+};

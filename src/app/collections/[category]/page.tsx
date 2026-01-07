@@ -5,7 +5,7 @@ import { Product, ApiProduct } from '@/types';
 import CategoryHero from '@/components/collection/CategoryHero';
 import ProductGridWithFilters from '@/components/collection/ProductGridWithFilters';
 import ComingSoon from '@/components/collection/ComingSoon';
-import { ALL_COLLECTION_SLUGS, COLLECTION_DISPLAY_NAMES } from '@/data/navigation';
+import { ALL_COLLECTION_SLUGS, COLLECTION_DISPLAY_NAMES, NAVIGATION_SLUG_MAPPING } from '@/data/navigation';
 
 interface PageProps {
   params: Promise<{ category: string }>;
@@ -59,6 +59,12 @@ export default async function CollectionPage({ params }: PageProps) {
 
   // Map frontend slug to backend slug if needed
   const mapCategorySlug = (slug: string): string => {
+    // Check if this is a custom navigation slug
+    if (NAVIGATION_SLUG_MAPPING[slug]) {
+      return NAVIGATION_SLUG_MAPPING[slug];
+    }
+
+    // Legacy slug mappings
     const slugMap: Record<string, string> = {
       'day-and-night-blinds': 'day-night-blinds', // Backend uses different format
     };
@@ -85,8 +91,8 @@ export default async function CollectionPage({ params }: PageProps) {
     notFound();
   }
 
-  // Get display name
-  const categoryName = backendCategory?.name || COLLECTION_DISPLAY_NAMES[categorySlug] ||
+  // Get display name (use custom name from COLLECTION_DISPLAY_NAMES if available)
+  const categoryName = COLLECTION_DISPLAY_NAMES[categorySlug] || backendCategory?.name ||
     categorySlug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 
   const categoryDescription = backendCategory?.description ||
@@ -98,7 +104,7 @@ export default async function CollectionPage({ params }: PageProps) {
 
   if (backendCategory) {
     try {
-      apiProducts = await fetchProductsByCategory(categorySlug);
+      apiProducts = await fetchProductsByCategory(backendSlug);
       products = apiProducts.map(transformProduct);
     } catch (error) {
       console.error('Error fetching products:', error);

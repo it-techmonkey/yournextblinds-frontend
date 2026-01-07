@@ -2,19 +2,30 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
-import { newNavigationData } from '@/data/navigation';
+import Link from 'next/link';
+import { newNavigationData, NewNavigationItem, NewNavigationLink } from '@/data/navigation';
 
 // Mobile Menu Item Component with Accordion
-const MobileMenuItem = ({ item, onClose }: { item: any; onClose: () => void }) => {
+const MobileMenuItem = ({ item, onClose }: { item: NewNavigationItem; onClose: () => void }) => {
   const [isOpen, setIsOpen] = useState(false);
   const hasSubmenu = item.submenu && item.submenu.length > 0;
 
   if (!hasSubmenu) {
     return (
       <div className="border-b border-gray-100 last:border-0">
-        <div className="flex items-center justify-between py-3 text-sm font-semibold text-black">
-          <span>{item.label}</span>
-        </div>
+        {item.href ? (
+          <Link
+            href={item.href}
+            className="flex items-center justify-between py-3 text-sm font-semibold text-black hover:text-[#00473c] transition-colors"
+            onClick={onClose}
+          >
+            <span>{item.label}</span>
+          </Link>
+        ) : (
+          <div className="flex items-center justify-between py-3 text-sm font-semibold text-black">
+            <span>{item.label}</span>
+          </div>
+        )}
       </div>
     );
   }
@@ -26,23 +37,33 @@ const MobileMenuItem = ({ item, onClose }: { item: any; onClose: () => void }) =
         className="flex items-center justify-between py-3 text-sm font-semibold text-black w-full"
       >
         <span>{item.label}</span>
-        <Image 
-          src="/icons/CaretDown.svg" 
-          alt="" 
-          width={12} 
-          height={12} 
+        <Image
+          src="/icons/CaretDown.svg"
+          alt=""
+          width={12}
+          height={12}
           className={`opacity-60 transition-transform ${isOpen ? 'rotate-180' : ''}`}
         />
       </button>
-      
-      {isOpen && (
+
+      {isOpen && item.submenu && (
         <div className="pb-3 pl-4">
           <ul className="space-y-2">
-            {item.submenu.map((link: any, linkIndex: number) => (
+            {item.submenu.map((link: NewNavigationLink, linkIndex: number) => (
               <li key={linkIndex}>
-                <div className="text-sm text-gray-700 block py-1">
-                  {link.label}
-                </div>
+                {link.href ? (
+                  <Link
+                    href={link.href}
+                    className="text-sm text-gray-700 hover:text-[#00473c] transition-colors block py-1"
+                    onClick={onClose}
+                  >
+                    {link.label}
+                  </Link>
+                ) : (
+                  <div className="text-sm text-gray-700 block py-1">
+                    {link.label}
+                  </div>
+                )}
               </li>
             ))}
           </ul>
@@ -63,65 +84,82 @@ const NavBar = () => {
           <ul className="flex gap-8 items-center justify-center">
             {newNavigationData.map((item, index) => (
               <li key={index} className="group py-4 static">
-                <div className="flex items-center gap-1.5 text-[15px] font-semibold text-black hover:text-[#00473c] transition-colors cursor-pointer">
-                  <span>{item.label}</span>
-                  {item.submenu && (
-                    <Image 
-                      src="/icons/CaretDown.svg" 
-                      alt="" 
-                      width={12} 
-                      height={12} 
-                      className="opacity-60 transition-transform group-hover:rotate-180" 
-                    />
-                  )}
-                </div>
+                {item.submenu ? (
+                  <>
+                    <div className="flex items-center gap-1.5 text-[15px] font-semibold text-black hover:text-[#00473c] transition-colors cursor-pointer">
+                      <span>{item.label}</span>
+                      <Image
+                        src="/icons/CaretDown.svg"
+                        alt=""
+                        width={12}
+                        height={12}
+                        className="opacity-60 transition-transform group-hover:rotate-180"
+                      />
+                    </div>
 
-                {/* Dropdown Menu */}
-                {item.submenu && (
-                  <div className="absolute left-1/2 -translate-x-1/2 top-full opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50 w-[1200px]">
-                    <div className="bg-white border-t-2 border-[#00473c] shadow-xl p-8">
-                      <div className="max-w-4xl mx-auto">
-                        <ul className="space-y-3">
-                          {item.submenu.map((link, linkIndex) => {
-                            // Assign icons based on menu labels
-                            let icon = '/nav-icons/vertical-blinds.webp'; // default
-                            
-                            if (item.label === 'Blinds') {
-                              if (link.label.includes('Light filtering Vertical')) icon = '/nav-icons/vertical-blinds.webp';
-                              else if (link.label.includes('Blackout vertical')) icon = '/nav-icons/blackout-blinds.svg';
-                              else if (link.label.includes('All blinds')) icon = '/nav-icons/roller-blinds.webp';
-                            } else if (item.label === 'Shades') {
-                              if (link.label.includes('Light filtering roller')) icon = '/nav-icons/roller-blinds.webp';
-                              else if (link.label.includes('Blackout roller')) icon = '/nav-icons/blackout-blinds.svg';
-                              else if (link.label.includes('Waterproof')) icon = '/nav-icons/waterproof-blinds.svg';
-                              else if (link.label.includes('Dual zebra')) icon = '/nav-icons/day-night-blinds.webp';
-                              else if (link.label.includes('All blinds')) icon = '/nav-icons/roller-blinds.webp';
-                            } else if (item.label === 'Motorization') {
-                              if (link.label.includes('roller')) icon = '/nav-icons/roller-blinds.webp';
-                              else if (link.label.includes('Dual')) icon = '/nav-icons/day-night-blinds.webp';
-                              else if (link.label.includes('EclipseCore')) icon = '/nav-icons/blackout-blinds.svg';
-                            } else if (item.label === 'Blackout') {
-                              if (link.label.includes('Roller')) icon = '/nav-icons/blackout-blinds.svg';
-                              else if (link.label.includes('Dual')) icon = '/nav-icons/day-night-blinds.webp';
-                              else if (link.label.includes('Vertical')) icon = '/nav-icons/vertical-blinds.webp';
-                              else if (link.label.includes('EclipseCore')) icon = '/nav-icons/blackout-blinds.svg';
-                            } else if (item.label === 'Shop by') {
-                              if (link.label.includes('Feature')) icon = '/nav-icons/thermal-blinds.svg';
-                              else if (link.label.includes('room')) icon = '/nav-icons/rooms-livingroom.webp';
-                            }
-                            
-                            return (
-                              <li key={linkIndex} className="flex items-start gap-2">
-                                <Image src={icon} alt="" width={20} height={20} className="opacity-70 mt-0.5 shrink-0" />
-                                <span className="text-[15px] text-gray-700 hover:text-[#00473c] transition-colors cursor-pointer">
-                                  {link.label}
-                                </span>
-                              </li>
-                            );
-                          })}
-                        </ul>
+                    {/* Dropdown Menu */}
+                    <div className="absolute left-1/2 -translate-x-1/2 top-full opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50 w-[1200px]">
+                      <div className="bg-white border-t-2 border-[#00473c] shadow-xl p-8">
+                        <div className="max-w-4xl mx-auto">
+                          <ul className="space-y-3">
+                            {item.submenu.map((link, linkIndex) => {
+                              // Assign icons based on menu labels
+                              let icon = '/nav-icons/vertical-blinds.webp'; // default
+
+                              if (item.label === 'Blinds') {
+                                if (link.label.includes('Light filtering Vertical')) icon = '/nav-icons/vertical-blinds.webp';
+                                else if (link.label.includes('Blackout vertical')) icon = '/nav-icons/blackout-blinds.svg';
+                                else if (link.label.includes('All blinds')) icon = '/nav-icons/roller-blinds.webp';
+                              } else if (item.label === 'Shades') {
+                                if (link.label.includes('Light filtering roller')) icon = '/nav-icons/roller-blinds.webp';
+                                else if (link.label.includes('Blackout roller')) icon = '/nav-icons/blackout-blinds.svg';
+                                else if (link.label.includes('Waterproof')) icon = '/nav-icons/waterproof-blinds.svg';
+                                else if (link.label.includes('Dual zebra')) icon = '/nav-icons/day-night-blinds.webp';
+                                else if (link.label.includes('All blinds')) icon = '/nav-icons/roller-blinds.webp';
+                              } else if (item.label === 'Motorization') {
+                                if (link.label.includes('roller')) icon = '/nav-icons/roller-blinds.webp';
+                                else if (link.label.includes('Dual')) icon = '/nav-icons/day-night-blinds.webp';
+                                else if (link.label.includes('EclipseCore')) icon = '/nav-icons/blackout-blinds.svg';
+                              } else if (item.label === 'Blackout') {
+                                if (link.label.includes('Roller')) icon = '/nav-icons/blackout-blinds.svg';
+                                else if (link.label.includes('Dual')) icon = '/nav-icons/day-night-blinds.webp';
+                                else if (link.label.includes('Vertical')) icon = '/nav-icons/vertical-blinds.webp';
+                                else if (link.label.includes('EclipseCore')) icon = '/nav-icons/blackout-blinds.svg';
+                              } else if (item.label === 'Shop by') {
+                                if (link.label.includes('Feature')) icon = '/nav-icons/thermal-blinds.svg';
+                                else if (link.label.includes('room')) icon = '/nav-icons/rooms-livingroom.webp';
+                              }
+
+                              return (
+                                <li key={linkIndex} className="flex items-start gap-2">
+                                  <Image src={icon} alt="" width={20} height={20} className="opacity-70 mt-0.5 shrink-0" />
+                                  {link.href ? (
+                                    <Link href={link.href} className="text-[15px] text-gray-700 hover:text-[#00473c] transition-colors">
+                                      {link.label}
+                                    </Link>
+                                  ) : (
+                                    <span className="text-[15px] text-gray-700">
+                                      {link.label}
+                                    </span>
+                                  )}
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        </div>
                       </div>
                     </div>
+                  </>
+                ) : item.href ? (
+                  <Link
+                    href={item.href}
+                    className="flex items-center gap-1.5 text-[15px] font-semibold text-black hover:text-[#00473c] transition-colors"
+                  >
+                    <span>{item.label}</span>
+                  </Link>
+                ) : (
+                  <div className="flex items-center gap-1.5 text-[15px] font-semibold text-black">
+                    <span>{item.label}</span>
                   </div>
                 )}
               </li>
@@ -149,7 +187,7 @@ const NavBar = () => {
         {/* Mobile Menu Dropdown */}
         {mobileMenuOpen && (
           <>
-            <div 
+            <div
               className="fixed inset-0 bg-black/50 z-40 animate-fade-in"
               onClick={() => setMobileMenuOpen(false)}
             />
@@ -168,9 +206,9 @@ const NavBar = () => {
               </div>
               <div className="px-4 py-4">
                 {newNavigationData.map((item, index) => (
-                  <MobileMenuItem 
-                    key={index} 
-                    item={item} 
+                  <MobileMenuItem
+                    key={index}
+                    item={item}
                     onClose={() => setMobileMenuOpen(false)}
                   />
                 ))}
