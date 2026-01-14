@@ -390,6 +390,7 @@ export const newNavigationData: NewNavigationItem[] = [
   },
   {
     label: 'About us',
+    href: '/about',
   },
   {
     label: 'Measure/fit guides',

@@ -20,11 +20,18 @@ export const HEADRAIL_COLOUR_OPTIONS = [
 // Installation method options (used for vertical blinds)
 export const INSTALLATION_METHOD_OPTIONS = [
   {
-    id: 'inside-recess',
-    name: 'Inside Recess',
+    id: 'inside-mount',
+    name: 'Inside Mount',
     description: 'Blinds are fitted inside the window recess for a clean, integrated look.',
     price: 0,
     image: '/products/installation/insideRecess.png',
+  },
+  {
+    id: 'outside-mount',
+    name: 'Outside Mount',
+    description: 'Blinds are mounted outside the window recess on the wall or frame.',
+    price: 0,
+    image: '/products/installation/exactSize.png',
   },
 ];
 
@@ -97,13 +104,6 @@ export const STACKING_OPTIONS = [
     description: 'Blinds stack to the right when opened.',
     price: 0,
     image: '/products/stacking/right.png',
-  },
-  {
-    id: 'split',
-    name: 'Split',
-    description: 'Blinds split and stack to both sides when opened.',
-    price: 0,
-    image: '/products/stacking/split.png',
   },
 ];
 

@@ -15,7 +15,7 @@ export const CATEGORY_CUSTOMIZATIONS: Record<string, ProductFeatures> = {
         hasInstallationMethod: true,
         hasControlOption: true,
         hasStacking: true,
-        hasControlSide: true,
+        hasControlSide: false,
         hasBottomChain: true,
         hasBracketType: true,
         hasChainColor: false,
