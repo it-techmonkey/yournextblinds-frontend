@@ -222,3 +222,70 @@ export const DEFAULT_PRODUCT_FEATURES: ProductFeatures = {
 export const DEFAULT_ESTIMATED_DELIVERY = '22 December 2025';
 export const DEFAULT_RATING = 5;
 export const DEFAULT_REVIEW_COUNT = 0;
+
+// ============================================
+// Pricing Types
+// ============================================
+
+export interface WidthBand {
+  id: string;
+  mm: number;
+  inches: number;
+}
+
+export interface HeightBand {
+  id: string;
+  mm: number;
+  inches: number;
+}
+
+export interface SizeBands {
+  widthBands: WidthBand[];
+  heightBands: HeightBand[];
+}
+
+export interface PriceBandMatrix {
+  id: string;
+  name: string;
+  widthBands: WidthBand[];
+  heightBands: HeightBand[];
+  prices: { widthMm: number; heightMm: number; price: number }[];
+}
+
+export interface CustomizationPricing {
+  category: string;
+  optionId: string;
+  name: string;
+  prices: { widthMm: number | null; price: number }[];
+}
+
+export interface PricingRequest {
+  productId: string;
+  widthInches: number;
+  heightInches: number;
+  customizations?: {
+    category: string;
+    optionId: string;
+  }[];
+}
+
+export interface PricingResponse {
+  basePrice: number;
+  dimensionPrice: number;
+  customizationPrices: {
+    category: string;
+    optionId: string;
+    name: string;
+    price: number;
+  }[];
+  totalPrice: number;
+  widthBand: { mm: number; inches: number };
+  heightBand: { mm: number; inches: number };
+}
+
+export interface PriceValidationResponse {
+  valid: boolean;
+  calculatedPrice: number;
+  difference: number;
+}
+

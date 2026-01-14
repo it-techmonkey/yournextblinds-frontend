@@ -1,12 +1,17 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Product, ProductConfiguration } from '@/types';
+import { Product, ProductConfiguration, PriceBandMatrix, CustomizationPricing as CustomizationPricingType } from '@/types';
 import { useCart } from '@/context/CartContext';
 import ProductGallery from './ProductGallery';
 import StarRating from './StarRating';
-import { calculatePrice, formatPrice, formatPriceWithCurrency } from '@/lib/api';
+import { formatPrice, formatPriceWithCurrency, fetchPriceMatrix, fetchCustomizationPricing, validateCartPrice } from '@/lib/api';
+import {
+  calculateTotalPrice,
+  configToCustomizations,
+  getTotalInches,
+} from '@/lib/pricing';
 import {
   SizeSelector,
   HeadrailSelector,
@@ -42,8 +47,8 @@ interface CustomizationModalProps {
   config: ProductConfiguration;
   setConfig: React.Dispatch<React.SetStateAction<ProductConfiguration>>;
   onClose: () => void;
-  basePricePerSquareMeter?: number; // Price per m² from backend
-  originalPricePerSquareMeter?: number; // Original price per m² from backend
+  basePricePerSquareMeter?: number; // Price per m² from backend (fallback)
+  originalPricePerSquareMeter?: number; // Original price per m² from backend (fallback)
 }
 
 const CustomizationModal = ({
@@ -55,25 +60,32 @@ const CustomizationModal = ({
   originalPricePerSquareMeter,
 }: CustomizationModalProps) => {
   const { addToCart } = useCart();
+  
+  // State for pricing data from backend
+  const [priceMatrix, setPriceMatrix] = useState<PriceBandMatrix | null>(null);
+  const [customizationPricing, setCustomizationPricing] = useState<CustomizationPricingType[]>([]);
+  const [pricingLoaded, setPricingLoaded] = useState(false);
+  const [isValidating, setIsValidating] = useState(false);
 
-  // Calculate base price based on size if basePricePerSquareMeter is provided
-  const basePrice = useMemo(() => {
-    if (basePricePerSquareMeter) {
-      // If no size is selected, return base price per square meter
-      if (config.width === 0 || config.height === 0) {
-        return basePricePerSquareMeter;
+  // Fetch pricing data on mount
+  useEffect(() => {
+    const loadPricingData = async () => {
+      try {
+        const [matrix, customizations] = await Promise.all([
+          fetchPriceMatrix(product.id),
+          fetchCustomizationPricing(),
+        ]);
+        setPriceMatrix(matrix);
+        setCustomizationPricing(customizations);
+        setPricingLoaded(true);
+      } catch (error) {
+        console.error('Failed to load pricing data:', error);
+        // Pricing will fall back to old system if this fails
+        setPricingLoaded(true);
       }
-      // Otherwise calculate price based on area
-      return calculatePrice(
-        basePricePerSquareMeter,
-        config.width,
-        config.widthFraction,
-        config.height,
-        config.heightFraction
-      );
-    }
-    return product.price;
-  }, [basePricePerSquareMeter, config.width, config.widthFraction, config.height, config.heightFraction, product.price]);
+    };
+    loadPricingData();
+  }, [product.id]);
 
   // Determine which options to use based on product category
   const isRollerOrDayNight = useMemo(() => {
@@ -133,77 +145,109 @@ const CustomizationModal = ({
     };
   }, [config.headrail, isRollerOrDayNight]);
 
-  // Calculate additional cost based on selected options
-  const additionalCost = useMemo(() => {
-    let cost = 0;
+  // Build list of selected customizations for pricing
+  const selectedCustomizations = useMemo(() => {
+    return configToCustomizations({
+      headrail: config.headrail,
+      headrailColour: visibleOptions.showHeadrailColour ? config.headrailColour : null,
+      installationMethod: visibleOptions.showInstallationMethod ? config.installationMethod : null,
+      controlOption: visibleOptions.showControlOption ? config.controlOption : null,
+      stacking: visibleOptions.showStacking ? config.stacking : null,
+      controlSide: visibleOptions.showControlSide ? config.controlSide : null,
+      bottomChain: visibleOptions.showBottomChain ? config.bottomChain : null,
+      bracketType: visibleOptions.showBracketType ? config.bracketType : null,
+      chainColor: config.chainColor,
+      wrappedCassette: config.wrappedCassette,
+      cassetteMatchingBar: config.cassetteMatchingBar,
+    });
+  }, [config, visibleOptions]);
 
-    if (config.headrail && product.features.hasHeadrail) {
-      const option = HEADRAIL_OPTIONS.find((o) => o.id === config.headrail);
-      cost += option?.price || 0;
+  // Calculate price using new pricing system
+  const priceCalculation = useMemo(() => {
+    // Need valid dimensions to calculate price
+    const widthInches = getTotalInches(config.width, config.widthFraction);
+    const heightInches = getTotalInches(config.height, config.heightFraction);
+    
+    if (!priceMatrix || widthInches <= 0 || heightInches <= 0) {
+      return null;
+    }
+    
+    return calculateTotalPrice(
+      widthInches,
+      heightInches,
+      priceMatrix,
+      selectedCustomizations,
+      customizationPricing
+    );
+  }, [config.width, config.widthFraction, config.height, config.heightFraction, priceMatrix, selectedCustomizations, customizationPricing]);
+
+  // Get display price - use new pricing system if available, otherwise fallback
+  const totalPrice = useMemo(() => {
+    if (priceCalculation) {
+      return priceCalculation.totalPrice;
+    }
+    // Fallback to base price from product if pricing not loaded
+    return product.price;
+  }, [priceCalculation, product.price]);
+
+  // Show minimum price indicator when no dimensions selected
+  const showMinPriceIndicator = config.width === 0 || config.height === 0;
+
+  const handleAddToCart = async () => {
+    // Validate dimensions are selected
+    if (config.width === 0 || config.height === 0) {
+      alert('Please select width and height before adding to cart.');
+      return;
     }
 
-    if (config.headrailColour && product.features.hasHeadrailColour && visibleOptions.showHeadrailColour) {
-      const option = HEADRAIL_COLOUR_OPTIONS.find((o) => o.id === config.headrailColour);
-      cost += option?.price || 0;
+    setIsValidating(true);
+    
+    try {
+      // Validate price with backend
+      const widthInches = getTotalInches(config.width, config.widthFraction);
+      const heightInches = getTotalInches(config.height, config.heightFraction);
+      
+      const validation = await validateCartPrice(
+        {
+          productId: product.id,
+          widthInches,
+          heightInches,
+          customizations: selectedCustomizations,
+        },
+        totalPrice
+      );
+      
+      if (!validation.valid) {
+        console.warn('Price mismatch detected:', {
+          submitted: totalPrice,
+          calculated: validation.calculatedPrice,
+          difference: validation.difference,
+        });
+        // Use the backend calculated price to ensure accuracy
+        const productWithPrice = {
+          ...product,
+          price: validation.calculatedPrice,
+        };
+        addToCart(productWithPrice, config);
+      } else {
+        // Price matches, proceed with cart
+        const productWithPrice = {
+          ...product,
+          price: totalPrice,
+        };
+        addToCart(productWithPrice, config);
+      }
+    } catch (error) {
+      console.error('Price validation failed:', error);
+      // Fallback: add to cart anyway with frontend calculated price
+      const productWithPrice = {
+        ...product,
+        price: totalPrice,
+      };
+      addToCart(productWithPrice, config);
+    } finally {
+      setIsValidating(false);
     }
-
-    if (config.installationMethod && product.features.hasInstallationMethod && visibleOptions.showInstallationMethod) {
-      const option = installationOptions.find((o) => o.id === config.installationMethod);
-      cost += option?.price || 0;
-    }
-
-    if (config.controlOption && product.features.hasControlOption && visibleOptions.showControlOption) {
-      const option = controlOptions.find((o) => o.id === config.controlOption);
-      cost += option?.price || 0;
-    }
-
-    if (config.stacking && product.features.hasStacking && visibleOptions.showStacking) {
-      const option = STACKING_OPTIONS.find((o) => o.id === config.stacking);
-      cost += option?.price || 0;
-    }
-
-    if (config.controlSide && product.features.hasControlSide && visibleOptions.showControlSide) {
-      const option = CONTROL_SIDE_OPTIONS.find((o) => o.id === config.controlSide);
-      cost += option?.price || 0;
-    }
-
-    if (config.bottomChain && product.features.hasBottomChain && visibleOptions.showBottomChain) {
-      const option = BOTTOM_CHAIN_OPTIONS.find((o) => o.id === config.bottomChain);
-      cost += option?.price || 0;
-    }
-
-    if (config.bracketType && product.features.hasBracketType && visibleOptions.showBracketType) {
-      const option = BRACKET_TYPE_OPTIONS.find((o) => o.id === config.bracketType);
-      cost += option?.price || 0;
-    }
-
-    if (config.chainColor && product.features.hasChainColor) {
-      const option = CHAIN_COLOR_OPTIONS.find((o) => o.id === config.chainColor);
-      cost += option?.price || 0;
-    }
-
-    if (config.wrappedCassette && product.features.hasWrappedCassette) {
-      const option = WRAPPED_CASSETTE_OPTIONS.find((o) => o.id === config.wrappedCassette);
-      cost += option?.price || 0;
-    }
-
-    if (config.cassetteMatchingBar && product.features.hasCassetteMatchingBar) {
-      const option = CASSETTE_MATCHING_BAR_OPTIONS.find((o) => o.id === config.cassetteMatchingBar);
-      cost += option?.price || 0;
-    }
-
-    return cost;
-  }, [config, product.features, visibleOptions, installationOptions, controlOptions]);
-
-  const totalPrice = basePrice + additionalCost;
-
-  const handleAddToCart = () => {
-    // Create a modified product with the updated price including customizations
-    const productWithPrice = {
-      ...product,
-      price: totalPrice,
-    };
-    addToCart(productWithPrice, config);
   };
 
   return (
@@ -392,16 +436,31 @@ const CustomizationModal = ({
         <div className="max-w-[1200px] mx-auto px-4 md:px-6 lg:px-20 py-3 md:py-4">
           <div className="flex items-center justify-between gap-4">
             <div>
-              <span className="text-xs md:text-sm text-gray-500">Price</span>
+              <span className="text-xs md:text-sm text-gray-500">
+                {showMinPriceIndicator ? 'From' : 'Price'}
+              </span>
               <div className="text-xl md:text-2xl font-bold text-[#3a3a3a]">
-                {formatPriceWithCurrency(formatPrice(totalPrice), product.currency)}
+                {showMinPriceIndicator 
+                  ? formatPriceWithCurrency(formatPrice(product.price), product.currency)
+                  : formatPriceWithCurrency(formatPrice(totalPrice), product.currency)
+                }
               </div>
+              {priceCalculation && !showMinPriceIndicator && (
+                <div className="text-xs text-gray-400">
+                  Size: {priceCalculation.widthBand?.inches}" × {priceCalculation.heightBand?.inches}"
+                </div>
+              )}
             </div>
             <button
               onClick={handleAddToCart}
-              className="bg-[#00473c] text-white py-2.5 md:py-3 px-6 md:px-8 rounded text-sm md:text-base font-medium hover:bg-[#003830] transition-colors"
+              disabled={isValidating || showMinPriceIndicator}
+              className={`py-2.5 md:py-3 px-6 md:px-8 rounded text-sm md:text-base font-medium transition-colors ${
+                isValidating || showMinPriceIndicator
+                  ? 'bg-gray-400 text-white cursor-not-allowed'
+                  : 'bg-[#00473c] text-white hover:bg-[#003830]'
+              }`}
             >
-              Add to Cart
+              {isValidating ? 'Adding to Cart...' : 'Add to Cart'}
             </button>
           </div>
         </div>

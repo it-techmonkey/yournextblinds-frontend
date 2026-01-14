@@ -43,7 +43,7 @@ const SizeSelector = ({
       return; // Allow empty value
     }
     const numValue = parseInt(value);
-    if (!isNaN(numValue) && numValue >= 10 && numValue <= 157) {
+    if (!isNaN(numValue) && numValue >= 20 && numValue <= 157) {
       onWidthChange(numValue);
     }
   };
@@ -54,7 +54,7 @@ const SizeSelector = ({
       return; // Allow empty value
     }
     const numValue = parseInt(value);
-    if (!isNaN(numValue) && numValue >= 10 && numValue <= 157) {
+    if (!isNaN(numValue) && numValue >= 20 && numValue <= 118) {
       onHeightChange(numValue);
     }
   };
@@ -78,7 +78,7 @@ const SizeSelector = ({
                 <div className="text-[10px] text-gray-400 uppercase tracking-wide mb-0.5">Inches</div>
                 <input
                   type="number"
-                  min="10"
+                  min="20"
                   max="157"
                   value={widthInput}
                   onChange={(e) => handleWidthChange(e.target.value)}
@@ -89,7 +89,7 @@ const SizeSelector = ({
                       return;
                     }
                     const numValue = parseInt(e.target.value);
-                    if (isNaN(numValue) || numValue < 10) {
+                    if (isNaN(numValue) || numValue < 20) {
                       setWidthInput('');
                       onWidthChange(0);
                     } else if (numValue > 157) {
@@ -101,7 +101,7 @@ const SizeSelector = ({
                     }
                   }}
                   className="text-base font-medium text-[#3a3a3a] bg-transparent border-none p-0 w-full focus:outline-none"
-                  placeholder="10-157"
+                  placeholder="20-157"
                 />
               </div>
             </div>
@@ -136,8 +136,8 @@ const SizeSelector = ({
                 <div className="text-[10px] text-gray-400 uppercase tracking-wide mb-0.5">Inches</div>
                 <input
                   type="number"
-                  min="10"
-                  max="157"
+                  min="20"
+                  max="118"
                   value={heightInput}
                   onChange={(e) => handleHeightChange(e.target.value)}
                   onBlur={(e) => {
@@ -147,19 +147,19 @@ const SizeSelector = ({
                       return;
                     }
                     const numValue = parseInt(e.target.value);
-                    if (isNaN(numValue) || numValue < 10) {
+                    if (isNaN(numValue) || numValue < 20) {
                       setHeightInput('');
                       onHeightChange(0);
-                    } else if (numValue > 157) {
-                      setHeightInput('157');
-                      onHeightChange(157);
+                    } else if (numValue > 118) {
+                      setHeightInput('118');
+                      onHeightChange(118);
                     } else {
                       setHeightInput(numValue.toString());
                       onHeightChange(numValue);
                     }
                   }}
                   className="text-base font-medium text-[#3a3a3a] bg-transparent border-none p-0 w-full focus:outline-none"
-                  placeholder="10-157"
+                  placeholder="20-118"
                 />
               </div>
             </div>

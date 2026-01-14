@@ -6,6 +6,12 @@ import {
   DEFAULT_ESTIMATED_DELIVERY,
   DEFAULT_RATING,
   DEFAULT_REVIEW_COUNT,
+  SizeBands,
+  PriceBandMatrix,
+  CustomizationPricing,
+  PricingRequest,
+  PricingResponse,
+  PriceValidationResponse,
 } from '@/types';
 import { getCategoryCustomizations } from '@/data/categoryCustomizations';
 
@@ -132,6 +138,64 @@ export async function fetchProductsByCategory(categorySlug: string): Promise<Api
   return response.data.filter((product) =>
     product.categories.some((cat) => cat.slug === backendSlug)
   );
+}
+
+// ============================================
+// Pricing API
+// ============================================
+
+interface PricingApiResponse<T> {
+  success: boolean;
+  data: T;
+}
+
+/**
+ * Get size bands (width and height bands) for pricing lookup
+ */
+export async function fetchSizeBands(): Promise<SizeBands> {
+  const response = await apiFetch<PricingApiResponse<SizeBands>>('/api/pricing/bands');
+  return response.data;
+}
+
+/**
+ * Get price band matrix for a product
+ */
+export async function fetchPriceMatrix(productId: string): Promise<PriceBandMatrix> {
+  const response = await apiFetch<PricingApiResponse<PriceBandMatrix>>(`/api/pricing/matrix/${productId}`);
+  return response.data;
+}
+
+/**
+ * Get all customization options with their pricing
+ */
+export async function fetchCustomizationPricing(): Promise<CustomizationPricing[]> {
+  const response = await apiFetch<PricingApiResponse<CustomizationPricing[]>>('/api/pricing/customizations');
+  return response.data;
+}
+
+/**
+ * Calculate price for a product configuration
+ */
+export async function calculatePriceFromBackend(request: PricingRequest): Promise<PricingResponse> {
+  const response = await apiFetch<PricingApiResponse<PricingResponse>>('/api/pricing/calculate', {
+    method: 'POST',
+    body: JSON.stringify(request),
+  });
+  return response.data;
+}
+
+/**
+ * Validate cart item price against backend calculation
+ */
+export async function validateCartPrice(
+  request: PricingRequest,
+  submittedPrice: number
+): Promise<PriceValidationResponse> {
+  const response = await apiFetch<PricingApiResponse<PriceValidationResponse>>('/api/pricing/validate', {
+    method: 'POST',
+    body: JSON.stringify({ ...request, submittedPrice }),
+  });
+  return response.data;
 }
 
 // ============================================
