@@ -1,15 +1,53 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import Link from 'next/link';
-import { Product, ProductConfiguration, DEFAULT_CONFIGURATION } from '@/types';
+import { Product, ProductConfiguration, DEFAULT_CONFIGURATION, PriceBandMatrix, CustomizationPricing as CustomizationPricingType } from '@/types';
+import { useCart } from '@/context/CartContext';
 import ProductGallery from './ProductGallery';
 import ProductReviews from './ProductReviews';
 import RelatedProducts from './RelatedProducts';
-import CustomizationModal from './CustomizationModal';
 import StarRating from './StarRating';
-import { calculatePrice, formatPrice, formatPriceWithCurrency } from '@/lib/api';
+import { formatPrice, formatPriceWithCurrency, fetchPriceMatrix, fetchCustomizationPricing, validateCartPrice } from '@/lib/api';
+import {
+  calculateTotalPrice,
+  configToCustomizations,
+  getTotalInches,
+} from '@/lib/pricing';
+import {
+  SizeSelector,
+  RoomTypeSelector,
+  BlindNameInput,
+  HeadrailSelector,
+  HeadrailColourSelector,
+  InstallationMethodSelector,
+  ControlOptionSelector,
+  StackingSelector,
+  ControlSideSelector,
+  BottomChainSelector,
+  BracketTypeSelector,
+  ChainColorSelector,
+  WrappedCassetteSelector,
+  CassetteMatchingBarSelector,
+  MotorizationSelector,
+} from './customization';
+import {
+  HEADRAIL_OPTIONS,
+  HEADRAIL_COLOUR_OPTIONS,
+  INSTALLATION_METHOD_OPTIONS,
+  ROLLER_INSTALLATION_OPTIONS,
+  CONTROL_OPTIONS,
+  ROLLER_CONTROL_OPTIONS,
+  STACKING_OPTIONS,
+  CONTROL_SIDE_OPTIONS,
+  BOTTOM_CHAIN_OPTIONS,
+  BRACKET_TYPE_OPTIONS,
+  CHAIN_COLOR_OPTIONS,
+  WRAPPED_CASSETTE_OPTIONS,
+  CASSETTE_MATCHING_BAR_OPTIONS,
+  MOTORIZATION_OPTIONS,
+} from '@/data/customizations';
+import { ROOM_TYPE_OPTIONS } from '@/data/roomTypes';
 
 interface ProductPageProps {
   product: Product;
@@ -24,10 +62,8 @@ const ProductPage = ({
   basePricePerSquareMeter,
   originalPricePerSquareMeter,
 }: ProductPageProps) => {
-  const searchParams = useSearchParams();
-  const shouldCustomize = searchParams.get('customize') === 'true';
+  const { addToCart } = useCart();
   
-  const [showCustomization, setShowCustomization] = useState(shouldCustomize);
   const [config, setConfig] = useState<ProductConfiguration>({
     ...DEFAULT_CONFIGURATION,
     width: 0,
@@ -36,69 +72,232 @@ const ProductPage = ({
     heightFraction: '0',
   });
 
-  // Auto-open customization if URL parameter is present
+  // State for pricing data from backend
+  const [priceMatrix, setPriceMatrix] = useState<PriceBandMatrix | null>(null);
+  const [customizationPricing, setCustomizationPricing] = useState<CustomizationPricingType[]>([]);
+  const [pricingLoaded, setPricingLoaded] = useState(false);
+  const [isValidating, setIsValidating] = useState(false);
+  const fetchingRef = useRef(false);
+
+  // Collapsible sections state
+  const [isMeasureOpen, setIsMeasureOpen] = useState(false);
+  const [isCustomizeOpen, setIsCustomizeOpen] = useState(false);
+
+  // Fetch pricing data on mount
   useEffect(() => {
-    if (shouldCustomize) {
-      setShowCustomization(true);
+    // Prevent multiple simultaneous fetches
+    if (fetchingRef.current) {
+      return;
     }
-  }, [shouldCustomize]);
 
-  // Use base price when customization is not open
-  const displayPrice = useMemo(() => {
-    if (showCustomization && basePricePerSquareMeter) {
-      // Calculate dynamic price based on size when customization is open
-      return calculatePrice(
-        basePricePerSquareMeter,
-        config.width,
-        config.widthFraction,
-        config.height,
-        config.heightFraction
-      );
+    fetchingRef.current = true;
+    let isMounted = true;
+
+    const loadPricingData = async () => {
+      try {
+        const [matrix, customizations] = await Promise.all([
+          fetchPriceMatrix(product.id),
+          fetchCustomizationPricing(),
+        ]);
+        
+        // Only update state if component is still mounted
+        if (isMounted) {
+          setPriceMatrix(matrix);
+          setCustomizationPricing(customizations);
+          setPricingLoaded(true);
+        }
+      } catch (error) {
+        console.error('Failed to load pricing data:', error);
+        // Pricing will fall back to old system if this fails
+        if (isMounted) {
+          setPricingLoaded(true);
+        }
+      } finally {
+        if (isMounted) {
+          fetchingRef.current = false;
+        }
+      }
+    };
+    
+    loadPricingData();
+
+    // Cleanup function
+    return () => {
+      isMounted = false;
+      fetchingRef.current = false;
+    };
+  }, [product.id]);
+
+  // Determine which options to use based on product category
+  const isRollerOrDayNight = useMemo(() => {
+    const category = product.category.toLowerCase();
+    return category.includes('roller') || category.includes('day') || category.includes('night');
+  }, [product.category]);
+
+  const installationOptions = isRollerOrDayNight ? ROLLER_INSTALLATION_OPTIONS : INSTALLATION_METHOD_OPTIONS;
+  const controlOptions = isRollerOrDayNight ? ROLLER_CONTROL_OPTIONS : CONTROL_OPTIONS;
+
+  // Determine which options should be visible based on product type and selected headrail
+  const visibleOptions = useMemo(() => {
+    const headrail = config.headrail;
+
+    // For roller blinds and day/night blinds - use product.features settings
+    if (isRollerOrDayNight) {
+      return {
+        showSize: product.features.hasSize,
+        showHeadrail: product.features.hasHeadrail,
+        showHeadrailColour: product.features.hasHeadrailColour,
+        showInstallationMethod: product.features.hasInstallationMethod,
+        showControlOption: product.features.hasControlOption,
+        showStacking: product.features.hasStacking,
+        showControlSide: product.features.hasControlSide,
+        showBottomChain: product.features.hasBottomChain,
+        showBracketType: product.features.hasBracketType,
+        showMotorization: product.features.hasMotorization,
+      };
     }
-    // Show base price when customization is not open - always use basePricePerSquareMeter if available
-    // This ensures consistency with category page which shows base price
-    if (basePricePerSquareMeter !== undefined && basePricePerSquareMeter !== null) {
-      return basePricePerSquareMeter;
+
+    // For vertical blinds (with headrail)
+    return {
+      // Size and Headrail are always visible
+      showSize: product.features.hasSize,
+      showHeadrail: product.features.hasHeadrail,
+
+      // Headrail Colour only for Platinum
+      showHeadrailColour: product.features.hasHeadrailColour && headrail === 'platinum',
+
+      // Installation Method always visible
+      showInstallationMethod: product.features.hasInstallationMethod,
+
+      // Control Option for Classic and Platinum
+      showControlOption: product.features.hasControlOption && (headrail === 'classic' || headrail === 'platinum'),
+
+      // Stacking for Classic and Platinum
+      showStacking: product.features.hasStacking && (headrail === 'classic' || headrail === 'platinum'),
+
+      // Control Side for Classic and Platinum
+      showControlSide: product.features.hasControlSide && (headrail === 'classic' || headrail === 'platinum'),
+
+      // Bottom Chain for all headrail types (Classic, Platinum)
+      showBottomChain: product.features.hasBottomChain && (headrail === 'classic' || headrail === 'platinum'),
+
+      // Bracket Type for Classic and Platinum
+      showBracketType: product.features.hasBracketType && (headrail === 'classic' || headrail === 'platinum'),
+    };
+  }, [config.headrail, isRollerOrDayNight, product.features]);
+
+  // Build list of selected customizations for pricing
+  const selectedCustomizations = useMemo(() => {
+    return configToCustomizations({
+      headrail: config.headrail,
+      headrailColour: visibleOptions.showHeadrailColour ? config.headrailColour : null,
+      installationMethod: visibleOptions.showInstallationMethod ? config.installationMethod : null,
+      controlOption: visibleOptions.showControlOption ? config.controlOption : null,
+      stacking: visibleOptions.showStacking ? config.stacking : null,
+      controlSide: visibleOptions.showControlSide ? config.controlSide : null,
+      bottomChain: visibleOptions.showBottomChain ? config.bottomChain : null,
+      bracketType: visibleOptions.showBracketType ? config.bracketType : null,
+      chainColor: config.chainColor,
+      wrappedCassette: config.wrappedCassette,
+      cassetteMatchingBar: config.cassetteMatchingBar,
+      motorization: config.motorization,
+    });
+  }, [config, visibleOptions]);
+
+  // Calculate price using new pricing system
+  const priceCalculation = useMemo(() => {
+    // Need valid dimensions to calculate price
+    const widthInches = getTotalInches(config.width, config.widthFraction);
+    const heightInches = getTotalInches(config.height, config.heightFraction);
+    
+    if (!priceMatrix || widthInches <= 0 || heightInches <= 0) {
+      return null;
     }
+    
+    return calculateTotalPrice(
+      widthInches,
+      heightInches,
+      priceMatrix,
+      selectedCustomizations,
+      customizationPricing
+    );
+  }, [config.width, config.widthFraction, config.height, config.heightFraction, priceMatrix, selectedCustomizations, customizationPricing]);
+
+  // Get display price - use new pricing system if available, otherwise fallback
+  const totalPrice = useMemo(() => {
+    if (priceCalculation) {
+      return priceCalculation.totalPrice;
+    }
+    // Fallback to base price from product if pricing not loaded
     return product.price;
-  }, [showCustomization, basePricePerSquareMeter, config.width, config.widthFraction, config.height, config.heightFraction, product.price]);
+  }, [priceCalculation, product.price]);
 
-  const displayOriginalPrice = useMemo(() => {
-    if (showCustomization && originalPricePerSquareMeter) {
-      // Calculate dynamic original price based on size when customization is open
-      return calculatePrice(
-        originalPricePerSquareMeter,
-        config.width,
-        config.widthFraction,
-        config.height,
-        config.heightFraction
-      );
-    }
-    // Show base original price when customization is not open - always use originalPricePerSquareMeter if available
-    // This ensures consistency with category page which shows base price
-    if (originalPricePerSquareMeter !== undefined && originalPricePerSquareMeter !== null) {
-      return originalPricePerSquareMeter;
-    }
-    return product.originalPrice;
-  }, [showCustomization, originalPricePerSquareMeter, config.width, config.widthFraction, config.height, config.heightFraction, product.originalPrice]);
+  // Show minimum price indicator when no dimensions selected
+  const showMinPriceIndicator = config.width === 0 || config.height === 0;
 
   // Calculate discount percentage
-  const discountPercentage = displayOriginalPrice
-    ? Math.round(((displayOriginalPrice - displayPrice) / displayOriginalPrice) * 100)
+  const discountPercentage = originalPricePerSquareMeter && basePricePerSquareMeter
+    ? Math.round(((originalPricePerSquareMeter - basePricePerSquareMeter) / originalPricePerSquareMeter) * 100)
+    : product.originalPrice && product.price
+    ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
     : 0;
 
-  if (showCustomization) {
-    return (
-      <CustomizationModal
-        product={product}
-        config={config}
-        setConfig={setConfig}
-        onClose={() => setShowCustomization(false)}
-        basePricePerSquareMeter={basePricePerSquareMeter}
-        originalPricePerSquareMeter={originalPricePerSquareMeter}
-      />
-    );
-  }
+  const handleAddToCart = async () => {
+    // Validate dimensions are selected
+    if (config.width === 0 || config.height === 0) {
+      alert('Please select width and height before adding to cart.');
+      return;
+    }
+
+    setIsValidating(true);
+    
+    try {
+      // Validate price with backend
+      const widthInches = getTotalInches(config.width, config.widthFraction);
+      const heightInches = getTotalInches(config.height, config.heightFraction);
+      
+      const validation = await validateCartPrice(
+        {
+          productId: product.id,
+          widthInches,
+          heightInches,
+          customizations: selectedCustomizations,
+        },
+        totalPrice
+      );
+      
+      if (!validation.valid) {
+        console.warn('Price mismatch detected:', {
+          submitted: totalPrice,
+          calculated: validation.calculatedPrice,
+          difference: validation.difference,
+        });
+        // Use the backend calculated price to ensure accuracy
+        const productWithPrice = {
+          ...product,
+          price: validation.calculatedPrice,
+        };
+        addToCart(productWithPrice, config);
+      } else {
+        // Price matches, proceed with cart
+        const productWithPrice = {
+          ...product,
+          price: totalPrice,
+        };
+        addToCart(productWithPrice, config);
+      }
+    } catch (error) {
+      console.error('Price validation failed:', error);
+      // Fallback: add to cart anyway with frontend calculated price
+      const productWithPrice = {
+        ...product,
+        price: totalPrice,
+      };
+      addToCart(productWithPrice, config);
+    } finally {
+      setIsValidating(false);
+    }
+  };
 
   return (
     <div className="bg-white">
@@ -167,28 +366,257 @@ const ProductPage = ({
                 </div>
               </div>
 
-              {/* Price & CTA Section */}
+              {/* Price Section */}
               <div className="border border-gray-200 rounded-lg p-4 md:p-5 mb-4 md:mb-6">
                 <div className="flex flex-col items-center lg:items-start">
                   <div className="text-xs md:text-sm text-[#0F9D49] mb-1">{discountPercentage}% off on First Order</div>
                   <div className="flex items-baseline gap-2 mb-3 md:mb-4">
                     <span className="text-xl md:text-2xl font-bold text-[#3a3a3a]">
-                      {formatPriceWithCurrency(formatPrice(displayPrice), product.currency)}
+                      {showMinPriceIndicator 
+                        ? formatPriceWithCurrency(formatPrice(product.price), product.currency)
+                        : formatPriceWithCurrency(formatPrice(totalPrice), product.currency)
+                      }
                     </span>
-                    {displayOriginalPrice > displayPrice && (
+                    {product.originalPrice && product.originalPrice > (showMinPriceIndicator ? product.price : totalPrice) && (
                       <span className="text-xs md:text-sm text-gray-400 line-through">
-                        {formatPriceWithCurrency(formatPrice(displayOriginalPrice), product.currency)}
+                        {formatPriceWithCurrency(formatPrice(product.originalPrice), product.currency)}
                       </span>
                     )}
                   </div>
-                  <button
-                    onClick={() => setShowCustomization(true)}
-                    className="w-full bg-[#00473c] text-white py-2.5 md:py-3 px-4 md:px-6 rounded-lg text-sm md:text-base font-medium hover:bg-[#003830] transition-colors"
-                  >
-                    Customize and Buy
-                  </button>
+                  {priceCalculation && !showMinPriceIndicator && (
+                    <div className="text-xs text-gray-400 mb-3">
+                      Size: {priceCalculation.widthBand?.inches}" × {priceCalculation.heightBand?.inches}"
+                    </div>
+                  )}
                 </div>
               </div>
+
+              {/* Customization Sections */}
+              <div className="space-y-4">
+                {/* Measure your windows - Collapsible Section */}
+                <div className="border border-gray-200 rounded-lg overflow-hidden">
+                  <button
+                    onClick={() => setIsMeasureOpen(!isMeasureOpen)}
+                    className="w-full flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100 transition-colors"
+                    aria-expanded={isMeasureOpen}
+                  >
+                    <h2 className="text-lg font-medium text-[#3a3a3a]">Measure your windows</h2>
+                    <div className="flex-shrink-0 w-6 h-6 bg-[#00473c] rounded-full flex items-center justify-center ml-3">
+                      {isMeasureOpen ? (
+                        <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      ) : (
+                        <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                        </svg>
+                      )}
+                    </div>
+                  </button>
+                  
+                  {isMeasureOpen && (
+                    <div className="p-4 md:p-6 space-y-6">
+                      {/* Size Selector */}
+                      {product.features.hasSize && (
+                        <SizeSelector
+                          width={config.width}
+                          widthFraction={config.widthFraction}
+                          height={config.height}
+                          heightFraction={config.heightFraction}
+                          onWidthChange={(value) => setConfig({ ...config, width: value })}
+                          onWidthFractionChange={(value) => setConfig({ ...config, widthFraction: value })}
+                          onHeightChange={(value) => setConfig({ ...config, height: value })}
+                          onHeightFractionChange={(value) => setConfig({ ...config, heightFraction: value })}
+                        />
+                      )}
+
+                      {/* Installation Method Selector */}
+                      {product.features.hasInstallationMethod && visibleOptions.showInstallationMethod && (
+                        <InstallationMethodSelector
+                          options={installationOptions}
+                          selectedMethod={config.installationMethod}
+                          onMethodChange={(methodId) => setConfig({ ...config, installationMethod: methodId })}
+                        />
+                      )}
+
+                      {/* Blind Name Selector (Room Type dropdown) */}
+                      <RoomTypeSelector
+                        options={ROOM_TYPE_OPTIONS}
+                        selectedRoomType={config.roomType}
+                        onRoomTypeChange={(roomTypeId) => setConfig({ ...config, roomType: roomTypeId })}
+                      />
+
+                      {/* Custom Blind Name Input - Only shown when "Other" is selected */}
+                      {config.roomType === 'other' && (
+                        <BlindNameInput
+                          value={config.blindName}
+                          onChange={(value) => setConfig({ ...config, blindName: value || null })}
+                        />
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Customize your order - Collapsible Section */}
+                <div className="border border-gray-200 rounded-lg overflow-hidden">
+                  <button
+                    onClick={() => setIsCustomizeOpen(!isCustomizeOpen)}
+                    className="w-full flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100 transition-colors"
+                    aria-expanded={isCustomizeOpen}
+                  >
+                    <h2 className="text-lg font-medium text-[#3a3a3a]">Customize your order</h2>
+                    <div className="flex-shrink-0 w-6 h-6 bg-[#00473c] rounded-full flex items-center justify-center ml-3">
+                      {isCustomizeOpen ? (
+                        <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      ) : (
+                        <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                        </svg>
+                      )}
+                    </div>
+                  </button>
+                  
+                  {isCustomizeOpen && (
+                    <div className="p-4 md:p-6 space-y-6 divide-y divide-gray-100">
+                      {/* Headrail Selector */}
+                      {product.features.hasHeadrail && (
+                        <div className="pt-0 first:pt-0 pb-6">
+                          <HeadrailSelector
+                            options={HEADRAIL_OPTIONS}
+                            selectedHeadrail={config.headrail}
+                            onHeadrailChange={(headrailId) => setConfig({ ...config, headrail: headrailId })}
+                          />
+                        </div>
+                      )}
+
+                      {/* Headrail Colour Selector */}
+                      {product.features.hasHeadrailColour && visibleOptions.showHeadrailColour && (
+                        <div className="pt-6">
+                          <HeadrailColourSelector
+                            options={HEADRAIL_COLOUR_OPTIONS}
+                            selectedColour={config.headrailColour}
+                            onColourChange={(colourId) => setConfig({ ...config, headrailColour: colourId })}
+                          />
+                        </div>
+                      )}
+
+                      {/* Control Option Selector */}
+                      {product.features.hasControlOption && visibleOptions.showControlOption && (
+                        <div className="pt-6">
+                          <ControlOptionSelector
+                            options={controlOptions}
+                            selectedOption={config.controlOption}
+                            onOptionChange={(optionId) => setConfig({ ...config, controlOption: optionId })}
+                          />
+                        </div>
+                      )}
+
+                      {/* Stacking Selector */}
+                      {product.features.hasStacking && visibleOptions.showStacking && (
+                        <div className="pt-6">
+                          <StackingSelector
+                            options={STACKING_OPTIONS}
+                            selectedStacking={config.stacking}
+                            onStackingChange={(stackingId) => setConfig({ ...config, stacking: stackingId })}
+                          />
+                        </div>
+                      )}
+
+                      {/* Control Side Selector */}
+                      {product.features.hasControlSide && visibleOptions.showControlSide && (
+                        <div className="pt-6">
+                          <ControlSideSelector
+                            options={CONTROL_SIDE_OPTIONS}
+                            selectedSide={config.controlSide}
+                            onSideChange={(sideId) => setConfig({ ...config, controlSide: sideId })}
+                          />
+                        </div>
+                      )}
+
+                      {/* Bottom Chain Selector */}
+                      {product.features.hasBottomChain && visibleOptions.showBottomChain && (
+                        <div className="pt-6">
+                          <BottomChainSelector
+                            options={BOTTOM_CHAIN_OPTIONS}
+                            selectedChain={config.bottomChain}
+                            onChainChange={(chainId) => setConfig({ ...config, bottomChain: chainId })}
+                          />
+                        </div>
+                      )}
+
+                      {/* Bracket Type Selector */}
+                      {product.features.hasBracketType && visibleOptions.showBracketType && (
+                        <div className="pt-6">
+                          <BracketTypeSelector
+                            options={BRACKET_TYPE_OPTIONS}
+                            selectedBracket={config.bracketType}
+                            onBracketChange={(bracketId) => setConfig({ ...config, bracketType: bracketId })}
+                          />
+                        </div>
+                      )}
+
+                      {/* Chain Color Selector */}
+                      {product.features.hasChainColor && (
+                        <div className="pt-6">
+                          <ChainColorSelector
+                            options={CHAIN_COLOR_OPTIONS}
+                            selectedColor={config.chainColor}
+                            onColorChange={(colorId) => setConfig({ ...config, chainColor: colorId })}
+                          />
+                        </div>
+                      )}
+
+                      {/* Wrapped Cassette Selector */}
+                      {product.features.hasWrappedCassette && (
+                        <div className="pt-6">
+                          <WrappedCassetteSelector
+                            options={WRAPPED_CASSETTE_OPTIONS}
+                            selectedOption={config.wrappedCassette}
+                            onOptionChange={(optionId) => setConfig({ ...config, wrappedCassette: optionId })}
+                          />
+                        </div>
+                      )}
+
+                      {/* Cassette Matching Bar Selector */}
+                      {product.features.hasCassetteMatchingBar && (
+                        <div className="pt-6">
+                          <CassetteMatchingBarSelector
+                            options={CASSETTE_MATCHING_BAR_OPTIONS}
+                            selectedBar={config.cassetteMatchingBar}
+                            onBarChange={(barId) => setConfig({ ...config, cassetteMatchingBar: barId })}
+                          />
+                        </div>
+                      )}
+
+                      {/* Motorization Selector */}
+                      {product.features.hasMotorization && (
+                        <div className="pt-6">
+                          <MotorizationSelector
+                            options={MOTORIZATION_OPTIONS}
+                            selectedOption={config.motorization}
+                            onOptionChange={(optionId) => setConfig({ ...config, motorization: optionId })}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Add to Cart Button */}
+              <button
+                onClick={handleAddToCart}
+                disabled={isValidating || showMinPriceIndicator}
+                className={`w-full mt-4 md:mt-6 py-2.5 md:py-3 px-4 md:px-6 rounded-lg text-sm md:text-base font-medium transition-colors ${
+                  isValidating || showMinPriceIndicator
+                    ? 'bg-gray-400 text-white cursor-not-allowed'
+                    : 'bg-[#00473c] text-white hover:bg-[#003830]'
+                }`}
+              >
+                {isValidating ? 'Adding to Cart...' : 'Add to Cart'}
+              </button>
             </div>
           </div>
         </div>

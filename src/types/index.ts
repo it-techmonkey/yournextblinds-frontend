@@ -76,6 +76,8 @@ export interface ProductConfiguration {
   height: number;
   heightFraction: string;
   heightUnit: string;
+  roomType: string | null;
+  blindName: string | null;
   headrail: string | null;
   headrailColour: string | null;
   installationMethod: string | null;
@@ -97,6 +99,8 @@ export const DEFAULT_CONFIGURATION: ProductConfiguration = {
   height: 0,
   heightFraction: '0',
   heightUnit: 'inches',
+  roomType: null,
+  blindName: null,
   headrail: null,
   headrailColour: null,
   installationMethod: null,

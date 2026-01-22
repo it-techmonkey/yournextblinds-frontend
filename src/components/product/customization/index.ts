@@ -1,5 +1,7 @@
 // Customization Selectors
 export { default as SizeSelector } from './SizeSelector';
+export { default as RoomTypeSelector } from './RoomTypeSelector';
+export { default as BlindNameInput } from './BlindNameInput';
 export { default as HeadrailSelector } from './HeadrailSelector';
 export { default as HeadrailColourSelector } from './HeadrailColourSelector';
 export { default as InstallationMethodSelector } from './InstallationMethodSelector';
