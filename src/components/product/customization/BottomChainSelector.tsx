@@ -18,12 +18,16 @@ interface BottomChainSelectorProps {
 
 const BottomChainSelector = ({ options, selectedChain, onChainChange }: BottomChainSelectorProps) => {
     const [isOpen, setIsOpen] = useState(false);
+    const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0, width: 0 });
     const dropdownRef = useRef<HTMLDivElement>(null);
+    const buttonRef = useRef<HTMLButtonElement>(null);
+    const menuRef = useRef<HTMLDivElement>(null);
 
     // Close dropdown when clicking outside
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node) &&
+                menuRef.current && !menuRef.current.contains(event.target as Node)) {
                 setIsOpen(false);
             }
         };
@@ -33,6 +37,36 @@ const BottomChainSelector = ({ options, selectedChain, onChainChange }: BottomCh
             document.removeEventListener('mousedown', handleClickOutside);
         };
     }, []);
+
+    useEffect(() => {
+        if (isOpen && buttonRef.current) {
+            const updateMenuPosition = () => {
+                if (buttonRef.current) {
+                    const buttonRect = buttonRef.current.getBoundingClientRect();
+                    
+                    // Calculate position - always open below
+                    const left = buttonRect.left;
+                    const width = buttonRect.width;
+                    
+                    setMenuPosition({
+                        top: buttonRect.bottom + 4,
+                        left,
+                        width,
+                    });
+                }
+            };
+
+            updateMenuPosition();
+            
+            window.addEventListener('scroll', updateMenuPosition, true);
+            window.addEventListener('resize', updateMenuPosition);
+            
+            return () => {
+                window.removeEventListener('scroll', updateMenuPosition, true);
+                window.removeEventListener('resize', updateMenuPosition);
+            };
+        }
+    }, [isOpen]);
 
     const selectedOption = options.find(opt => opt.id === selectedChain);
 
@@ -51,6 +85,7 @@ const BottomChainSelector = ({ options, selectedChain, onChainChange }: BottomCh
             {/* Custom Dropdown */}
             <div className="relative" ref={dropdownRef}>
                 <button
+                    ref={buttonRef}
                     type="button"
                     onClick={() => setIsOpen(!isOpen)}
                     className="w-full border-2 border-gray-300 rounded-lg p-3 bg-white text-left flex items-center justify-between hover:border-[#00473c] transition-colors"
@@ -69,7 +104,23 @@ const BottomChainSelector = ({ options, selectedChain, onChainChange }: BottomCh
                 </button>
 
                 {isOpen && (
-                    <div className="absolute z-[9999] w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-80 overflow-y-auto">
+                    <>
+                        {/* Backdrop to capture clicks outside */}
+                        <div 
+                            className="fixed inset-0 z-[99998]" 
+                            onClick={() => setIsOpen(false)}
+                        />
+                        {/* Dropdown menu with fixed positioning to escape overflow constraints - always opens below */}
+                        <div
+                            ref={menuRef}
+                            className="fixed z-[99999] bg-white border border-gray-200 rounded-lg shadow-xl max-h-80 overflow-y-auto"
+                            style={{
+                                top: `${menuPosition.top}px`,
+                                left: `${menuPosition.left}px`,
+                                width: `${menuPosition.width}px`,
+                                maxHeight: '320px',
+                            }}
+                        >
                         {options.map((option) => (
                             <button
                                 key={option.id}
@@ -107,7 +158,8 @@ const BottomChainSelector = ({ options, selectedChain, onChainChange }: BottomCh
                                 ) : null}
                             </button>
                         ))}
-                    </div>
+                        </div>
+                    </>
                 )}
             </div>
 

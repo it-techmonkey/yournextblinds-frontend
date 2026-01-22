@@ -478,7 +478,7 @@ const ProductPage = ({
                     className="w-full flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100 transition-colors"
                     aria-expanded={isCustomizeOpen}
                   >
-                    <h2 className="text-lg font-medium text-[#3a3a3a]">Customize your order</h2>
+                    <h2 className="text-lg font-medium text-[#3a3a3a]">Customize your blind</h2>
                     <div className="shrink-0 w-6 h-6 bg-[#00473c] rounded-full flex items-center justify-center ml-3">
                       {isCustomizeOpen ? (
                         <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
