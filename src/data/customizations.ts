@@ -56,16 +56,16 @@ export const CONTROL_OPTIONS = [
 // Installation method options for roller blinds and day/night blinds
 export const ROLLER_INSTALLATION_OPTIONS = [
   {
-    id: 'inside-recess',
-    name: 'Inside Recess',
-    description: 'Blinds are fitted inside the window recess.',
+    id: 'inside-mount',
+    name: 'Inside Mount',
+    description: 'Blinds are mounted inside the window recess.',
     price: 0,
     image: '/products/installation/insideRecess.png',
   },
   {
-    id: 'exact-size',
-    name: 'Exact Size',
-    description: 'Blinds are made to your exact measurements.',
+    id: 'outside-mount',
+    name: 'Outside Mount',
+    description: 'Blinds are mounted outside the window recess on the wall or frame.',
     price: 0,
     image: '/products/installation/exactSize.png',
   },
@@ -175,26 +175,26 @@ export const BRACKET_TYPE_OPTIONS = [
 export const CHAIN_COLOR_OPTIONS = [
   {
     id: 'white-plastic',
-    name: 'White - Plastic',
-    price: 0,
+    name: 'White',
+    price: 0, // FREE
+    image: '/products/chainColor/whitePlastic.png',
+  },
+  {
+    id: 'grey-plastic',
+    name: 'Grey',
+    price: 4.00, // $4
     image: '/products/chainColor/whitePlastic.png',
   },
   {
     id: 'black-plastic',
-    name: 'Black - Plastic',
-    price: 0,
+    name: 'Black',
+    price: 4.00, // $4
     image: '/products/chainColor/blackPlastic.png',
   },
   {
-    id: 'anthracite-plastic',
-    name: 'Anthracite - Plastic',
-    price: 0,
-    image: '/products/chainColor/anthracitePlastic.png',
-  },
-  {
     id: 'chrome-metal',
-    name: 'Chrome - Metal',
-    price: 4.99,
+    name: 'Chrome Metal',
+    price: 7.00, // $7
     image: '/products/chainColor/chromeMetal.png',
   },
 ];
@@ -219,20 +219,20 @@ export const WRAPPED_CASSETTE_OPTIONS = [
 export const CASSETTE_MATCHING_BAR_OPTIONS = [
   {
     id: 'white',
-    name: 'White',
-    price: 0,
+    name: 'White Standard',
+    price: 0, // FREE
     image: '/products/cassetteBar/white.png',
   },
   {
     id: 'black',
     name: 'Black',
-    price: 10.00,
+    price: 18.50, // +$18.50
     image: '/products/cassetteBar/black.png',
   },
   {
     id: 'grey',
     name: 'Grey',
-    price: 10.00,
+    price: 18.50, // +$18.50
     image: '/products/cassetteBar/grey.png',
   },
 ];

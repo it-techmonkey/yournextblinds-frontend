@@ -412,7 +412,7 @@ export const NAVIGATION_SLUG_MAPPING: Record<string, string> = {
 
   // Motorization
   'motorised-roller-shades': 'motorized-blinds',
-  'motorised-dual-zebra-shades': 'motorized-blinds',
+  'motorised-dual-zebra-shades': 'day-and-night-blinds',
   'motorised-eclipsecore': 'motorized-blinds',
 
   // Blackout

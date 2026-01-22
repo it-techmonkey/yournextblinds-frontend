@@ -59,16 +59,19 @@ export default async function CollectionPage({ params }: PageProps) {
 
   // Map frontend slug to backend slug if needed
   const mapCategorySlug = (slug: string): string => {
-    // Check if this is a custom navigation slug
+    let mappedSlug = slug;
+    
+    // First, check if this is a custom navigation slug
     if (NAVIGATION_SLUG_MAPPING[slug]) {
-      return NAVIGATION_SLUG_MAPPING[slug];
+      mappedSlug = NAVIGATION_SLUG_MAPPING[slug];
     }
 
-    // Legacy slug mappings
-    const slugMap: Record<string, string> = {
+    // Then apply backend slug conversions (e.g., day-and-night-blinds -> day-night-blinds)
+    const backendSlugMap: Record<string, string> = {
       'day-and-night-blinds': 'day-night-blinds', // Backend uses different format
     };
-    return slugMap[slug] || slug;
+    
+    return backendSlugMap[mappedSlug] || mappedSlug;
   };
 
   // Validate the slug exists in our defined collections

@@ -20,7 +20,7 @@ const ControlSideSelector = ({ options, selectedSide, onSideChange }: ControlSid
     return (
         <div className="flex flex-col gap-4">
             <div className="flex items-center gap-2">
-                <h3 className="text-lg font-medium text-[#3a3a3a]">Control Side</h3>
+                <h3 className="text-lg font-medium text-[#3a3a3a]">Continuous Chain - Select Location</h3>
                 <button
                     type="button"
                     className="w-5 h-5 rounded-full border-2 border-gray-400 flex items-center justify-center text-gray-400 text-xs hover:border-gray-600 hover:text-gray-600"

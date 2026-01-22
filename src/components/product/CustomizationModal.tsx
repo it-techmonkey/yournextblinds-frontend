@@ -100,50 +100,49 @@ const CustomizationModal = ({
   const visibleOptions = useMemo(() => {
     const headrail = config.headrail;
 
-    // For roller blinds and day/night blinds (no headrail)
+    // For roller blinds and day/night blinds - use product.features settings
     if (isRollerOrDayNight) {
       return {
-        showSize: true,
-        showHeadrail: false,
-        showHeadrailColour: false,
-        showInstallationMethod: true, // Always show for roller/day-night
-        showControlOption: true, // Always show for roller/day-night
-        showStacking: false,
-        showControlSide: false,
-        showBottomChain: false,
-        showBracketType: false,
+        showSize: product.features.hasSize,
+        showHeadrail: product.features.hasHeadrail,
+        showHeadrailColour: product.features.hasHeadrailColour,
+        showInstallationMethod: product.features.hasInstallationMethod,
+        showControlOption: product.features.hasControlOption,
+        showStacking: product.features.hasStacking,
+        showControlSide: product.features.hasControlSide,
+        showBottomChain: product.features.hasBottomChain,
+        showBracketType: product.features.hasBracketType,
       };
     }
 
     // For vertical blinds (with headrail)
     return {
       // Size and Headrail are always visible
-      showSize: true,
-      showHeadrail: true,
+      showSize: product.features.hasSize,
+      showHeadrail: product.features.hasHeadrail,
 
       // Headrail Colour only for Platinum
-      showHeadrailColour: headrail === 'platinum',
+      showHeadrailColour: product.features.hasHeadrailColour && headrail === 'platinum',
 
       // Installation Method for Classic and Platinum
-      showInstallationMethod: headrail === 'classic' || headrail === 'platinum',
+      showInstallationMethod: product.features.hasInstallationMethod && (headrail === 'classic' || headrail === 'platinum'),
 
       // Control Option for Classic and Platinum
-      showControlOption: headrail === 'classic' || headrail === 'platinum',
+      showControlOption: product.features.hasControlOption && (headrail === 'classic' || headrail === 'platinum'),
 
       // Stacking for Classic and Platinum
-      showStacking: headrail === 'classic' || headrail === 'platinum',
+      showStacking: product.features.hasStacking && (headrail === 'classic' || headrail === 'platinum'),
 
       // Control Side for Classic and Platinum
-      showControlSide: headrail === 'classic' || headrail === 'platinum',
+      showControlSide: product.features.hasControlSide && (headrail === 'classic' || headrail === 'platinum'),
 
       // Bottom Chain for all headrail types (Classic, Platinum)
-      // showBottomChain: headrail === 'louvres-only' || headrail === 'classic' || headrail === 'platinum',
-      showBottomChain: headrail === 'classic' || headrail === 'platinum',
+      showBottomChain: product.features.hasBottomChain && (headrail === 'classic' || headrail === 'platinum'),
 
       // Bracket Type for Classic and Platinum
-      showBracketType: headrail === 'classic' || headrail === 'platinum',
+      showBracketType: product.features.hasBracketType && (headrail === 'classic' || headrail === 'platinum'),
     };
-  }, [config.headrail, isRollerOrDayNight]);
+  }, [config.headrail, isRollerOrDayNight, product.features]);
 
   // Build list of selected customizations for pricing
   const selectedCustomizations = useMemo(() => {
