@@ -30,6 +30,7 @@ import {
   WrappedCassetteSelector,
   CassetteMatchingBarSelector,
   MotorizationSelector,
+  SimpleDropdown,
 } from './customization';
 import {
   HEADRAIL_OPTIONS,
@@ -48,6 +49,8 @@ import {
   MOTORIZATION_OPTIONS,
 } from '@/data/customizations';
 import { ROOM_TYPE_OPTIONS } from '@/data/roomTypes';
+import { CONTINUOUS_CHAIN_CARD, CASSETTE_CARD, MOTORIZATION_CARD } from '@/data/optionalCustomizations';
+import Image from 'next/image';
 
 interface ProductPageProps {
   product: Product;
@@ -82,6 +85,17 @@ const ProductPage = ({
   // Collapsible sections state
   const [isMeasureOpen, setIsMeasureOpen] = useState(false);
   const [isCustomizeOpen, setIsCustomizeOpen] = useState(false);
+
+  // Selected optional customization cards (multi-select)
+  const [selectedOptionalCards, setSelectedOptionalCards] = useState<{
+    continuousChain: boolean;
+    cassette: boolean;
+    motorization: boolean;
+  }>({
+    continuousChain: false,
+    cassette: false,
+    motorization: false,
+  });
 
   // Fetch pricing data on mount
   useEffect(() => {
@@ -303,7 +317,7 @@ const ProductPage = ({
     <div className="bg-white">
       {/* Breadcrumb */}
       <div className="px-4 md:px-6 lg:px-20 py-3 md:py-4">
-        <div className="max-w-[1200px] mx-auto">
+        <div className="max-w-[1400px] mx-auto px-4 md:px-6 lg:px-8">
           <nav className="flex items-center gap-2 text-xs md:text-sm text-gray-500">
             <Link href="/" className="hover:text-[#00473c]">{product.category}</Link>
             <span>&gt;</span>
@@ -314,7 +328,7 @@ const ProductPage = ({
 
       {/* Main Product Section */}
       <section className="px-4 md:px-6 lg:px-20 pb-8 md:pb-12">
-        <div className="max-w-[1200px] mx-auto">
+        <div className="max-w-[1400px] mx-auto px-4 md:px-6 lg:px-8">
           <div className="flex flex-col lg:flex-row gap-6 md:gap-8 lg:gap-12">
             {/* Left - Gallery with Thumbnails on Left */}
             <div className="w-full lg:w-1/2">
@@ -401,7 +415,7 @@ const ProductPage = ({
                     aria-expanded={isMeasureOpen}
                   >
                     <h2 className="text-lg font-medium text-[#3a3a3a]">Measure your windows</h2>
-                    <div className="flex-shrink-0 w-6 h-6 bg-[#00473c] rounded-full flex items-center justify-center ml-3">
+                    <div className="shrink-0 w-6 h-6 bg-[#00473c] rounded-full flex items-center justify-center ml-3">
                       {isMeasureOpen ? (
                         <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -465,7 +479,7 @@ const ProductPage = ({
                     aria-expanded={isCustomizeOpen}
                   >
                     <h2 className="text-lg font-medium text-[#3a3a3a]">Customize your order</h2>
-                    <div className="flex-shrink-0 w-6 h-6 bg-[#00473c] rounded-full flex items-center justify-center ml-3">
+                    <div className="shrink-0 w-6 h-6 bg-[#00473c] rounded-full flex items-center justify-center ml-3">
                       {isCustomizeOpen ? (
                         <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -524,16 +538,6 @@ const ProductPage = ({
                         </div>
                       )}
 
-                      {/* Control Side Selector */}
-                      {product.features.hasControlSide && visibleOptions.showControlSide && (
-                        <div className="pt-6">
-                          <ControlSideSelector
-                            options={CONTROL_SIDE_OPTIONS}
-                            selectedSide={config.controlSide}
-                            onSideChange={(sideId) => setConfig({ ...config, controlSide: sideId })}
-                          />
-                        </div>
-                      )}
 
                       {/* Bottom Chain Selector */}
                       {product.features.hasBottomChain && visibleOptions.showBottomChain && (
@@ -557,46 +561,241 @@ const ProductPage = ({
                         </div>
                       )}
 
-                      {/* Chain Color Selector */}
-                      {product.features.hasChainColor && (
-                        <div className="pt-6">
-                          <ChainColorSelector
+                      {/* Optional Customization Cards Row */}
+                      <div className="pt-6 pb-6 border-b border-gray-200">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                          {/* Continuous Chain - Select Location Card */}
+                          {product.features.hasChainColor && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const newValue = !selectedOptionalCards.continuousChain;
+                                setSelectedOptionalCards({
+                                  ...selectedOptionalCards,
+                                  continuousChain: newValue,
+                                });
+                                if (!newValue) {
+                                  setConfig({ ...config, chainColor: null, controlSide: null });
+                                }
+                              }}
+                              className={`relative border-2 rounded-lg p-5 transition-all duration-300 text-left group ${
+                                selectedOptionalCards.continuousChain
+                                  ? 'border-[#00473c] bg-gradient-to-br from-[#f6fffd] to-[#e8f5f3] shadow-md scale-[1.01]'
+                                  : 'border-gray-300 bg-white hover:border-[#00473c] hover:shadow-sm hover:scale-[1.005]'
+                              }`}
+                            >
+                              {selectedOptionalCards.continuousChain && (
+                                <div className="absolute top-3 right-3 w-6 h-6 bg-[#00473c] rounded-full flex items-center justify-center shadow-md z-10">
+                                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                  </svg>
+                                </div>
+                              )}
+                              {CONTINUOUS_CHAIN_CARD.image && (
+                                <div className={`relative h-[120px] w-full mb-3 rounded-lg overflow-hidden flex items-center justify-center transition-all duration-300 ${
+                                  selectedOptionalCards.continuousChain
+                                    ? 'bg-gradient-to-br from-[#e8f5f3] to-[#d0ebe8] shadow-inner'
+                                    : 'bg-gradient-to-br from-gray-50 to-gray-100 group-hover:from-gray-100 group-hover:to-gray-150'
+                                }`}>
+                                  <Image
+                                    src={CONTINUOUS_CHAIN_CARD.image}
+                                    alt={CONTINUOUS_CHAIN_CARD.name}
+                                    width={120}
+                                    height={120}
+                                    className="object-contain"
+                                  />
+                                </div>
+                              )}
+                              <h4 className="text-base font-semibold text-[#3a3a3a] mb-1.5 pr-8">
+                                {CONTINUOUS_CHAIN_CARD.name}
+                              </h4>
+                              {CONTINUOUS_CHAIN_CARD.description && (
+                                <p className="text-xs text-gray-600 leading-relaxed">{CONTINUOUS_CHAIN_CARD.description}</p>
+                              )}
+                              {CONTINUOUS_CHAIN_CARD.price > 0 && (
+                                <span className="absolute bottom-4 right-4 bg-[#00473c] text-white text-xs font-semibold px-3 py-1.5 rounded-lg shadow-md">
+                                  +£{CONTINUOUS_CHAIN_CARD.price.toFixed(2)}
+                                </span>
+                              )}
+                            </button>
+                          )}
+
+                          {/* Cassette and Bottom Matching Bar Card */}
+                          {(product.features.hasWrappedCassette || product.features.hasCassetteMatchingBar) && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const newValue = !selectedOptionalCards.cassette;
+                                setSelectedOptionalCards({
+                                  ...selectedOptionalCards,
+                                  cassette: newValue,
+                                });
+                                if (!newValue) {
+                                  setConfig({ 
+                                    ...config, 
+                                    wrappedCassette: null,
+                                    cassetteMatchingBar: null 
+                                  });
+                                }
+                              }}
+                              className={`relative border-2 rounded-lg p-5 transition-all duration-300 text-left group ${
+                                selectedOptionalCards.cassette
+                                  ? 'border-[#00473c] bg-gradient-to-br from-[#f6fffd] to-[#e8f5f3] shadow-md scale-[1.01]'
+                                  : 'border-gray-300 bg-white hover:border-[#00473c] hover:shadow-sm hover:scale-[1.005]'
+                              }`}
+                            >
+                              {selectedOptionalCards.cassette && (
+                                <div className="absolute top-3 right-3 w-6 h-6 bg-[#00473c] rounded-full flex items-center justify-center shadow-md z-10">
+                                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                  </svg>
+                                </div>
+                              )}
+                              {CASSETTE_CARD.image && (
+                                <div className={`relative h-[120px] w-full mb-3 rounded-lg overflow-hidden flex items-center justify-center transition-all duration-300 ${
+                                  selectedOptionalCards.cassette
+                                    ? 'bg-gradient-to-br from-[#e8f5f3] to-[#d0ebe8] shadow-inner'
+                                    : 'bg-gradient-to-br from-gray-50 to-gray-100 group-hover:from-gray-100 group-hover:to-gray-150'
+                                }`}>
+                                  <Image
+                                    src={CASSETTE_CARD.image}
+                                    alt={CASSETTE_CARD.name}
+                                    width={120}
+                                    height={120}
+                                    className="object-contain"
+                                  />
+                                </div>
+                              )}
+                              <h4 className="text-base font-semibold text-[#3a3a3a] mb-1.5 pr-8">
+                                {CASSETTE_CARD.name}
+                              </h4>
+                              {CASSETTE_CARD.description && (
+                                <p className="text-xs text-gray-600 leading-relaxed">{CASSETTE_CARD.description}</p>
+                              )}
+                              {CASSETTE_CARD.price > 0 && (
+                                <span className="absolute bottom-4 right-4 bg-[#00473c] text-white text-xs font-semibold px-3 py-1.5 rounded-lg shadow-md">
+                                  +£{CASSETTE_CARD.price.toFixed(2)}
+                                </span>
+                              )}
+                            </button>
+                          )}
+
+                          {/* Motorization Card */}
+                          {product.features.hasMotorization && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const newValue = !selectedOptionalCards.motorization;
+                                setSelectedOptionalCards({
+                                  ...selectedOptionalCards,
+                                  motorization: newValue,
+                                });
+                                if (!newValue) {
+                                  setConfig({ ...config, motorization: null });
+                                }
+                              }}
+                              className={`relative border-2 rounded-lg p-5 transition-all duration-300 text-left group ${
+                                selectedOptionalCards.motorization
+                                  ? 'border-[#00473c] bg-gradient-to-br from-[#f6fffd] to-[#e8f5f3] shadow-md scale-[1.01]'
+                                  : 'border-gray-300 bg-white hover:border-[#00473c] hover:shadow-sm hover:scale-[1.005]'
+                              }`}
+                            >
+                              {selectedOptionalCards.motorization && (
+                                <div className="absolute top-3 right-3 w-6 h-6 bg-[#00473c] rounded-full flex items-center justify-center shadow-md z-10">
+                                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                  </svg>
+                                </div>
+                              )}
+                              {MOTORIZATION_CARD.image && (
+                                <div className={`relative h-[120px] w-full mb-3 rounded-lg overflow-hidden flex items-center justify-center transition-all duration-300 ${
+                                  selectedOptionalCards.motorization
+                                    ? 'bg-gradient-to-br from-[#e8f5f3] to-[#d0ebe8] shadow-inner'
+                                    : 'bg-gradient-to-br from-gray-50 to-gray-100 group-hover:from-gray-100 group-hover:to-gray-150'
+                                }`}>
+                                  <Image
+                                    src={MOTORIZATION_CARD.image}
+                                    alt={MOTORIZATION_CARD.name}
+                                    width={120}
+                                    height={120}
+                                    className="object-contain"
+                                  />
+                                </div>
+                              )}
+                              <h4 className="text-base font-semibold text-[#3a3a3a] mb-1.5 pr-8">
+                                {MOTORIZATION_CARD.name}
+                              </h4>
+                              {MOTORIZATION_CARD.description && (
+                                <p className="text-xs text-gray-600 leading-relaxed">{MOTORIZATION_CARD.description}</p>
+                              )}
+                              {MOTORIZATION_CARD.price > 0 && (
+                                <span className="absolute bottom-4 right-4 bg-[#00473c] text-white text-xs font-semibold px-3 py-1.5 rounded-lg shadow-md">
+                                  +£{MOTORIZATION_CARD.price.toFixed(2)}
+                                </span>
+                              )}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Continuous Chain - Select Location - Only shown when Continuous Chain card is selected */}
+                      {selectedOptionalCards.continuousChain && product.features.hasChainColor && (
+                        <div className="pt-6 space-y-4">
+                          {/* Location Selection (Left/Right) Dropdown */}
+                          <SimpleDropdown
+                            label="Select Location"
+                            options={CONTROL_SIDE_OPTIONS}
+                            selectedValue={config.controlSide}
+                            onChange={(sideId) => setConfig({ ...config, controlSide: sideId })}
+                            placeholder="Select location"
+                          />
+
+                          {/* Chain Color Dropdown */}
+                          <SimpleDropdown
+                            label="Chain Color"
                             options={CHAIN_COLOR_OPTIONS}
-                            selectedColor={config.chainColor}
-                            onColorChange={(colorId) => setConfig({ ...config, chainColor: colorId })}
+                            selectedValue={config.chainColor}
+                            onChange={(colorId) => setConfig({ ...config, chainColor: colorId })}
+                            placeholder="Select chain color"
                           />
                         </div>
                       )}
 
-                      {/* Wrapped Cassette Selector */}
-                      {product.features.hasWrappedCassette && (
-                        <div className="pt-6">
-                          <WrappedCassetteSelector
-                            options={WRAPPED_CASSETTE_OPTIONS}
-                            selectedOption={config.wrappedCassette}
-                            onOptionChange={(optionId) => setConfig({ ...config, wrappedCassette: optionId })}
-                          />
+                      {/* Cassette Options - Only shown when Cassette card is selected */}
+                      {selectedOptionalCards.cassette && (
+                        <div className="pt-6 space-y-4">
+                          {/* Wrapped Cassette Options (for Roller Blinds) */}
+                          {product.features.hasWrappedCassette && (
+                            <SimpleDropdown
+                              label="Cassette Color"
+                              options={WRAPPED_CASSETTE_OPTIONS}
+                              selectedValue={config.wrappedCassette}
+                              onChange={(optionId) => setConfig({ ...config, wrappedCassette: optionId })}
+                              placeholder="Select cassette color"
+                            />
+                          )}
+                          {/* Cassette Matching Bar Options (for Day/Night Blinds) */}
+                          {product.features.hasCassetteMatchingBar && (
+                            <SimpleDropdown
+                              label="Cassette and Bottom Matching Bar"
+                              options={CASSETTE_MATCHING_BAR_OPTIONS}
+                              selectedValue={config.cassetteMatchingBar}
+                              onChange={(optionId) => setConfig({ ...config, cassetteMatchingBar: optionId })}
+                              placeholder="Select cassette and bottom bar"
+                            />
+                          )}
                         </div>
                       )}
 
-                      {/* Cassette Matching Bar Selector */}
-                      {product.features.hasCassetteMatchingBar && (
+                      {/* Motorization Dropdown - Only shown when Motorization card is selected */}
+                      {selectedOptionalCards.motorization && product.features.hasMotorization && (
                         <div className="pt-6">
-                          <CassetteMatchingBarSelector
-                            options={CASSETTE_MATCHING_BAR_OPTIONS}
-                            selectedBar={config.cassetteMatchingBar}
-                            onBarChange={(barId) => setConfig({ ...config, cassetteMatchingBar: barId })}
-                          />
-                        </div>
-                      )}
-
-                      {/* Motorization Selector */}
-                      {product.features.hasMotorization && (
-                        <div className="pt-6">
-                          <MotorizationSelector
+                          <SimpleDropdown
+                            label="Motorization Option"
                             options={MOTORIZATION_OPTIONS}
-                            selectedOption={config.motorization}
-                            onOptionChange={(optionId) => setConfig({ ...config, motorization: optionId })}
+                            selectedValue={config.motorization}
+                            onChange={(optionId) => setConfig({ ...config, motorization: optionId })}
+                            placeholder="Select motorization"
                           />
                         </div>
                       )}
@@ -624,7 +823,7 @@ const ProductPage = ({
 
       {/* Product Details Section - Full Width */}
       <section className="px-4 md:px-6 lg:px-20 py-6 bg-white">
-        <div className="max-w-[1200px] mx-auto">
+        <div className="max-w-[1400px] mx-auto px-4 md:px-6 lg:px-8">
           <div className="bg-white rounded-lg border border-gray-200 px-3 md:px-4 py-4 md:py-6">
             <div className="flex flex-col gap-8">
               {/* Product Details */}
@@ -665,7 +864,7 @@ const ProductPage = ({
 
       {/* Reviews Section */}
       <section className="px-4 md:px-6 lg:px-20 py-8 md:py-12 bg-white border-t border-gray-100">
-        <div className="max-w-[1200px] mx-auto">
+        <div className="max-w-[1400px] mx-auto px-4 md:px-6 lg:px-8">
           <ProductReviews
             reviews={product.reviews}
             averageRating={product.rating}
@@ -677,7 +876,7 @@ const ProductPage = ({
       {/* Related Products */}
       {relatedProducts.length > 0 && (
         <section className="px-4 md:px-6 lg:px-20 py-8 md:py-12 bg-white">
-          <div className="max-w-[1200px] mx-auto">
+          <div className="max-w-[1400px] mx-auto px-4 md:px-6 lg:px-8">
             <RelatedProducts products={relatedProducts} />
           </div>
         </section>
