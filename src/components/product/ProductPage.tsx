@@ -332,7 +332,7 @@ const ProductPage = ({
           <div className="flex flex-col lg:flex-row gap-6 md:gap-8 lg:gap-12">
             {/* Left - Gallery with Thumbnails on Left */}
             <div className="w-full lg:w-1/2">
-              <ProductGallery images={product.images} productName={product.name} />
+              <ProductGallery images={product.images} videos={product.videos} productName={product.name} />
             </div>
 
             {/* Right - Product Info */}
@@ -738,8 +738,8 @@ const ProductPage = ({
                                 }
                               }}
                               className={`relative border-2 rounded-lg p-5 transition-all duration-300 text-left group cursor-pointer h-full flex flex-col ${selectedOptionalCards.motorization
-                                  ? 'border-[#00473c] bg-gradient-to-br from-[#f6fffd] to-[#e8f5f3] shadow-md'
-                                  : 'border-gray-300 bg-white hover:border-[#00473c] hover:shadow-sm'
+                                ? 'border-[#00473c] bg-gradient-to-br from-[#f6fffd] to-[#e8f5f3] shadow-md'
+                                : 'border-gray-300 bg-white hover:border-[#00473c] hover:shadow-sm'
                                 }`}
                             >
                               {selectedOptionalCards.motorization && (

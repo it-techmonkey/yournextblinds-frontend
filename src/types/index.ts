@@ -60,6 +60,7 @@ export interface Product {
   estimatedDelivery: string;
   description: string;
   images: string[];
+  videos?: string[];
   features: ProductFeatures;
   reviews: ProductReview[];
   relatedProducts: string[];
