@@ -8,6 +8,11 @@ const nextConfig: NextConfig = {
         hostname: 'cdn.shopify.com',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: '1clickblinds.co.uk',
+        pathname: '/**',
+      },
       // Allow localhost for local development
       {
         protocol: 'http',
