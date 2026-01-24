@@ -166,6 +166,7 @@ export interface ApiProduct {
   title: string;
   description: string | null;
   images: string[];
+  videos?: string[];
   oldPrice: number | string;
   basePrice: number | string;
   createdAt: string;

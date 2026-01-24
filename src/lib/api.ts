@@ -68,7 +68,7 @@ async function apiFetch<T>(endpoint: string, options?: RequestInit, retries: num
     return response.json();
   } catch (error: any) {
     clearTimeout(timeoutId);
-    
+
     // Retry logic for network errors
     if (retries > 0 && (error.name === 'AbortError' || error.code === 'UND_ERR_CONNECT_TIMEOUT' || error.message?.includes('timeout'))) {
       if (!isBuildTime) {
@@ -330,6 +330,7 @@ export function transformProduct(apiProduct: ApiProduct): Product {
     estimatedDelivery: DEFAULT_ESTIMATED_DELIVERY,
     description: apiProduct.description || '',
     images: apiProduct.images.length > 0 ? apiProduct.images : [],
+    videos: apiProduct.videos || [],
     features: features,
     reviews: [],
     relatedProducts: [],

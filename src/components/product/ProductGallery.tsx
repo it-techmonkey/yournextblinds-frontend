@@ -81,6 +81,7 @@ const ProductGallery = ({ images, videos = [], productName }: ProductGalleryProp
         fill
         className={`object-cover ${className}`}
         priority={!fill} // Only priority for main image
+        unoptimized
       />
     );
   };
@@ -91,8 +92,8 @@ const ProductGallery = ({ images, videos = [], productName }: ProductGalleryProp
         key={index}
         onClick={() => setSelectedImage(index)}
         className={`relative w-16 h-16 md:w-20 md:h-20 shrink-0 overflow-hidden border-2 transition-all ${selectedImage === index
-            ? 'border-[#00473c]'
-            : 'border-gray-200 hover:border-[#00473c]/50'
+          ? 'border-[#00473c]'
+          : 'border-gray-200 hover:border-[#00473c]/50'
           }`}
       >
         {item.type === 'video' || isVideo(item.url) ? (
@@ -107,7 +108,10 @@ const ProductGallery = ({ images, videos = [], productName }: ProductGalleryProp
                  Since we only have URL, we'll try to use a video tag paused at 0s or something simple. 
                  Or just a generic video icon background if we don't want to load video.
                  But let's try rendering the video muted. */}
-            <video src={item.url} className="absolute inset-0 w-full h-full object-cover -z-10 bg-gray-800" muted preload="metadata" />
+            {/* Only use video tag for direct files, typically mp4 */}
+            {!item.url.includes('youtube') && !item.url.includes('vimeo') && (
+              <video src={item.url} className="absolute inset-0 w-full h-full object-cover -z-10 bg-gray-800" muted preload="metadata" />
+            )}
           </div>
         ) : (
           <Image
@@ -115,6 +119,7 @@ const ProductGallery = ({ images, videos = [], productName }: ProductGalleryProp
             alt={`${productName} view ${index + 1}`}
             fill
             className="object-cover"
+            unoptimized
           />
         )}
       </button>
@@ -136,8 +141,8 @@ const ProductGallery = ({ images, videos = [], productName }: ProductGalleryProp
                 <button
                   onClick={handleMoreClick}
                   className={`relative w-16 h-16 shrink-0 overflow-hidden border-2 transition-all ${selectedImage >= MAX_VISIBLE_THUMBNAILS
-                      ? 'border-[#00473c]'
-                      : 'border-gray-200 hover:border-[#00473c]/50'
+                    ? 'border-[#00473c]'
+                    : 'border-gray-200 hover:border-[#00473c]/50'
                     }`}
                 >
                   <div className="relative w-full h-full">
@@ -159,8 +164,8 @@ const ProductGallery = ({ images, videos = [], productName }: ProductGalleryProp
                 <button
                   onClick={handleMoreClick}
                   className={`relative w-20 h-20 shrink-0 overflow-hidden border-2 transition-all ${selectedImage >= MAX_VISIBLE_THUMBNAILS
-                      ? 'border-[#00473c]'
-                      : 'border-gray-200 hover:border-[#00473c]/50'
+                    ? 'border-[#00473c]'
+                    : 'border-gray-200 hover:border-[#00473c]/50'
                     }`}
                 >
                   <div className="relative w-full h-full">
@@ -236,8 +241,8 @@ const ProductGallery = ({ images, videos = [], productName }: ProductGalleryProp
                     key={index}
                     onClick={() => handleImageSelectFromModal(index)}
                     className={`relative aspect-square overflow-hidden rounded-lg border-2 transition-all hover:opacity-90 ${selectedImage === index
-                        ? 'border-[#00473c] ring-2 ring-[#00473c]/30'
-                        : 'border-gray-200 hover:border-[#00473c]/50'
+                      ? 'border-[#00473c] ring-2 ring-[#00473c]/30'
+                      : 'border-gray-200 hover:border-[#00473c]/50'
                       }`}
                   >
                     {item.type === 'video' || isVideo(item.url) ? (
@@ -257,6 +262,7 @@ const ProductGallery = ({ images, videos = [], productName }: ProductGalleryProp
                         alt={`${productName} view ${index + 1}`}
                         fill
                         className="object-cover"
+                        unoptimized
                       />
                     )}
                     <div className="absolute bottom-2 left-2 bg-black/60 text-white text-xs px-2 py-1 rounded">
