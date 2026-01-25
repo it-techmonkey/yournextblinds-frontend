@@ -893,8 +893,8 @@ const ProductPage = ({
       </section>
 
       {/* Product Details Section - Full Width */}
-      <section className="px-4 md:px-6 lg:px-20 py-6 bg-white">
-        <div className="max-w-[1400px] mx-auto px-4 md:px-6 lg:px-8">
+      {(
+        <section className="px-4 md:px-6 lg:px-20 py-6 bg-white">
           <div className="bg-white rounded-lg border border-gray-200 px-3 md:px-4 py-4 md:py-6">
             <div className="flex flex-col gap-8">
               {/* Product Details */}
@@ -930,22 +930,24 @@ const ProductPage = ({
               </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* Reviews Section */}
-      <section className="px-4 md:px-6 lg:px-20 py-8 md:py-12 bg-white border-t border-gray-100">
-        <div className="max-w-[1400px] mx-auto px-4 md:px-6 lg:px-8">
-          <ProductReviews
-            reviews={product.reviews}
-            averageRating={product.rating}
-            totalReviews={product.reviewCount}
-          />
-        </div>
-      </section>
+      {product.slug !== 'non-driii-honeycomb-blackout-blinds' && (
+        <section className="px-4 md:px-6 lg:px-20 py-8 md:py-12 bg-white border-t border-gray-100">
+          <div className="max-w-[1400px] mx-auto px-4 md:px-6 lg:px-8">
+            <ProductReviews
+              reviews={product.reviews}
+              averageRating={product.rating}
+              totalReviews={product.reviewCount}
+            />
+          </div>
+        </section>
+      )}
 
       {/* Related Products */}
-      {relatedProducts.length > 0 && (
+      {product.slug !== 'non-driii-honeycomb-blackout-blinds' && relatedProducts.length > 0 && (
         <section className="px-4 md:px-6 lg:px-20 py-8 md:py-12 bg-white">
           <div className="max-w-[1400px] mx-auto px-4 md:px-6 lg:px-8">
             <RelatedProducts products={relatedProducts} />

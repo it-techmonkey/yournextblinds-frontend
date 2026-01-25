@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 import { Product } from '@/types';
-import { ProductPage } from '@/components/product';
+import { ProductPage, CustomerReviewsSection, ProductFeatureSection, ProductComparisonSection, HowItWorksSection, ProductRechargeSection, ProductWarrantySection, ProductComparisonTableSection } from '@/components/product';
 import { TopBar, Header, FlashSale, FAQ, Footer, NavBar } from '@/components';
 import { fetchProductBySlug, fetchProducts, transformProduct, getBasePricePerSqM, getOriginalPricePerSqM } from '@/lib/api';
 
@@ -30,11 +30,11 @@ export async function generateStaticParams() {
 // Generate metadata for SEO
 export async function generateMetadata({ params }: ProductPageProps) {
   const { slug } = await params;
-  
+
   try {
     const response = await fetchProductBySlug(slug);
     const product = transformProduct(response.data);
-    
+
     return {
       title: `${product.name} | Your Next Blinds`,
       description: product.description,
@@ -48,7 +48,7 @@ export async function generateMetadata({ params }: ProductPageProps) {
 
 export default async function ProductPageRoute({ params }: ProductPageProps) {
   const { slug } = await params;
-  
+
   let productData;
   try {
     const response = await fetchProductBySlug(slug);
@@ -60,17 +60,17 @@ export default async function ProductPageRoute({ params }: ProductPageProps) {
     }
     notFound();
   }
-  
+
   const product = transformProduct(productData);
-  
+
   let relatedProducts: Product[] = [];
   try {
-    const categorySlug = productData.categories.length > 0 
-      ? productData.categories[0].slug 
+    const categorySlug = productData.categories.length > 0
+      ? productData.categories[0].slug
       : null;
-    
+
     const allProductsResponse = await fetchProducts({ limit: 100 });
-    
+
     const sameCategoryProducts = allProductsResponse.data
       .filter((data) => {
         if (data.slug === product.slug) return false;
@@ -81,9 +81,9 @@ export default async function ProductPageRoute({ params }: ProductPageProps) {
       })
       .map((data) => transformProduct(data))
       .slice(0, 4);
-    
+
     relatedProducts = sameCategoryProducts;
-    
+
     if (relatedProducts.length < 4) {
       const otherProducts = allProductsResponse.data
         .filter((data) => {
@@ -96,7 +96,7 @@ export default async function ProductPageRoute({ params }: ProductPageProps) {
         .map((data) => transformProduct(data))
         .filter((p) => !relatedProducts.some((rp) => rp.slug === p.slug))
         .slice(0, 4 - relatedProducts.length);
-      
+
       relatedProducts.push(...otherProducts);
     }
   } catch (error) {
@@ -105,7 +105,7 @@ export default async function ProductPageRoute({ params }: ProductPageProps) {
       console.error('Error fetching related products:', error);
     }
   }
-  
+
   return (
     <>
       <TopBar />
@@ -120,8 +120,23 @@ export default async function ProductPageRoute({ params }: ProductPageProps) {
             originalPricePerSquareMeter={getOriginalPricePerSqM(productData)}
           />
         </Suspense>
-        <FlashSale />
-        <FAQ />
+        {slug !== 'non-driii-honeycomb-blackout-blinds' && (
+          <>
+            <FlashSale />
+            <FAQ />
+          </>
+        )}
+        {slug === 'non-driii-honeycomb-blackout-blinds' && (
+          <>
+            <CustomerReviewsSection />
+            <ProductFeatureSection />
+            <ProductComparisonSection />
+            <HowItWorksSection />
+            <ProductRechargeSection />
+            <ProductWarrantySection />
+            <ProductComparisonTableSection />
+          </>
+        )}
       </main>
       <Footer />
     </>

@@ -369,7 +369,7 @@ export const newNavigationData: NewNavigationItem[] = [
     submenu: [
       { label: 'Motorised roller shades', href: '/collections/motorised-roller-shades' },
       { label: 'Motorised Dual / zebra shades', href: '/collections/motorised-dual-zebra-shades' },
-      { label: 'Motorised EclipseCore', href: '/product/non-driii-honeycomb-blackout-blinds' },
+      { label: 'Motorised EclipseCore', href: '/collections/motorised-eclipsecore' },
     ]
   },
   {
@@ -378,7 +378,7 @@ export const newNavigationData: NewNavigationItem[] = [
       { label: 'Roller Shades', href: '/collections/blackout-roller-shades-category' },
       { label: 'Dual/ zebra shades', href: '/collections/blackout-dual-zebra-shades' },
       { label: 'Vertical blinds', href: '/collections/blackout-vertical-blinds-category' },
-      { label: 'EclipseCore shades', href: '/collections/eclipsecore-shades' },
+      { label: 'EclipseCore shades', href: '/product/non-driii-honeycomb-blackout-blinds' },
     ]
   },
   {
