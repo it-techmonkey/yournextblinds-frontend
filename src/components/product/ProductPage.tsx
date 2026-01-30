@@ -785,7 +785,7 @@ const ProductPage = ({
                               )}
                               {CONTINUOUS_CHAIN_CARD.price > 0 && (
                                 <span className="absolute bottom-4 right-4 bg-[#00473c] text-white text-xs font-semibold px-3 py-1.5 rounded-lg shadow-md">
-                                  +£{CONTINUOUS_CHAIN_CARD.price.toFixed(2)}
+                                  +${CONTINUOUS_CHAIN_CARD.price.toFixed(2)}
                                 </span>
                               )}
 
@@ -865,7 +865,7 @@ const ProductPage = ({
                               )}
                               {CASSETTE_CARD.price > 0 && (
                                 <span className="absolute bottom-4 right-4 bg-[#00473c] text-white text-xs font-semibold px-3 py-1.5 rounded-lg shadow-md">
-                                  +£{CASSETTE_CARD.price.toFixed(2)}
+                                  +${CASSETTE_CARD.price.toFixed(2)}
                                 </span>
                               )}
 
@@ -949,7 +949,7 @@ const ProductPage = ({
 
                               {/* Simple Price Text */}
                               <div className="mt-2 text-sm font-medium text-[#00473c]">
-                                +£95.00 (Remote)
+                                +$95.00 (Remote)
                               </div>
 
                               {/* Dropdowns inside the card */}

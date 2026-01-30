@@ -153,7 +153,7 @@ const BottomChainSelector = ({ options, selectedChain, onChainChange }: BottomCh
 
                                 {option.price && option.price > 0 ? (
                                     <span className="text-xs font-semibold bg-[#00473c] text-white px-2 py-1 rounded">
-                                        +£{option.price.toFixed(2)}
+                                        +${option.price.toFixed(2)}
                                     </span>
                                 ) : null}
                             </button>
@@ -180,7 +180,7 @@ const BottomChainSelector = ({ options, selectedChain, onChainChange }: BottomCh
                     <div>
                         <p className="font-medium text-[#3a3a3a]">{selectedOption.name}</p>
                         {selectedOption.price && selectedOption.price > 0 ? (
-                            <p className="text-[#00473c] font-bold mt-1">+£{selectedOption.price.toFixed(2)}</p>
+                            <p className="text-[#00473c] font-bold mt-1">+${selectedOption.price.toFixed(2)}</p>
                         ) : (
                             <p className="text-gray-500 text-sm mt-1">Included in price</p>
                         )}

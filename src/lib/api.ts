@@ -333,7 +333,7 @@ export async function validateCartPrice(
 
 /**
  * Converts backend price (stored without decimal point) to actual price
- * e.g., 124 in DB = £1.24 actual price
+ * e.g., 124 in DB = $1.24 actual price
  */
 function parsePrice(price: number | string): number {
   const numPrice = typeof price === 'string' ? parseFloat(price) : price;
@@ -396,7 +396,7 @@ export function getCurrencySymbol(code: string): string {
 /**
  * Format price with currency symbol
  */
-export function formatPriceWithCurrency(price: number, currency: string = 'GBP'): string {
+export function formatPriceWithCurrency(price: number, currency: string = 'USD'): string {
   const symbol = getCurrencySymbol(currency);
   const formatted = formatPrice(price);
   if (['JPY', 'KRW'].includes(currency.toUpperCase())) {
@@ -435,7 +435,7 @@ export function transformProduct(apiProduct: ApiProduct): Product {
     slug: apiProduct.slug,
     category: categoryName,
     price: formatPrice(price),
-    currency: 'GBP',
+    currency: 'USD',
     rating: DEFAULT_RATING,
     reviewCount: DEFAULT_REVIEW_COUNT,
     estimatedDelivery: DEFAULT_ESTIMATED_DELIVERY,

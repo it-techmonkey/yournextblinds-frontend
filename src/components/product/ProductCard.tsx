@@ -23,7 +23,7 @@ interface ProductCardProps {
 export default function ProductCard({ product, className = '' }: ProductCardProps) {
   const router = useRouter();
   const imageUrl = product.image || product.images?.[0] || '';
-  const currency = product.currency || 'GBP';
+  const currency = product.currency || 'USD';
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();

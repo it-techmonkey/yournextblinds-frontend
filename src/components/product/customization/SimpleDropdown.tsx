@@ -132,7 +132,7 @@ const SimpleDropdown = ({ label, options, selectedValue, onChange, placeholder =
                   </div>
                   {option.price && option.price > 0 ? (
                     <span className="text-xs font-semibold bg-[#00473c] text-white px-2.5 py-1 rounded-md shrink-0">
-                      +£{option.price.toFixed(2)}
+                      +${option.price.toFixed(2)}
                     </span>
                   ) : null}
                   {selectedValue === option.id && (

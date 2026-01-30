@@ -20,7 +20,7 @@ model Product {
   // Pricing
   price          Decimal  @db.Decimal(10, 2)
   originalPrice  Decimal? @db.Decimal(10, 2)
-  currency       String   @default("GBP")
+  currency       String   @default("USD")
   
   // Stock & Availability
   stockStatus    StockStatus @default(IN_STOCK)
