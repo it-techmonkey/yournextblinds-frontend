@@ -5,6 +5,7 @@ import {
   Hero,
   WindowTypes,
   Categories,
+  CategoryGrid,
   Installation,
   BestSelling,
   Craftsmanship,
@@ -27,8 +28,9 @@ export default function Home() {
       {/* Main Content */}
       <main>
         <Hero />
-        <WindowTypes />
-        <Categories />
+        {/* <WindowTypes /> */}
+        {/* <Categories /> */}
+        <CategoryGrid />
         <Installation />
         <BestSelling />
         <Craftsmanship />

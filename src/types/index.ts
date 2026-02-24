@@ -288,7 +288,7 @@ export interface CustomizationPricing {
 }
 
 export interface PricingRequest {
-  productId: string;
+  handle: string;
   widthInches: number;
   heightInches: number;
   customizations?: {
@@ -314,5 +314,36 @@ export interface PriceValidationResponse {
   valid: boolean;
   calculatedPrice: number;
   difference: number;
+}
+
+// ============================================
+// Checkout Types
+// ============================================
+
+export interface CheckoutItemRequest {
+  handle: string;
+  widthInches: number;
+  heightInches: number;
+  quantity: number;
+  submittedPrice: number;
+  configuration: Record<string, string | undefined>;
+}
+
+export interface CheckoutRequest {
+  items: CheckoutItemRequest[];
+  customerEmail?: string;
+  note?: string;
+}
+
+export interface CheckoutResponse {
+  checkoutUrl: string;
+  draftOrderId: string;
+  lineItems: {
+    handle: string;
+    title: string;
+    calculatedPrice: number;
+    quantity: number;
+  }[];
+  subtotal: number;
 }
 

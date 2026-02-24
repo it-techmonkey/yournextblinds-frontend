@@ -1,5 +1,6 @@
 export { default as Hero } from './Hero';
 export { default as Categories } from './Categories';
+export { default as CategoryGrid } from './CategoryGrid';
 export { default as BestSelling } from './BestSelling';
 export { default as WindowTypes } from './WindowTypes';
 export { default as Installation } from './Installation';

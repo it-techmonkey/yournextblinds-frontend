@@ -1,8 +1,11 @@
 'use client';
 
 import { useCart } from '@/context/CartContext';
+import { useAuth } from '@/context/AuthContext';
 import { TopBar, Header, NavBar, Footer } from '@/components';
-import { formatPriceWithCurrency } from '@/lib/api';
+import { formatPriceWithCurrency, createCheckout } from '@/lib/api';
+import { getTotalInches } from '@/lib/pricing';
+import { CheckoutItemRequest } from '@/types';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
@@ -25,11 +28,82 @@ import {
 
 export default function CartPage() {
   const { cart, removeFromCart, updateQuantity, clearCart } = useCart();
+  const { customer } = useAuth();
   const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
 
-  const shippingCost = cart.total >= 100 ? 0 : 15;
-  const tax = cart.total * 0.1;
-  const finalTotal = cart.total + shippingCost + tax;
+  const handleCheckout = async () => {
+    setIsCheckingOut(true);
+    setCheckoutError(null);
+
+    try {
+      // Convert cart items to checkout request format
+      const checkoutItems: CheckoutItemRequest[] = cart.items.map((item) => {
+        const config = item.configuration;
+
+        // Convert to inches (handles cm/fractions)
+        const widthInches = getTotalInches(
+          config.width,
+          config.widthFraction,
+          config.widthUnit
+        );
+        const heightInches = getTotalInches(
+          config.height,
+          config.heightFraction,
+          config.heightUnit
+        );
+
+        // Build configuration object for backend (strip non-customization fields)
+        const backendConfig: Record<string, string | undefined> = {
+          roomType: config.roomType || undefined,
+          blindName: config.blindName || undefined,
+          headrail: config.headrail || undefined,
+          headrailColour: config.headrailColour || undefined,
+          installationMethod: config.installationMethod || undefined,
+          controlOption: config.controlOption || undefined,
+          stacking: config.stacking || undefined,
+          controlSide: config.controlSide || undefined,
+          bottomChain: config.bottomChain || undefined,
+          bracketType: config.bracketType || undefined,
+          chainColor: config.chainColor || undefined,
+          wrappedCassette: config.wrappedCassette || undefined,
+          cassetteMatchingBar: config.cassetteMatchingBar || undefined,
+          motorization: config.motorization || undefined,
+          blindColor: config.blindColor || undefined,
+          frameColor: config.frameColor || undefined,
+          openingDirection: config.openingDirection || undefined,
+          bottomBar: config.bottomBar || undefined,
+          rollStyle: config.rollStyle || undefined,
+        };
+
+        return {
+          handle: item.product.slug,
+          widthInches,
+          heightInches,
+          quantity: item.quantity,
+          submittedPrice: item.product.price,
+          configuration: backendConfig,
+        };
+      });
+
+      const result = await createCheckout(checkoutItems, customer?.email || undefined);
+
+      // Clear cart before redirecting
+      clearCart();
+
+      // Redirect to Shopify checkout
+      window.location.href = result.checkoutUrl;
+    } catch (error: any) {
+      console.error('Checkout error:', error);
+      setCheckoutError(
+        error.message || 'Something went wrong. Please try again.'
+      );
+      setIsCheckingOut(false);
+    }
+  };
+
+  const finalTotal = cart.total;
 
   const formatConfiguration = (config: any) => {
     const parts = [];
@@ -405,27 +479,9 @@ export default function CartPage() {
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600">Shipping</span>
-                    <span className="font-medium text-[#3a3a3a]">
-                      {shippingCost === 0 ? (
-                        <span className="text-green-600">FREE</span>
-                      ) : (
-                        formatPriceWithCurrency(shippingCost)
-                      )}
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Estimated Tax</span>
-                    <span className="font-medium text-[#3a3a3a]">{formatPriceWithCurrency(tax)}</span>
+                    <span className="text-sm text-gray-500 italic">Calculated at checkout</span>
                   </div>
                 </div>
-
-                {cart.total < 100 && (
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
-                    <p className="text-xs text-blue-800">
-                      Add {formatPriceWithCurrency(100 - cart.total)} more to get FREE shipping!
-                    </p>
-                  </div>
-                )}
 
                 <div className="border-t border-gray-200 pt-4 mb-6">
                   <div className="flex justify-between items-baseline">
@@ -434,8 +490,28 @@ export default function CartPage() {
                   </div>
                 </div>
 
-                <button className="w-full bg-[#00473c] text-white py-3 px-6 rounded-lg text-base font-medium hover:bg-[#003830] transition-colors mb-3">
-                  Proceed to Checkout
+                {checkoutError && (
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+                    <p className="text-xs text-red-800">{checkoutError}</p>
+                  </div>
+                )}
+
+                <button
+                  onClick={handleCheckout}
+                  disabled={isCheckingOut}
+                  className="w-full bg-[#00473c] text-white py-3 px-6 rounded-lg text-base font-medium hover:bg-[#003830] transition-colors mb-3 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {isCheckingOut ? (
+                    <>
+                      <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Processing...
+                    </>
+                  ) : (
+                    'Proceed to Checkout'
+                  )}
                 </button>
 
                 <button className="w-full border border-gray-300 text-[#3a3a3a] py-3 px-6 rounded-lg text-base font-medium hover:bg-gray-50 transition-colors">
@@ -444,12 +520,6 @@ export default function CartPage() {
 
                 <div className="mt-6 pt-6 border-t border-gray-200">
                   <div className="space-y-3">
-                    <div className="flex items-center gap-3">
-                      <svg className="w-5 h-5 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                      <span className="text-sm text-gray-600">Free shipping on orders over $100</span>
-                    </div>
                     <div className="flex items-center gap-3">
                       <svg className="w-5 h-5 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />

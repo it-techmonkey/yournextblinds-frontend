@@ -81,7 +81,7 @@ const CustomizationModal = ({
     const loadPricingData = async () => {
       try {
         const [matrix, customizations] = await Promise.all([
-          fetchPriceMatrix(product.id),
+          fetchPriceMatrix(product.slug),
           fetchCustomizationPricing(),
         ]);
 
@@ -119,7 +119,7 @@ const CustomizationModal = ({
       isMounted = false;
       fetchingRef.current = false;
     };
-  }, [product.id]);
+  }, [product.slug]);
 
   // Determine which options to use based on product category
   const isRollerOrDayNight = useMemo(() => {
@@ -270,7 +270,7 @@ const CustomizationModal = ({
 
       const validation = await validateCartPrice(
         {
-          productId: product.id,
+          handle: product.slug,
           widthInches,
           heightInches,
           customizations: selectedCustomizations,

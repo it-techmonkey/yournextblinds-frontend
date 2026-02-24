@@ -12,6 +12,8 @@ import {
   PricingRequest,
   PricingResponse,
   PriceValidationResponse,
+  CheckoutItemRequest,
+  CheckoutResponse,
 } from '@/types';
 import { getCategoryCustomizations } from '@/data/categoryCustomizations';
 
@@ -127,30 +129,28 @@ export interface Category {
   productCount: number;
 }
 
-interface CategoriesResponse {
-  success: boolean;
-  data: Category[];
-}
+import {
+  fetchShopifyProductsMerged,
+  fetchShopifyProductByHandleMerged,
+  fetchShopifyCollectionsMapped,
+} from './shopify';
 
 /**
- * Fetch all categories from backend
+ * Fetch all categories from Shopify collections.
  */
 export async function fetchCategories(): Promise<Category[]> {
   try {
-    const response = await apiFetch<CategoriesResponse>('/api/categories');
-    return response.data || [];
+    return await fetchShopifyCollectionsMapped();
   } catch (error: any) {
-    // Return empty array during build if backend is unavailable
+    console.warn('Shopify categories unavailable:', error.message);
     const isBuildTime = typeof window === 'undefined' && process.env.NODE_ENV !== 'development';
-    if (isBuildTime && (error.isBuildTimeError || error.code === 'ECONNREFUSED' || error.message?.includes('ECONNREFUSED'))) {
-      return [];
-    }
+    if (isBuildTime) return [];
     throw error;
   }
 }
 
 // ============================================
-// Product API
+// Product API (Shopify Storefront + Backend Pricing)
 // ============================================
 
 interface FetchProductsParams {
@@ -160,61 +160,49 @@ interface FetchProductsParams {
   search?: string;
 }
 
+/**
+ * Fetch products from Shopify Storefront API, merged with backend prices.
+ * Falls back to backend REST API if Shopify is unavailable.
+ */
 export async function fetchProducts(params?: FetchProductsParams): Promise<ApiProductsResponse> {
-  const queryParams = new URLSearchParams();
-
-  if (params?.page) queryParams.append('page', params.page.toString());
-  if (params?.limit) queryParams.append('limit', params.limit.toString());
-  if (params?.tags?.length) queryParams.append('tags', params.tags.join(','));
-  if (params?.search) queryParams.append('search', params.search);
-
-  const query = queryParams.toString();
   try {
-    return await apiFetch<ApiProductsResponse>(`/api/products${query ? `?${query}` : ''}`);
+    let allProducts = await fetchShopifyProductsMerged(params?.search);
+
+    // Apply tag filter if specified
+    if (params?.tags?.length) {
+      allProducts = allProducts.filter((product) => {
+        const productTagSlugs = product.tags.map((t) => t.slug);
+        return params.tags!.every((tag) => productTagSlugs.includes(tag));
+      });
+    }
+
+    // Apply pagination
+    const page = params?.page || 1;
+    const limit = params?.limit || 20;
+    const startIndex = (page - 1) * limit;
+    const paginatedProducts = allProducts.slice(startIndex, startIndex + limit);
+    const totalPages = Math.ceil(allProducts.length / limit);
+
+    return {
+      success: true,
+      data: paginatedProducts,
+      pagination: {
+        page,
+        limit,
+        total: allProducts.length,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPreviousPage: page > 1,
+      },
+    };
   } catch (error: any) {
-    // Return empty response during build if backend is unavailable
+    console.warn('Shopify products unavailable:', error.message);
     const isBuildTime = typeof window === 'undefined' && process.env.NODE_ENV !== 'development';
-    if (isBuildTime && (error.isBuildTimeError || error.code === 'ECONNREFUSED' || error.message?.includes('ECONNREFUSED'))) {
+    if (isBuildTime) {
       return {
         success: true,
         data: [],
-        pagination: {
-          page: 1,
-          limit: params?.limit || 20,
-          total: 0,
-          totalPages: 0,
-          hasNextPage: false,
-          hasPreviousPage: false,
-        },
-      };
-    }
-    throw error;
-  }
-}
-
-export async function fetchProductBySlug(slug: string): Promise<ApiProductResponse> {
-  try {
-    return await apiFetch<ApiProductResponse>(`/api/products/${slug}`);
-  } catch (error: any) {
-    // Return empty response during build if backend is unavailable
-    const isBuildTime = typeof window === 'undefined' && process.env.NODE_ENV !== 'development';
-    if (isBuildTime && (error.isBuildTimeError || error.code === 'ECONNREFUSED' || error.message?.includes('ECONNREFUSED'))) {
-      // Return a minimal product structure that will trigger notFound()
-      return {
-        success: false,
-        data: {
-          id: '',
-          slug: '',
-          title: '',
-          description: null,
-          images: [],
-          videos: [],
-          price: 0,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          categories: [],
-          tags: [],
-        },
+        pagination: { page: 1, limit: params?.limit || 20, total: 0, totalPages: 0, hasNextPage: false, hasPreviousPage: false },
       };
     }
     throw error;
@@ -222,17 +210,36 @@ export async function fetchProductBySlug(slug: string): Promise<ApiProductRespon
 }
 
 /**
- * Map frontend category slugs to backend category slugs
- * Handles cases where frontend and backend use different naming
+ * Fetch a single product by slug from Shopify.
  */
-function mapCategorySlug(frontendSlug: string): string {
-  // Backend uses 'day-and-night-blinds' (with 'and'), no conversion needed
-  return frontendSlug;
+export async function fetchProductBySlug(slug: string): Promise<ApiProductResponse> {
+  const emptyProduct: ApiProductResponse = {
+    success: false,
+    data: {
+      id: '', slug: '', title: '', description: null, images: [], videos: [],
+      price: 0, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
+      categories: [], tags: [],
+    },
+  };
+  const isBuildTime = typeof window === 'undefined' && process.env.NODE_ENV !== 'development';
+
+  try {
+    const product = await fetchShopifyProductByHandleMerged(slug);
+    if (product) {
+      return { success: true, data: product };
+    }
+    console.warn(`Product "${slug}" not found in Shopify`);
+    if (isBuildTime) return emptyProduct;
+    throw new Error(`Product not found: ${slug}`);
+  } catch (error: any) {
+    if (isBuildTime) return emptyProduct;
+    throw error;
+  }
 }
 
 /**
- * Fetch products filtered by category slug and optional tags
- * Maps frontend slug to backend slug if needed
+ * Fetch products filtered by category slug and optional tags.
+ * Products are fetched from Shopify and filtered by their collection memberships.
  */
 export async function fetchProductsByCategory(
   categorySlug: string,
@@ -240,12 +247,11 @@ export async function fetchProductsByCategory(
   requiredCategories?: string[]
 ): Promise<ApiProduct[]> {
   try {
-    const backendSlug = mapCategorySlug(categorySlug);
     const response = await fetchProducts({ limit: 500 });
 
     return response.data.filter((product) => {
       // Must have the primary category
-      const hasPrimaryCategory = product.categories.some((cat) => cat.slug === backendSlug);
+      const hasPrimaryCategory = product.categories.some((cat) => cat.slug === categorySlug);
       if (!hasPrimaryCategory) return false;
 
       // Must have all required tags (if specified)
@@ -265,11 +271,8 @@ export async function fetchProductsByCategory(
       return true;
     });
   } catch (error: any) {
-    // Return empty array during build if backend is unavailable
     const isBuildTime = typeof window === 'undefined' && process.env.NODE_ENV !== 'development';
-    if (isBuildTime && (error.isBuildTimeError || error.code === 'ECONNREFUSED' || error.message?.includes('ECONNREFUSED'))) {
-      return [];
-    }
+    if (isBuildTime) return [];
     throw error;
   }
 }
@@ -301,11 +304,11 @@ export async function fetchSizeBands(): Promise<SizeBands> {
 }
 
 /**
- * Get price band matrix for a product
+ * Get price band matrix for a product (by handle/slug)
  */
-export async function fetchPriceMatrix(productId: string): Promise<PriceBandMatrix> {
+export async function fetchPriceMatrix(handle: string): Promise<PriceBandMatrix> {
   try {
-    const response = await apiFetch<PricingApiResponse<PriceBandMatrix>>(`/api/pricing/matrix/${productId}`);
+    const response = await apiFetch<PricingApiResponse<PriceBandMatrix>>(`/api/pricing/matrix/${handle}`);
     return response.data;
   } catch (error: any) {
     // Return empty structure during build if backend is unavailable
@@ -356,6 +359,40 @@ export async function validateCartPrice(
     method: 'POST',
     body: JSON.stringify({ ...request, submittedPrice }),
   });
+  return response.data;
+}
+
+// ============================================
+// Checkout API
+// ============================================
+
+interface CheckoutApiResponse {
+  success: boolean;
+  data: CheckoutResponse;
+  error?: { message: string };
+}
+
+/**
+ * Create a Shopify checkout session via Draft Order.
+ * Sends cart items to the backend for server-side price validation,
+ * which creates a Shopify Draft Order and returns a checkout URL.
+ */
+export async function createCheckout(
+  items: CheckoutItemRequest[],
+  customerEmail?: string
+): Promise<CheckoutResponse> {
+  const response = await apiFetch<CheckoutApiResponse>('/api/orders/create-checkout', {
+    method: 'POST',
+    body: JSON.stringify({
+      items,
+      customerEmail,
+    }),
+  });
+
+  if (!response.success) {
+    throw new Error((response as any).error?.message || 'Failed to create checkout');
+  }
+
   return response.data;
 }
 

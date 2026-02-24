@@ -20,6 +20,7 @@ export const navigationData: NavigationItem[] = [
     submenu: [
       { label: 'Light filtering Vertical blinds', href: '/collections/light-filtering-vertical-blinds' },
       { label: 'Blackout vertical blinds', href: '/collections/blackout-vertical-blinds' },
+      { label: 'Waterproof Blackout vertical blinds', href: '/collections/waterproof-blackout-vertical-blinds' },
       { label: 'All blinds and shades', href: '/collections' },
     ]
   },
@@ -71,6 +72,7 @@ export const navigationData: NavigationItem[] = [
 export const ALL_COLLECTION_SLUGS = [
   'light-filtering-vertical-blinds',
   'blackout-vertical-blinds',
+  'waterproof-blackout-vertical-blinds',
   'light-filtering-roller-shades',
   'blackout-roller-shades',
   'waterproof-blackout-roller-shades',
@@ -90,6 +92,7 @@ export const ALL_COLLECTION_SLUGS = [
 export const COLLECTION_DISPLAY_NAMES: Record<string, string> = {
   'light-filtering-vertical-blinds': 'Light filtering Vertical blinds',
   'blackout-vertical-blinds': 'Blackout vertical blinds',
+  'waterproof-blackout-vertical-blinds': 'Waterproof Blackout vertical blinds',
   'light-filtering-roller-shades': 'Light filtering roller Shades',
   'blackout-roller-shades': 'Blackout roller Shades',
   'waterproof-blackout-roller-shades': 'Waterproof Blackout roller Shades',
@@ -112,6 +115,7 @@ export const NAVIGATION_SLUG_MAPPING: Record<string, string> = {
   // Blinds - map to primary category (filtering by tags will be handled separately)
   'light-filtering-vertical-blinds': 'vertical-blinds', // Primary: vertical-blinds, Tag: light-filtering
   'blackout-vertical-blinds': 'vertical-blinds', // Primary: vertical-blinds, Tag: blackout
+  'waterproof-blackout-vertical-blinds': 'vertical-blinds', // Primary: vertical-blinds, Tags: waterproof, blackout
 
   // Shades - map to primary category
   'light-filtering-roller-shades': 'roller-blinds', // Primary: roller-blinds, Tag: light-filtering
@@ -140,6 +144,7 @@ export const NAVIGATION_SLUG_MAPPING: Record<string, string> = {
 export const NAVIGATION_TAG_FILTERS: Record<string, string[]> = {
   'light-filtering-vertical-blinds': ['light-filtering'],
   'blackout-vertical-blinds': ['blackout'],
+  'waterproof-blackout-vertical-blinds': ['waterproof', 'blackout'],
   'light-filtering-roller-shades': ['light-filtering'],
   'blackout-roller-shades': ['blackout'],
   'waterproof-blackout-roller-shades': ['waterproof', 'blackout'],
