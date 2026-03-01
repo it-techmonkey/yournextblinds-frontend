@@ -60,14 +60,14 @@ export const ROLLER_INSTALLATION_OPTIONS = [
     name: 'Inside Mount',
     description: 'Blinds are mounted inside the window recess.',
     price: 0,
-    image: '/products/installation/insideMount.png',
+    image: '/products/installation/rollerInsideMount.png',
   },
   {
     id: 'outside-mount',
     name: 'Outside Mount',
     description: 'Blinds are mounted outside the window recess on the wall or frame.',
     price: 0,
-    image: '/products/installation/outsideMount.png',
+    image: '/products/installation/rollerOutsideMount.png',
   },
 ];
 
@@ -342,13 +342,13 @@ export const BOTTOM_BAR_OPTIONS = [
     id: 'grey-round-bar',
     name: 'Grey Round Bar',
     price: 8.00,
-    image: '/products/bottomBar/greyRoundBar.png',
+    image: '/products/bottomBar/Grey_round_bar.png',
   },
   {
     id: 'white-round-bar',
     name: 'White Round Bar',
     price: 8.00,
-    image: '/products/bottomBar/whiteRoundBar.png',
+    image: '/products/bottomBar/White_round_bar.png',
   },
   {
     id: 'full-fabric-cover-premium-bar',
@@ -361,15 +361,17 @@ export const BOTTOM_BAR_OPTIONS = [
 // Roll Style Options (used for roller blinds)
 export const ROLL_STYLE_OPTIONS = [
   {
-    id: 'front-roll',
-    name: 'Front Roll',
+    id: 'standard-roll',
+    name: 'Standard Roll',
+    description: 'Fabric rolls down from the back, roller tube is visible.',
     price: 0,
-    image: '/products/rollStyle/frontRoll.png',
+    image: '/products/rollStyle/Standard_roll.png',
   },
   {
-    id: 'back-roll',
-    name: 'Back Roll',
+    id: 'reverse-roll',
+    name: 'Reverse Roll',
+    description: 'Fabric rolls down from the front, roller tube is not visible.',
     price: 0,
-    image: '/products/rollStyle/backRoll.png',
+    image: '/products/rollStyle/Reverse_roll.png',
   },
 ];
