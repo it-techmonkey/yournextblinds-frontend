@@ -1,0 +1,61 @@
+import Image from 'next/image';
+
+const features = [
+  { id: 1, title: 'First in your Letterbox', description: 'No need to stay in or wait around.' },
+  { id: 2, title: 'Delivered in a Day', description: 'No need to stay in or wait around.' },
+  { id: 3, title: 'Find Your Perfect Blinds', description: 'Choose from a wide range of Products' },
+];
+
+const FreeSamples = () => {
+  return (
+    <section className="bg-neutral-50 px-4 md:px-6 lg:px-20 py-12 md:py-16 lg:py-24">
+      <div className="max-w-[1200px] mx-auto flex flex-col gap-8 md:gap-10 lg:gap-12">
+        <div className="flex flex-col gap-3 md:gap-4 text-center lg:text-left">
+          <h2 className="text-2xl md:text-3xl lg:text-[40px] font-medium text-[#3a3a3a] tracking-tight leading-tight">
+            Fast, Free Samples
+          </h2>
+          <p className="text-sm md:text-base lg:text-lg text-[#484848] leading-relaxed max-w-[700px] mx-auto lg:mx-0">
+            Feel the quality of blinds for yourself and enjoy up to 10 FREE samples of our blinds delivered at ZERO cost.
+          </p>
+        </div>
+        
+        <div className="flex flex-col lg:flex-row gap-8 md:gap-10 lg:gap-16 justify-between">
+          <div className="flex flex-col justify-between h-auto lg:h-[480px] w-full lg:w-[380px] order-2 lg:order-1">
+            <div className="flex flex-col gap-5 md:gap-6 lg:gap-0 lg:justify-between lg:h-[380px]">
+              {features.map((feature, index) => (
+                <div key={feature.id}>
+                  <div className="pb-4 md:pb-5 text-center lg:text-left">
+                    <h3 className="text-base md:text-lg lg:text-xl font-medium text-[#3a3a3a] leading-snug mb-1">
+                      {feature.title}
+                    </h3>
+                    <p className="text-sm md:text-base lg:text-lg text-[#484848] leading-relaxed">
+                      {feature.description}
+                    </p>
+                  </div>
+                  {index < features.length - 1 && (
+                    <div className="h-px bg-[#e1dcd4] w-full" />
+                  )}
+                </div>
+              ))}
+            </div>
+            
+            <button className="mt-6 md:mt-8 lg:mt-0 w-full md:w-fit mx-auto lg:mx-0 bg-[#00473c] text-white px-6 md:px-8 py-3 md:py-4 rounded text-sm md:text-base lg:text-lg font-medium tracking-wider hover:bg-[#003a31] transition-colors">
+              Order Now
+            </button>
+          </div>
+          
+          <div className="relative w-full lg:w-[787px] h-[300px] md:h-[400px] lg:h-[525px] order-1 lg:order-2">
+            <Image
+              src="/home/samples.jpg"
+              alt="Free samples"
+              fill
+              className="object-cover"
+            />
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+export default FreeSamples;
