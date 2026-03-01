@@ -730,7 +730,6 @@ const ProductPage = ({
                                     selectedValue={config.bottomBar}
                                     onChange={(optionId) => setConfig({ ...config, bottomBar: optionId })}
                                     placeholder="Select bottom bar style"
-                                    showOptionImageHelp
                                   />
                                 </div>
                               )}
