@@ -21,6 +21,7 @@ interface SimpleDropdownProps {
 }
 
 const SimpleDropdown = ({ label, options, selectedValue, onChange, placeholder = 'Select', showOptionImageHelp = false }: SimpleDropdownProps) => {
+  const showHelpIcons = showOptionImageHelp || label === 'Select Bottom Bar';
   const [isOpen, setIsOpen] = useState(false);
   const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0, width: 0 });
   const [imagePreview, setImagePreview] = useState<{ name: string; image: string } | null>(null);
@@ -126,19 +127,19 @@ const SimpleDropdown = ({ label, options, selectedValue, onChange, placeholder =
                   key={option.id}
                   className={`w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3 border-b border-gray-100 last:border-0 transition-colors ${selectedValue === option.id ? 'bg-[#f6fffd]' : ''}`}
                 >
-                  {/* Question mark to show image preview - only when option has image and help is enabled */}
-                  {showOptionImageHelp && option.image ? (
+                  {/* Question mark to show image preview - when option has image (e.g. Grey/White Round Bar) */}
+                  {showHelpIcons && option.image ? (
                     <button
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
                         setImagePreview({ name: option.name, image: option.image! });
                       }}
-                      className="w-6 h-6 rounded-full border border-gray-400 flex items-center justify-center text-gray-500 hover:border-[#00473c] hover:text-[#00473c] hover:bg-[#f6fffd] shrink-0 transition-colors"
+                      className="w-7 h-7 rounded-full border-2 border-gray-400 flex items-center justify-center text-gray-600 hover:border-[#00473c] hover:text-[#00473c] hover:bg-[#f6fffd] shrink-0 transition-colors flex-shrink-0"
                       title={`View ${option.name}`}
                       aria-label={`Show image for ${option.name}`}
                     >
-                      <span className="text-xs font-semibold">?</span>
+                      <span className="text-sm font-bold leading-none">?</span>
                     </button>
                   ) : null}
                   <button
