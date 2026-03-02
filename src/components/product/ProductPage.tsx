@@ -85,8 +85,8 @@ const ProductPage = ({
   const fetchingRef = useRef(false);
 
   // Collapsible sections state
-  const [isMeasureOpen, setIsMeasureOpen] = useState(false);
-  const [isCustomizeOpen, setIsCustomizeOpen] = useState(false);
+  const [isMeasureOpen, setIsMeasureOpen] = useState(true);
+  const [isCustomizeOpen, setIsCustomizeOpen] = useState(true);
 
   // Selected optional customization cards (multi-select)
   const [selectedOptionalCards, setSelectedOptionalCards] = useState<{
