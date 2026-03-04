@@ -39,7 +39,7 @@ export const navigationData: NavigationItem[] = [
     submenu: [
       { label: 'Motorised roller shades', href: '/collections/motorised-roller-shades' },
       { label: 'Motorised Dual zebra shades', href: '/collections/motorised-dual-zebra-shades' },
-      { label: 'Motorised EclipseCore', href: '/collections/motorised-eclipsecore' },
+      { label: 'Motorised EclipseCore', href: '/product/non-driii-honeycomb-blackout-blinds?motorized=true' },
     ]
   },
   {
@@ -156,5 +156,5 @@ export const NAVIGATION_TAG_FILTERS: Record<string, string[]> = {
 // Mapping of navigation slugs to required secondary categories for filtering
 // Products must have the specified secondary category to appear on these pages
 export const NAVIGATION_CATEGORY_FILTERS: Record<string, string[]> = {
-  'motorised-eclipsecore': ['motorized-blinds'],
+  // motorised-eclipsecore intentionally omitted — shows all EclipseCore products with motorization pre-selected
 };

@@ -108,7 +108,7 @@ export default async function ProductPageRoute({ params }: ProductPageProps) {
 
   return (
     <>
-      <TopBar />
+      {/* <TopBar /> */}
       <Header />
       <NavBar />
       <main className="bg-white min-h-screen">

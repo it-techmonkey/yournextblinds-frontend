@@ -63,7 +63,7 @@ export default function LoginPage() {
 
   return (
     <div className="bg-[#FAF9F6] min-h-screen flex flex-col">
-      <TopBar />
+      {/* <TopBar /> */}
       <Header />
       <NavBar />
 

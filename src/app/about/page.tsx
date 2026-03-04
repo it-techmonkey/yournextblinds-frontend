@@ -40,7 +40,7 @@ export default function AboutPage() {
     <div className="min-h-screen bg-white">
       {/* Header Section */}
       <header className="sticky top-0 z-50 bg-white shadow-sm">
-        <TopBar />
+        {/* <TopBar /> */}
         <Header />
         <NavBar />
       </header>

@@ -20,7 +20,7 @@ export default function AccountPage() {
   if (isLoading) {
     return (
       <div className="bg-[#FAF9F6] min-h-screen flex flex-col">
-        <TopBar />
+        {/* <TopBar /> */}
         <Header />
         <NavBar />
         <main className="flex-1 flex items-center justify-center">
@@ -93,7 +93,7 @@ export default function AccountPage() {
 
   return (
     <div className="bg-[#FAF9F6] min-h-screen flex flex-col">
-      <TopBar />
+      {/* <TopBar /> */}
       <Header />
       <NavBar />
 

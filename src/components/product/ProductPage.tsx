@@ -10,6 +10,7 @@ import ProductReviews from './ProductReviews';
 import RelatedProducts from './RelatedProducts';
 import StarRating from './StarRating';
 import { formatPrice, formatPriceWithCurrency, fetchPriceMatrix, fetchCustomizationPricing, validateCartPrice } from '@/lib/api';
+import { PRODUCT_GUIDES } from '@/data/guides';
 import {
   calculateTotalPrice,
   configToCustomizations,
@@ -104,9 +105,12 @@ const ProductPage = ({
     bottomBar: false,
   });
 
+  // Force motorization when arriving from a motorised collection page (e.g. Motorised EclipseCore)
+  const forceMotorization = searchParams.get('motorized') === 'true';
+
   // Pre-select motorization when arriving from a motorised collection page
   useEffect(() => {
-    if (searchParams.get('motorized') === 'true' && product.features.hasMotorization) {
+    if (forceMotorization) {
       setSelectedOptionalCards((prev) => ({
         ...prev,
         motorization: true,
@@ -179,6 +183,14 @@ const ProductPage = ({
   const isDayNight = useMemo(() => {
     const category = product.category.toLowerCase();
     return category.includes('day') || category.includes('night') || category.includes('zebra');
+  }, [product.category]);
+
+  const guideType = useMemo(() => {
+    const cat = product.category.toLowerCase();
+    if (cat.includes('vertical'))                                               return 'vertical' as const;
+    if (cat.includes('zebra') || cat.includes('day') || cat.includes('night')) return 'zebra' as const;
+    if (cat.includes('roller'))                                                return 'roller' as const;
+    return null;
   }, [product.category]);
 
   const installationOptions = isDayNight
@@ -926,9 +938,11 @@ const ProductPage = ({
                           )}
 
                           {/* Motorization Card */}
-                          {product.features.hasMotorization && (
+                          {(product.features.hasMotorization || forceMotorization) && (
                             <div
                               onClick={() => {
+                                // When forced (e.g. Motorised EclipseCore), don't allow toggling off
+                                if (forceMotorization) return;
                                 const newValue = !selectedOptionalCards.motorization;
                                 setSelectedOptionalCards({
                                   ...selectedOptionalCards,
@@ -1014,6 +1028,28 @@ const ProductPage = ({
               >
                 {isValidating ? 'Adding to Cart...' : 'Add to Cart'}
               </button>
+
+              {/* Installation & Measurement Guide Buttons */}
+              {guideType && (
+                <div className="flex gap-3 mt-3">
+                  <a
+                    href={PRODUCT_GUIDES[guideType].installation}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1 py-2.5 border border-[#00473c] text-[#00473c] text-sm font-medium rounded-lg text-center hover:bg-[#f0fdf9] transition-colors"
+                  >
+                    Installation Guide
+                  </a>
+                  <a
+                    href={PRODUCT_GUIDES[guideType].measurement}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1 py-2.5 border border-[#00473c] text-[#00473c] text-sm font-medium rounded-lg text-center hover:bg-[#f0fdf9] transition-colors"
+                  >
+                    Measurement Guide
+                  </a>
+                </div>
+              )}
             </div>
           </div>
         </div>

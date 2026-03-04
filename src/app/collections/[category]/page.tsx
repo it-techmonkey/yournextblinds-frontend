@@ -132,12 +132,13 @@ export default async function CollectionPage({ params }: PageProps) {
   // Pre-select motorization when browsing motorised collections
   const preselectedMotorization =
     categorySlug === 'motorised-roller-shades' ||
-    categorySlug === 'motorised-dual-zebra-shades';
+    categorySlug === 'motorised-dual-zebra-shades' ||
+    categorySlug === 'motorised-eclipsecore';
 
   return (
     <div className="min-h-screen bg-[#fafafa]">
       <header className="sticky top-0 z-50 bg-white shadow-sm">
-        <TopBar />
+        {/* <TopBar /> */}
         <Header />
         <NavBar />
       </header>

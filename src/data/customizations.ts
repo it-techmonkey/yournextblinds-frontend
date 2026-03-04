@@ -24,14 +24,14 @@ export const INSTALLATION_METHOD_OPTIONS = [
     name: 'Inside Mount',
     description: 'Blinds are fitted inside the window recess for a clean, integrated look.',
     price: 0,
-    image: '/products/installation/insideMount.png',
+    image: '/products/installation/rollerInsideMount.png',
   },
   {
     id: 'outside-mount',
     name: 'Outside Mount',
     description: 'Blinds are mounted outside the window recess on the wall or frame.',
     price: 0,
-    image: '/products/installation/outsideMount.png',
+    image: '/products/installation/rollerOutsideMount.png',
   },
 ];
 

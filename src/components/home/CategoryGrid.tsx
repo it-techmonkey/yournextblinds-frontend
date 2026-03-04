@@ -16,6 +16,7 @@ const IMAGE_MAP: Record<string, string> = {
   '/collections/motorised-roller-shades':            '/home/categories/Motorised%20roller%20shades.png',
   '/collections/motorised-dual-zebra-shades':        '/home/categories/motorised%20zebra%20dual%20shades.png',
   '/collections/motorised-eclipsecore':              '/home/categories/motorised%20eclipsecore.png',
+  '/product/non-driii-honeycomb-blackout-blinds?motorized=true': '/home/categories/motorised%20eclipsecore.png',
   '/collections/blackout-roller-shades-category':    '/home/categories/Blackout%20roller%20Shades.png',
   '/collections/blackout-dual-zebra-shades':         '/home/categories/Dual%20zebra%20Shades.png',
   '/collections/blackout-vertical-blinds-category':  '/home/categories/blackout%20vertical%20blinds.png',

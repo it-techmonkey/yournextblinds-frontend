@@ -288,7 +288,7 @@ export default function CartPage() {
     return (
       <div className="min-h-screen bg-[#fafafa]">
         <header className="sticky top-0 z-50 bg-white shadow-sm">
-          <TopBar />
+          {/* < /> */}
           <Header />
           <NavBar />
         </header>
@@ -321,7 +321,7 @@ export default function CartPage() {
   return (
     <div className="min-h-screen bg-[#fafafa]">
       <header className="sticky top-0 z-50 bg-white shadow-sm">
-        <TopBar />
+        {/* <TopBar /> */}
         <Header />
         <NavBar />
       </header>
