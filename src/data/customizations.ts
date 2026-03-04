@@ -71,6 +71,24 @@ export const ROLLER_INSTALLATION_OPTIONS = [
   },
 ];
 
+// Installation method options specifically for dual zebra / day-night shades
+export const ZEBRA_INSTALLATION_OPTIONS = [
+  {
+    id: 'inside-mount',
+    name: 'Inside Mount',
+    description: 'Shades are mounted inside the window recess.',
+    price: 0,
+    image: '/products/installation/zebra-insideMount.png',
+  },
+  {
+    id: 'outside-mount',
+    name: 'Outside Mount',
+    description: 'Shades are mounted outside the window recess on the wall or frame.',
+    price: 0,
+    image: '/products/installation/zebra-outsideMount.png',
+  },
+];
+
 // Control options for roller blinds and day/night blinds (Left/Right)
 export const ROLLER_CONTROL_OPTIONS = [
   {
@@ -221,19 +239,19 @@ export const CASSETTE_MATCHING_BAR_OPTIONS = [
     id: 'white',
     name: 'White Standard',
     price: 0, // FREE
-    image: '/products/cassetteBar/white.png',
+    image: '/products/cassetteBar/zebra_shade_cassette_and_bottom_bar_white.png',
   },
   {
     id: 'black',
     name: 'Black',
     price: 18.50, // +$18.50
-    image: '/products/cassetteBar/black.png',
+    image: '/products/cassetteBar/zebra_shade_cassette_and_bottom_bar_black.png',
   },
   {
     id: 'grey',
     name: 'Grey',
     price: 18.50, // +$18.50
-    image: '/products/cassetteBar/grey.png',
+    image: '/products/cassetteBar/zebra_shade_cassette_and_bottom_bar_grey.png',
   },
 ];
 
@@ -354,7 +372,7 @@ export const BOTTOM_BAR_OPTIONS = [
     id: 'full-fabric-cover-premium-bar',
     name: 'Full Fabric Cover Premium Bar',
     price: 15.00,
-    image: '/products/bottomBar/fullFabric.png',
+    image: '/products/bottomBar/covered_bottom_bar_picture.png',
   },
 ];
 

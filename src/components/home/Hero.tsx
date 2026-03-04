@@ -5,9 +5,9 @@ import { useEffect, useState } from 'react';
 
 // Replace these paths with actual hero images when available
 const slides = [
-  { src: '/home/hero/hero-background.jpg', alt: 'Elegant window blinds' },
-  { src: '/home/hero/hero-background.jpg', alt: 'Beautiful roller blinds' },
-  { src: '/home/hero/hero-background.jpg', alt: 'Premium vertical blinds' },
+  { src: '/home/hero/hero-zebra.png', alt: 'Dual Zebra Shades' },
+  { src: '/home/hero/hero-roller.png', alt: 'Beautiful Blackout Roller Shades' },
+  { src: '/home/hero/hero-vertical.png', alt: 'Premium Vertical Blinds' },
 ];
 
 const INTERVAL_MS = 5000;

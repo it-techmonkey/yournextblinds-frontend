@@ -6,7 +6,7 @@ const Craftsmanship = () => {
       <div className="absolute inset-0">
         <Image
           src="/home/craftsmanship-bg.jpg"
-          alt="Yorkshire craftsmanship"
+          alt="Texas craftsmanship"
           fill
           className="object-cover"
         />

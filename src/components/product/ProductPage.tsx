@@ -39,6 +39,7 @@ import {
   HEADRAIL_COLOUR_OPTIONS,
   INSTALLATION_METHOD_OPTIONS,
   ROLLER_INSTALLATION_OPTIONS,
+  ZEBRA_INSTALLATION_OPTIONS,
   CONTROL_OPTIONS,
   ROLLER_CONTROL_OPTIONS,
   STACKING_OPTIONS,
@@ -175,7 +176,16 @@ const ProductPage = ({
     return category.includes('roller') || category.includes('day') || category.includes('night');
   }, [product.category]);
 
-  const installationOptions = isRollerOrDayNight ? ROLLER_INSTALLATION_OPTIONS : INSTALLATION_METHOD_OPTIONS;
+  const isDayNight = useMemo(() => {
+    const category = product.category.toLowerCase();
+    return category.includes('day') || category.includes('night') || category.includes('zebra');
+  }, [product.category]);
+
+  const installationOptions = isDayNight
+    ? ZEBRA_INSTALLATION_OPTIONS
+    : isRollerOrDayNight
+    ? ROLLER_INSTALLATION_OPTIONS
+    : INSTALLATION_METHOD_OPTIONS;
   const controlOptions = isRollerOrDayNight ? ROLLER_CONTROL_OPTIONS : CONTROL_OPTIONS;
 
   // Determine which options should be visible based on product type and selected headrail
@@ -907,6 +917,7 @@ const ProductPage = ({
                                       selectedValue={config.cassetteMatchingBar}
                                       onChange={(optionId) => setConfig({ ...config, cassetteMatchingBar: optionId })}
                                       placeholder="Select cassette and bottom bar"
+                                      showOptionImageHelp={true}
                                     />
                                   )}
                                 </div>

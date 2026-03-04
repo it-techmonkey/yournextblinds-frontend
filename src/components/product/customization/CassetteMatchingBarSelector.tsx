@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
+import { useState } from 'react';
 
 interface CassetteMatchingBarOption {
     id: string;
@@ -17,134 +17,95 @@ interface CassetteMatchingBarSelectorProps {
 }
 
 const CassetteMatchingBarSelector = ({ options, selectedBar, onBarChange }: CassetteMatchingBarSelectorProps) => {
-    const [isOpen, setIsOpen] = useState(false);
-    const dropdownRef = useRef<HTMLDivElement>(null);
-
-    // Close dropdown when clicking outside
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-                setIsOpen(false);
-            }
-        };
-
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
-        };
-    }, []);
-
-    const selectedOption = options.find(opt => opt.id === selectedBar);
+    const [hoveredOption, setHoveredOption] = useState<CassetteMatchingBarOption | null>(null);
 
     return (
         <div className="flex flex-col gap-4">
             <div className="flex items-center gap-2">
                 <h3 className="text-lg font-medium text-[#3a3a3a]">Cassette and Bottom Matching Bar</h3>
-                <button
-                    type="button"
-                    className="w-5 h-5 rounded-full border-2 border-gray-400 flex items-center justify-center text-gray-400 text-xs hover:border-gray-600 hover:text-gray-600"
-                >
-                    ?
-                </button>
             </div>
 
-            {/* Custom Dropdown */}
-            <div className="relative" ref={dropdownRef}>
-                <button
-                    type="button"
-                    onClick={() => setIsOpen(!isOpen)}
-                    className="w-full border-2 border-gray-300 rounded-lg p-3 bg-white text-left flex items-center justify-between hover:border-[#00473c] transition-colors"
-                >
-                    <span className="text-[#3a3a3a] font-medium">
-                        {selectedOption ? selectedOption.name : 'Select cassette color'}
-                    </span>
-                    <svg
-                        className={`w-5 h-5 text-gray-500 transition-transform ${isOpen ? 'rotate-180' : ''}`}
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {options.map((option) => (
+                    <div
+                        key={option.id}
+                        className="relative"
+                        onMouseEnter={() => setHoveredOption(option)}
+                        onMouseLeave={() => setHoveredOption(null)}
                     >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                </button>
+                        <button
+                            type="button"
+                            onClick={() => onBarChange(option.id)}
+                            className={`relative border-2 rounded-lg p-4 transition-all hover:border-[#00473c] flex flex-col items-center text-center h-full w-full ${
+                                selectedBar === option.id
+                                    ? 'border-[#00473c] bg-[#f6fffd] shadow-sm'
+                                    : 'border-gray-200 bg-white hover:shadow-sm'
+                            }`}
+                        >
+                            {/* Image */}
+                            <div className="relative w-full aspect-video mb-3 bg-gray-50 rounded-md overflow-hidden flex items-center justify-center">
+                                {option.image ? (
+                                    <Image
+                                        src={option.image}
+                                        alt={option.name}
+                                        fill
+                                        className="object-contain p-2"
+                                    />
+                                ) : (
+                                    <div className="w-full h-full bg-gray-100 flex items-center justify-center">
+                                        <span className="text-xs text-gray-300">No Image</span>
+                                    </div>
+                                )}
+                            </div>
 
-                {isOpen && (
-                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-80 overflow-y-auto">
-                        {options.map((option) => (
-                            <button
-                                key={option.id}
-                                type="button"
-                                onClick={() => {
-                                    onBarChange(option.id);
-                                    setIsOpen(false);
-                                }}
-                                className={`w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3 border-b border-gray-100 last:border-0 ${selectedBar === option.id ? 'bg-[#f6fffd]' : ''
-                                    }`}
-                            >
-                                {/* Thumbnail Image */}
-                                {option.image && (
-                                    <div className="w-10 h-10 bg-gray-100 rounded-md overflow-hidden flex-shrink-0 border border-gray-200">
+                            {/* Label & price */}
+                            <div className="flex flex-col grow justify-between w-full gap-2">
+                                <span className="text-sm font-medium text-[#3a3a3a] leading-tight">
+                                    {option.name}
+                                </span>
+                                {option.price != null && option.price > 0 ? (
+                                    <span className="text-[#00473c] text-xs font-bold">
+                                        +${option.price.toFixed(2)}
+                                    </span>
+                                ) : (
+                                    <span className="text-gray-400 text-xs">Included</span>
+                                )}
+                            </div>
+
+                            {selectedBar === option.id && (
+                                <div className="absolute top-2 right-2 w-5 h-5 bg-[#00473c] rounded-full flex items-center justify-center shadow-md z-10">
+                                    <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                    </svg>
+                                </div>
+                            )}
+                        </button>
+
+                        {/* Hover popover */}
+                        {hoveredOption?.id === option.id && option.image && (
+                            <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 z-20 pointer-events-none">
+                                <div className="bg-white rounded-lg shadow-xl border border-gray-200 p-2 max-w-[280px]">
+                                    <div className="relative w-[260px] aspect-4/3 rounded-md overflow-hidden bg-gray-50">
                                         <Image
                                             src={option.image}
                                             alt={option.name}
-                                            width={40}
-                                            height={40}
-                                            className="object-cover w-full h-full"
+                                            fill
+                                            className="object-contain"
+                                            sizes="260px"
                                         />
                                     </div>
-                                )}
-
-                                <div className="flex-grow">
-                                    <p className={`text-sm font-medium ${selectedBar === option.id ? 'text-[#00473c]' : 'text-[#3a3a3a]'}`}>
+                                    <p className="text-center text-sm font-medium text-[#3a3a3a] mt-2">
                                         {option.name}
                                     </p>
                                 </div>
-
-                                {option.price && option.price > 0 ? (
-                                    <span className="text-xs font-semibold bg-[#00473c] text-white px-2 py-1 rounded">
-                                        +${option.price.toFixed(2)}
-                                    </span>
-                                ) : null}
-                            </button>
-                        ))}
-                    </div>
-                )}
-            </div>
-
-            {/* Preview of selected option */}
-            {selectedOption && (
-                <div className="border border-gray-200 rounded-lg p-4 bg-gray-50 flex items-center gap-4">
-                    {selectedOption.image && (
-                        <div className="w-20 h-20 bg-white rounded-md overflow-hidden border border-gray-200 flex-shrink-0 flex items-center justify-center">
-                            <Image
-                                src={selectedOption.image}
-                                alt={selectedOption.name}
-                                width={80}
-                                height={80}
-                                className="object-contain"
-                            />
-                        </div>
-                    )}
-                    <div>
-                        <p className="font-medium text-[#3a3a3a]">{selectedOption.name}</p>
-                        {selectedOption.price && selectedOption.price > 0 ? (
-                            <p className="text-[#00473c] font-bold mt-1">+${selectedOption.price.toFixed(2)}</p>
-                        ) : (
-                            <p className="text-gray-500 text-sm mt-1">Included in price</p>
-                        )}
-                        <div className="flex items-center gap-1 mt-2 text-[#00473c] text-xs font-medium">
-                            <div className="w-4 h-4 rounded-full bg-[#00473c] flex items-center justify-center">
-                                <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                                </svg>
                             </div>
-                            Selected
-                        </div>
+                        )}
                     </div>
-                </div>
-            )}
+                ))}
+            </div>
         </div>
     );
 };
 
 export default CassetteMatchingBarSelector;
+

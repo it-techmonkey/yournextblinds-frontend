@@ -1,7 +1,27 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { navigationData } from '@/data/navigation';
 
-const EXCLUDED_LABELS = new Set(['All blinds and shades']);
+const EXCLUDED_LABELS = new Set(['All blinds and shades', 'Roller Shades', 'Vertical blinds']);
+
+// Map each collection href to its category image
+const IMAGE_MAP: Record<string, string> = {
+  '/collections/light-filtering-roller-shades':      '/home/categories/light%20filtering%20roller%20shades.png',
+  '/collections/blackout-roller-shades':             '/home/categories/Blackout%20roller%20Shades.png',
+  '/collections/waterproof-blackout-roller-shades':  '/home/categories/Waterproof%20Blackout%20roller%20Shades.png',
+  '/collections/dual-zebra-shades':                  '/home/categories/Dual%20zebra%20Shades.png',
+  '/collections/light-filtering-vertical-blinds':    '/home/categories/light%20filtering%20vertical%20blinds.png',
+  '/collections/blackout-vertical-blinds':           '/home/categories/blackout%20vertical%20blinds.png',
+  '/collections/waterproof-blackout-vertical-blinds':'/home/categories/water%20proof%20vertical%20blinds.png',
+  '/collections/motorised-roller-shades':            '/home/categories/Motorised%20roller%20shades.png',
+  '/collections/motorised-dual-zebra-shades':        '/home/categories/motorised%20zebra%20dual%20shades.png',
+  '/collections/motorised-eclipsecore':              '/home/categories/motorised%20eclipsecore.png',
+  '/collections/blackout-roller-shades-category':    '/home/categories/Blackout%20roller%20Shades.png',
+  '/collections/blackout-dual-zebra-shades':         '/home/categories/Dual%20zebra%20Shades.png',
+  '/collections/blackout-vertical-blinds-category':  '/home/categories/blackout%20vertical%20blinds.png',
+  '/collections/eclipsecore-shades':                 '/home/categories/eclipse%20core%20shades.png',
+  '/product/non-driii-honeycomb-blackout-blinds':    '/home/categories/eclipse%20core%20shades.png',
+};
 
 const categoryItems = navigationData
   .filter((item) => item.submenu)
@@ -11,6 +31,7 @@ const categoryItems = navigationData
       .map((sub) => ({
         label: sub.label,
         href: sub.href!,
+        image: IMAGE_MAP[sub.href!] ?? null,
       }))
   );
 
@@ -34,17 +55,31 @@ const CategoryGrid = () => {
             <Link
               key={cat.href}
               href={cat.href}
-              className="group flex items-center justify-between px-4 py-3.5 md:px-5 md:py-4 bg-white border border-[#e8e8e8] rounded-sm hover:border-[#00473c] hover:bg-[#f7faf9] transition-all duration-200"
+              className="group flex flex-col bg-white border border-[#e8e8e8] rounded-sm overflow-hidden hover:border-[#00473c] hover:shadow-md transition-all duration-200"
             >
-              <span className="text-sm md:text-[15px] font-medium text-[#3a3a3a] leading-snug group-hover:text-[#00473c] transition-colors duration-200">
-                {cat.label}
-              </span>
-              <svg
-                className="shrink-0 ml-2 text-[#b0b0b0] group-hover:text-[#00473c] transition-colors duration-200"
-                width="16" height="16" viewBox="0 0 16 16" fill="none"
-              >
-                <path d="M6 3L11 8L6 13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
+              {/* Image */}
+              {cat.image && (
+                <div className="relative w-full aspect-4/3 overflow-hidden">
+                  <Image
+                    src={cat.image}
+                    alt={cat.label}
+                    fill
+                    className="object-cover transition-transform duration-300 group-hover:scale-105"
+                  />
+                </div>
+              )}
+              {/* Label */}
+              <div className="flex items-center justify-between px-4 py-3 md:px-5 md:py-3.5">
+                <span className="text-sm md:text-[15px] font-medium text-[#3a3a3a] leading-snug group-hover:text-[#00473c] transition-colors duration-200">
+                  {cat.label}
+                </span>
+                <svg
+                  className="shrink-0 ml-2 text-[#b0b0b0] group-hover:text-[#00473c] transition-colors duration-200"
+                  width="16" height="16" viewBox="0 0 16 16" fill="none"
+                >
+                  <path d="M6 3L11 8L6 13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
             </Link>
           ))}
         </div>

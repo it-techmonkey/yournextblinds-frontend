@@ -45,9 +45,9 @@ export const navigationData: NavigationItem[] = [
   {
     label: 'Blackout',
     submenu: [
-      { label: 'Roller Shades', href: '/collections/blackout-roller-shades-category' },
-      { label: 'Dual/ zebra shades', href: '/collections/blackout-dual-zebra-shades' },
-      { label: 'Vertical blinds', href: '/collections/blackout-vertical-blinds-category' },
+      { label: 'Blackout Roller Shades', href: '/collections/blackout-roller-shades-category' },
+      { label: 'Blackout Dual zebra shades', href: '/collections/blackout-dual-zebra-shades' },
+      { label: 'Blackout Vertical blinds', href: '/collections/blackout-vertical-blinds-category' },
       { label: 'EclipseCore shades', href: '/product/non-driii-honeycomb-blackout-blinds' },
     ]
   },
@@ -101,7 +101,7 @@ export const COLLECTION_DISPLAY_NAMES: Record<string, string> = {
   'motorised-dual-zebra-shades': 'Motorised Dual zebra shades',
   'motorised-eclipsecore': 'Motorised EclipseCore',
   'blackout-roller-shades-category': 'Roller Shades',
-  'blackout-dual-zebra-shades': 'Dual/ zebra shades',
+  'blackout-dual-zebra-shades': 'Dual zebra shades',
   'blackout-vertical-blinds-category': 'Vertical blinds',
   'eclipsecore-shades': 'EclipseCore shades',
   'shop-by-feature': 'Shop by Feature',
