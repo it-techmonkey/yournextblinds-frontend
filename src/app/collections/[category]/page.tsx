@@ -5,6 +5,7 @@ import { Product, ApiProduct } from '@/types';
 import CategoryHero from '@/components/collection/CategoryHero';
 import ProductGridWithFilters from '@/components/collection/ProductGridWithFilters';
 import ComingSoon from '@/components/collection/ComingSoon';
+import CategoryInfoSection from '@/components/collection/CategoryInfoSection';
 import { ALL_COLLECTION_SLUGS, COLLECTION_DISPLAY_NAMES, NAVIGATION_SLUG_MAPPING, NAVIGATION_TAG_FILTERS, NAVIGATION_CATEGORY_FILTERS } from '@/data/navigation';
 
 interface PageProps {
@@ -165,6 +166,7 @@ export default async function CollectionPage({ params }: PageProps) {
           </div>
         </div>
 
+        <CategoryInfoSection categorySlug={backendSlug} />
         <FlashSale />
         <FAQ />
       </main>

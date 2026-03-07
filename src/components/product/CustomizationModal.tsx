@@ -43,6 +43,7 @@ import {
   CHAIN_COLOR_OPTIONS,
   WRAPPED_CASSETTE_OPTIONS,
   CASSETTE_MATCHING_BAR_OPTIONS,
+  ROLLER_CASSETTE_OPTIONS,
   MOTORIZATION_OPTIONS,
   BOTTOM_BAR_OPTIONS,
 } from '@/data/customizations';
@@ -206,6 +207,7 @@ const CustomizationModal = ({
       chainColor: config.chainColor,
       wrappedCassette: config.wrappedCassette,
       cassetteMatchingBar: config.cassetteMatchingBar,
+      isRollerCassette: product.features.hasRollerCassette,
       motorization: config.motorization,
       bottomBar: visibleOptions.showBottomBar ? config.bottomBar : null,
     });
@@ -452,7 +454,7 @@ const CustomizationModal = ({
                 {product.features.hasBottomChain && visibleOptions.showBottomChain && (
                   <div className="pt-6 relative z-30">
                     <BottomChainSelector
-                      options={BOTTOM_CHAIN_OPTIONS}
+                      options={BOTTOM_CHAIN_OPTIONS.filter(opt => !('pvcOnly' in opt) || product.features.hasPvcFabric)}
                       selectedChain={config.bottomChain}
                       onChainChange={(chainId) => setConfig({ ...config, bottomChain: chainId })}
                     />
@@ -501,7 +503,19 @@ const CustomizationModal = ({
                       selectedValue={config.cassetteMatchingBar}
                       onChange={(barId) => setConfig({ ...config, cassetteMatchingBar: barId })}
                       placeholder="Select cassette and bottom bar"
-                      showOptionImageHelp={true}
+                    />
+                  </div>
+                )}
+
+                {/* Roller Cassette Selector */}
+                {product.features.hasRollerCassette && (
+                  <div className="pt-6 relative z-[3]">
+                    <SimpleDropdown
+                      label="Cassette and Bottom Matching Bar"
+                      options={ROLLER_CASSETTE_OPTIONS}
+                      selectedValue={config.cassetteMatchingBar}
+                      onChange={(barId) => setConfig({ ...config, cassetteMatchingBar: barId })}
+                      placeholder="Select cassette color"
                     />
                   </div>
                 )}

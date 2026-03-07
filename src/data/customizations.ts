@@ -9,12 +9,12 @@ export const HEADRAIL_OPTIONS = [
 
 // Headrail colour options (used for vertical blinds)
 export const HEADRAIL_COLOUR_OPTIONS = [
-  { id: 'ice-white', name: 'Ice White', price: 12.10, image: '/products/headrail/colours/iceWhite.png' },
-  { id: 'brushed-aluminium', name: 'Brushed Aluminium', price: 14.52, image: '/products/headrail/colours/brushedAluminium.png' },
-  { id: 'anthacite-grey', name: 'Anthacite Grey', price: 13.91, image: '/products/headrail/colours/anthaciteGrey.png' },
-  { id: 'champagne-gold', name: 'Champagne Gold', price: 14.52, image: '/products/headrail/colours/champagneGold.png' },
-  { id: 'piano-black', name: 'Piano Black', price: 13.91, image: '/products/headrail/colours/pianoBlack.png' },
-  { id: 'espresso-brown', name: 'Espresso Brown', price: 13.91, image: '/products/headrail/colours/espressoBrown.png' },
+  { id: 'vouge-white', name: 'Vouge White', price: 12.10, image: '/products/headrail/colours/vouge-white-headrail.png' },
+  { id: 'vouge-silver', name: 'Vouge Silver', price: 14.52, image: '/products/headrail/colours/vouge-silver-headrail.png' },
+  { id: 'vouge-anthracite', name: 'Vouge Anthracite', price: 13.91, image: '/products/headrail/colours/vouge-anthracite-headrail.png' },
+  { id: 'vouge-gold', name: 'Vouge Gold', price: 14.52, image: '/products/headrail/colours/vouge-gold-headrail.png' },
+  { id: 'vouge-black', name: 'Vouge Black', price: 13.91, image: '/products/headrail/colours/vouge-black-headrail.png' },
+  { id: 'vouge-brown', name: 'Vouge Brown', price: 13.91, image: '/products/headrail/colours/vouge-brown-headrail.png' },
 ];
 
 // Installation method options (used for vertical blinds)
@@ -22,32 +22,39 @@ export const INSTALLATION_METHOD_OPTIONS = [
   {
     id: 'inside-mount',
     name: 'Inside Mount',
-    description: 'Blinds are fitted inside the window recess for a clean, integrated look.',
+    description: 'Measure inside width (min of 3 measurements) and inside height (max of 3 measurements). Best for deep window frames and a sleek, recessed look.',
     price: 0,
-    image: '/products/installation/rollerInsideMount.png',
+    image: '/products/installation/insidemountVerticalBlinds.png',
   },
   {
     id: 'outside-mount',
     name: 'Outside Mount',
-    description: 'Blinds are mounted outside the window recess on the wall or frame.',
+    description: 'Add 3–6" to frame width and 5–10" to frame height. Ideal when window frame depth is less than 2–3 inches.',
     price: 0,
-    image: '/products/installation/rollerOutsideMount.png',
+    image: '/products/installation/outsidemountVerticalBlinds.png',
   },
 ];
 
 // Control options (used for vertical blinds)
 export const CONTROL_OPTIONS = [
   {
-    id: 'wand',
-    name: 'Wand',
+    id: 'wand-control',
+    name: 'Wand Control',
     description: 'Control your blinds with a simple wand mechanism.',
     price: 0,
     image: '/products/control/wand.png',
   },
   {
-    id: 'cord-chain',
-    name: 'Cord & Chain',
-    description: 'Traditional cord and chain control system.',
+    id: 'chain-chord-right',
+    name: 'Chain Chord Right',
+    description: 'Chain chord control positioned on the right side.',
+    price: 0,
+    image: '/products/control/cordChain.png',
+  },
+  {
+    id: 'chain-chord-left',
+    name: 'Chain Chord Left',
+    description: 'Chain chord control positioned on the left side.',
     price: 0,
     image: '/products/control/cordChain.png',
   },
@@ -125,6 +132,31 @@ export const STACKING_OPTIONS = [
   },
 ];
 
+// Stacking options including split (available when chain chord control is selected)
+export const STACKING_OPTIONS_WITH_SPLIT = [
+  {
+    id: 'left',
+    name: 'Left',
+    description: 'Blinds stack to the left when opened.',
+    price: 0,
+    image: '/products/stacking/left.png',
+  },
+  {
+    id: 'right',
+    name: 'Right',
+    description: 'Blinds stack to the right when opened.',
+    price: 0,
+    image: '/products/stacking/right.png',
+  },
+  {
+    id: 'split',
+    name: 'Split',
+    description: 'Blinds split and stack to both sides when opened.',
+    price: 0,
+    image: '/products/stacking/split.png',
+  },
+];
+
 // Control side options (used for vertical blinds)
 export const CONTROL_SIDE_OPTIONS = [
   {
@@ -150,6 +182,13 @@ export const BOTTOM_CHAIN_OPTIONS = [
     name: 'Standard white weights & chains',
     price: 0,
     image: '/products/bottomChain/standardWhite.png',
+  },
+  {
+    id: 'pet-friendly',
+    name: 'Pet Friendly',
+    price: 0.50,
+    image: '/products/bottomChain/pet-friendly.png',
+    pvcOnly: true,
   },
   {
     id: 'white-chainless',
@@ -230,6 +269,34 @@ export const WRAPPED_CASSETTE_OPTIONS = [
     name: 'Yes',
     price: 20.00,
     image: '/products/cassette/yes.png',
+  },
+];
+
+// Cassette and bottom matching bar options for roller blinds
+export const ROLLER_CASSETTE_OPTIONS = [
+  {
+    id: 'white',
+    name: 'Standard White',
+    price: 12.99,
+    image: '/products/cassetteBar/standard-white-cassette-roller.png',
+  },
+  {
+    id: 'grey',
+    name: 'Premium Grey',
+    price: 18.50,
+    image: '/products/cassetteBar/grey-cassette-roller.png',
+  },
+  {
+    id: 'black',
+    name: 'Premium Black',
+    price: 18.50,
+    image: '/products/cassetteBar/black-cassette-roller.png',
+  },
+  {
+    id: 'matching-fabric',
+    name: 'Matching Fabric Cassette',
+    price: 23.99,
+    image: '/products/cassetteBar/premium-fabric-insert-cassette-roller.png',
   },
 ];
 

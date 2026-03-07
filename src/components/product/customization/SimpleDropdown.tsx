@@ -16,12 +16,9 @@ interface SimpleDropdownProps {
   selectedValue: string | null;
   onChange: (value: string) => void;
   placeholder?: string;
-  /** When true, options with an image show a ? icon that opens the image on click */
-  showOptionImageHelp?: boolean;
 }
 
-const SimpleDropdown = ({ label, options, selectedValue, onChange, placeholder = 'Select', showOptionImageHelp = false }: SimpleDropdownProps) => {
-  const showHelpIcons = showOptionImageHelp || label === 'Select Bottom Bar';
+const SimpleDropdown = ({ label, options, selectedValue, onChange, placeholder = 'Select' }: SimpleDropdownProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0, width: 0 });
   const [imagePreview, setImagePreview] = useState<{ name: string; image: string } | null>(null);
@@ -42,10 +39,6 @@ const SimpleDropdown = ({ label, options, selectedValue, onChange, placeholder =
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
-
-  useEffect(() => {
-    if (!isOpen) setImagePreview(null);
-  }, [isOpen]);
 
   useEffect(() => {
     if (isOpen && buttonRef.current) {
@@ -90,6 +83,11 @@ const SimpleDropdown = ({ label, options, selectedValue, onChange, placeholder =
           className="w-full border-2 border-gray-300 rounded-lg p-3 bg-white text-left flex items-center justify-between hover:border-[#00473c] transition-colors"
         >
           <div className="flex items-center gap-3 flex-1 min-w-0">
+            {selectedOption?.image && (
+              <div className="w-8 h-8 rounded-md overflow-hidden shrink-0 border border-gray-200 bg-gray-50">
+                <Image src={selectedOption.image} alt={selectedOption.name} width={32} height={32} className="object-cover w-full h-full" />
+              </div>
+            )}
             <span className="text-[#3a3a3a] font-medium truncate">
               {selectedOption ? selectedOption.name : placeholder}
             </span>
@@ -127,28 +125,29 @@ const SimpleDropdown = ({ label, options, selectedValue, onChange, placeholder =
                   key={option.id}
                   className={`w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3 border-b border-gray-100 last:border-0 transition-colors ${selectedValue === option.id ? 'bg-[#f6fffd]' : ''}`}
                 >
-                  {/* Question mark to show image preview - when option has image (e.g. Grey/White Round Bar) */}
-                  {showHelpIcons && option.image ? (
+                  {/* Clickable thumbnail — closes dropdown and opens image popup */}
+                  {option.image && (
                     <button
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
+                        setIsOpen(false);
                         setImagePreview({ name: option.name, image: option.image! });
                       }}
-                      className="w-7 h-7 rounded-full border-2 border-gray-400 flex items-center justify-center text-gray-600 hover:border-[#00473c] hover:text-[#00473c] hover:bg-[#f6fffd] shrink-0 transition-colors flex-shrink-0"
+                      className="w-10 h-10 rounded-md overflow-hidden shrink-0 border border-gray-200 bg-gray-50 hover:border-[#00473c] transition-colors cursor-pointer"
                       title={`View ${option.name}`}
-                      aria-label={`Show image for ${option.name}`}
+                      aria-label={`View image for ${option.name}`}
                     >
-                      <span className="text-sm font-bold leading-none">?</span>
+                      <Image src={option.image} alt={option.name} width={40} height={40} className="object-cover w-full h-full" />
                     </button>
-                  ) : null}
+                  )}
                   <button
                     type="button"
                     onClick={() => {
                       onChange(option.id);
                       setIsOpen(false);
                     }}
-                    className="flex-grow min-w-0 flex items-center gap-3 text-left"
+                    className="grow min-w-0 flex items-center gap-3 text-left"
                   >
                     <p className={`text-sm font-medium ${selectedValue === option.id ? 'text-[#00473c]' : 'text-[#3a3a3a]'}`}>
                       {option.name}
@@ -174,15 +173,15 @@ const SimpleDropdown = ({ label, options, selectedValue, onChange, placeholder =
           </>
         )}
 
-        {/* Image preview modal - when user clicks ? on an option that has an image */}
+        {/* Image preview modal */}
         {imagePreview && (
           <>
             <div
-              className="fixed inset-0 z-[99997] bg-black/50"
+              className="fixed inset-0 z-[100000] bg-black/50"
               onClick={() => setImagePreview(null)}
               aria-hidden="true"
             />
-            <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[99999] bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden max-w-[90vw] max-h-[90vh] flex flex-col">
+            <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[100001] bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden max-w-[90vw] max-h-[90vh] flex flex-col">
               <div className="relative w-[280px] sm:w-[320px] aspect-[4/3] bg-gray-50 flex items-center justify-center p-4">
                 <Image
                   src={imagePreview.image}

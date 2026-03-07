@@ -9,6 +9,7 @@ import ProductGallery from './ProductGallery';
 import ProductReviews from './ProductReviews';
 import RelatedProducts from './RelatedProducts';
 import StarRating from './StarRating';
+import CategoryInfoSection from '@/components/collection/CategoryInfoSection';
 import { formatPrice, formatPriceWithCurrency, fetchPriceMatrix, fetchCustomizationPricing, validateCartPrice } from '@/lib/api';
 import { PRODUCT_GUIDES } from '@/data/guides';
 import {
@@ -44,12 +45,14 @@ import {
   CONTROL_OPTIONS,
   ROLLER_CONTROL_OPTIONS,
   STACKING_OPTIONS,
+  STACKING_OPTIONS_WITH_SPLIT,
   CONTROL_SIDE_OPTIONS,
   BOTTOM_CHAIN_OPTIONS,
   BRACKET_TYPE_OPTIONS,
   CHAIN_COLOR_OPTIONS,
   WRAPPED_CASSETTE_OPTIONS,
   CASSETTE_MATCHING_BAR_OPTIONS,
+  ROLLER_CASSETTE_OPTIONS,
   MOTORIZATION_OPTIONS,
   BLIND_COLOR_OPTIONS,
   FRAME_COLOR_OPTIONS,
@@ -200,6 +203,20 @@ const ProductPage = ({
     : INSTALLATION_METHOD_OPTIONS;
   const controlOptions = isRollerOrDayNight ? ROLLER_CONTROL_OPTIONS : CONTROL_OPTIONS;
 
+  // Dynamic stacking options for vertical blinds: chain chord controls unlock the split option
+  const stackingOptions = useMemo(() => {
+    const isChainChord = config.controlOption === 'chain-chord-right' || config.controlOption === 'chain-chord-left';
+    return isChainChord ? STACKING_OPTIONS_WITH_SPLIT : STACKING_OPTIONS;
+  }, [config.controlOption]);
+
+  // Reset stacking to null if the user switches to wand-control and had split selected
+  useEffect(() => {
+    if (config.controlOption === 'wand-control' && config.stacking === 'split') {
+      setConfig((prev) => ({ ...prev, stacking: null }));
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [config.controlOption]);
+
   // Determine which options should be visible based on product type and selected headrail
   const visibleOptions = useMemo(() => {
     const headrail = config.headrail;
@@ -274,6 +291,7 @@ const ProductPage = ({
       chainColor: config.chainColor,
       wrappedCassette: config.wrappedCassette,
       cassetteMatchingBar: config.cassetteMatchingBar,
+      isRollerCassette: product.features.hasRollerCassette,
       motorization: config.motorization,
       bottomBar: visibleOptions.showBottomBar ? config.bottomBar : null,
       rollStyle: visibleOptions.showRollStyle ? config.rollStyle : null,
@@ -417,7 +435,7 @@ const ProductPage = ({
         <div className="max-w-[1400px] mx-auto px-4 md:px-6 lg:px-8">
           <div className="flex flex-col lg:flex-row gap-6 md:gap-8 lg:gap-12">
             {/* Left - Gallery with Thumbnails on Left */}
-            <div className="w-full lg:w-1/2">
+            <div className="w-full lg:w-1/2 lg:sticky lg:top-8 lg:self-start">
               <ProductGallery images={product.images} videos={product.videos} productName={product.name} />
             </div>
 
@@ -446,8 +464,8 @@ const ProductPage = ({
                   </svg>
                 </div>
                 <div className="ml-2 md:ml-3">
-                  <div className="text-[10px] md:text-xs text-gray-500">Estimated Shipping Date</div>
-                  <div className="text-xs md:text-sm font-semibold text-[#00473c]">{product.estimatedDelivery}</div>
+                  <div className="text-[10px] md:text-xs text-gray-500">Estimated Delivery Date</div>
+                  <div className="text-xs md:text-sm font-semibold text-[#00473c]">12 Working Days</div>
                 </div>
               </div>
 
@@ -607,7 +625,7 @@ const ProductPage = ({
                       {product.features.hasStacking && visibleOptions.showStacking && (
                         <div className="pt-6">
                           <StackingSelector
-                            options={STACKING_OPTIONS}
+                            options={stackingOptions}
                             selectedStacking={config.stacking}
                             onStackingChange={(stackingId) => setConfig({ ...config, stacking: stackingId })}
                           />
@@ -619,7 +637,7 @@ const ProductPage = ({
                       {product.features.hasBottomChain && visibleOptions.showBottomChain && (
                         <div className="pt-6">
                           <BottomChainSelector
-                            options={BOTTOM_CHAIN_OPTIONS}
+                            options={BOTTOM_CHAIN_OPTIONS.filter(opt => !('pvcOnly' in opt) || product.features.hasPvcFabric)}
                             selectedChain={config.bottomChain}
                             onChainChange={(chainId) => setConfig({ ...config, bottomChain: chainId })}
                           />
@@ -767,7 +785,6 @@ const ProductPage = ({
                                     selectedValue={config.bottomBar}
                                     onChange={(optionId) => setConfig({ ...config, bottomBar: optionId })}
                                     placeholder="Select bottom bar style"
-                                    showOptionImageHelp={true}
                                   />
                                 </div>
                               )}
@@ -853,7 +870,7 @@ const ProductPage = ({
                           )}
 
                           {/* Cassette and Bottom Matching Bar Card */}
-                          {(product.features.hasWrappedCassette || product.features.hasCassetteMatchingBar) && (
+                          {(product.features.hasWrappedCassette || product.features.hasCassetteMatchingBar || product.features.hasRollerCassette) && (
                             <div
                               onClick={() => {
                                 const newValue = !selectedOptionalCards.cassette;
@@ -929,7 +946,15 @@ const ProductPage = ({
                                       selectedValue={config.cassetteMatchingBar}
                                       onChange={(optionId) => setConfig({ ...config, cassetteMatchingBar: optionId })}
                                       placeholder="Select cassette and bottom bar"
-                                      showOptionImageHelp={true}
+                                    />
+                                  )}
+                                  {product.features.hasRollerCassette && (
+                                    <SimpleDropdown
+                                      label="Cassette and Bottom Matching Bar"
+                                      options={ROLLER_CASSETTE_OPTIONS}
+                                      selectedValue={config.cassetteMatchingBar}
+                                      onChange={(optionId) => setConfig({ ...config, cassetteMatchingBar: optionId })}
+                                      placeholder="Select cassette color"
                                     />
                                   )}
                                 </div>
@@ -1056,48 +1081,10 @@ const ProductPage = ({
       </section>
 
       {/* Product Details Section - Full Width */}
-      {(
-        <section className="px-4 md:px-6 lg:px-20 py-6 bg-white">
-          <div className="bg-white rounded-lg border border-gray-200 px-3 md:px-4 py-4 md:py-6">
-            <div className="flex flex-col gap-8">
-              {/* Product Details */}
-              <div className="flex flex-col gap-1.5">
-                <h3 className="text-lg font-medium text-black">Product Details</h3>
-                <div className="text-sm text-[#141414] leading-[1.3]">
-                  <p className="mb-3">
-                    Textured Vinyl Vertical Blinds give large windows and sliding glass doors a high-design style not often found in vertical blinds products. Featuring 3 1/2&quot; wide slats that come in an alluring assortment of soft pastels and richly-tinted jewel tones, their hues are enhanced by textural appeal.
-                  </p>
-                  <p className="mb-3">
-                    These blinds&apos; beauty is matched with durability, too. They include a deluxe track with self-aligning carriers, a heavy-duty aluminum channel designed to ensure equal spacing, and synchronized slats action. It all adds up to functionality and aesthetics you&apos;ll love to live with every day.
-                  </p>
-                  <p>
-                    <span className="font-bold">Install Time:</span> 20 - 25 minutes
-                  </p>
-                </div>
-              </div>
+      <CategoryInfoSection categorySlug={product.category.toLowerCase().replace(/\s+/g, '-')} />
 
-              {/* We Recommend */}
-              <div className="flex flex-col gap-1.5">
-                <h3 className="text-lg font-medium text-black">We Recommend</h3>
-                <p className="text-sm text-[#141414] leading-[1.3]">
-                  Choose the optional valance to give a well-coordinated, finished look – and to help control dust!
-                </p>
-              </div>
-
-              {/* Considerations */}
-              <div className="flex flex-col gap-1.5">
-                <h3 className="text-lg font-medium text-black">Considerations</h3>
-                <p className="text-sm text-[#141414] leading-[1.3]">
-                  Vinyl Vertical Blinds may be specified to stack on either side of the window or split down the middle when open. Please consider your view before specifying.
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* Reviews Section */}
-      {product.slug !== 'non-driii-honeycomb-blackout-blinds' && (
+      {/* Reviews Section — hidden */}
+      {false && product.slug !== 'non-driii-honeycomb-blackout-blinds' && (
         <section className="px-4 md:px-6 lg:px-20 py-8 md:py-12 bg-white border-t border-gray-100">
           <div className="max-w-[1400px] mx-auto px-4 md:px-6 lg:px-8">
             <ProductReviews

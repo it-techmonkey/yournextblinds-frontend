@@ -1,9 +1,9 @@
 import Image from 'next/image';
 
 const features = [
-  { id: 1, title: 'First in your Letterbox', description: 'No need to stay in or wait around.' },
-  { id: 2, title: 'Delivered in a Day', description: 'No need to stay in or wait around.' },
-  { id: 3, title: 'Find Your Perfect Blinds', description: 'Choose from a wide range of Products' },
+  { id: 1, title: 'First in your Letterbox', description: 'Samples are posted directly through your letterbox — no waiting in required.' },
+  { id: 2, title: 'Available on Selected Products', description: 'Free samples are offered on specific fabric ranges. Look for the sample option on eligible product pages.' },
+  { id: 3, title: 'Find Your Perfect Match', description: 'See how our fabrics and colours look in your own home before placing your order.' },
 ];
 
 const FreeSamples = () => {
@@ -15,7 +15,7 @@ const FreeSamples = () => {
             Fast, Free Samples
           </h2>
           <p className="text-sm md:text-base lg:text-lg text-[#484848] leading-relaxed max-w-[700px] mx-auto lg:mx-0">
-            Feel the quality of blinds for yourself and enjoy up to 10 FREE samples of our blinds delivered at ZERO cost.
+            Want to feel the quality before you buy? Order up to 10 FREE fabric samples for selected products — delivered straight to your door at absolutely no cost.
           </p>
         </div>
         

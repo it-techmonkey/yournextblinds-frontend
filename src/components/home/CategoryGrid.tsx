@@ -69,18 +69,7 @@ const CategoryGrid = () => {
                   />
                 </div>
               )}
-              {/* Label */}
-              <div className="flex items-center justify-between px-4 py-3 md:px-5 md:py-3.5">
-                <span className="text-sm md:text-[15px] font-medium text-[#3a3a3a] leading-snug group-hover:text-[#00473c] transition-colors duration-200">
-                  {cat.label}
-                </span>
-                <svg
-                  className="shrink-0 ml-2 text-[#b0b0b0] group-hover:text-[#00473c] transition-colors duration-200"
-                  width="16" height="16" viewBox="0 0 16 16" fill="none"
-                >
-                  <path d="M6 3L11 8L6 13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </div>
+
             </Link>
           ))}
         </div>

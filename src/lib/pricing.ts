@@ -213,6 +213,7 @@ export function configToCustomizations(config: {
   chainColor?: string | null;
   wrappedCassette?: string | null;
   cassetteMatchingBar?: string | null;
+  isRollerCassette?: boolean;
   motorization?: string | null;
   blindColor?: string | null;
   frameColor?: string | null;
@@ -253,7 +254,8 @@ export function configToCustomizations(config: {
     customizations.push({ category: 'wrapped-cassette', optionId: config.wrappedCassette });
   }
   if (config.cassetteMatchingBar) {
-    customizations.push({ category: 'cassette-bar', optionId: config.cassetteMatchingBar });
+    const cassetteCategory = config.isRollerCassette ? 'roller-cassette' : 'cassette-bar';
+    customizations.push({ category: cassetteCategory, optionId: config.cassetteMatchingBar });
   }
   if (config.motorization && config.motorization !== 'none') {
     customizations.push({ category: 'motorization', optionId: config.motorization });

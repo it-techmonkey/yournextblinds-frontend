@@ -27,6 +27,8 @@ export const CATEGORY_CUSTOMIZATIONS: Record<string, ProductFeatures> = {
         hasOpeningDirection: false,
         hasBottomBar: false,
         hasRollStyle: false,
+        hasPvcFabric: false,
+        hasRollerCassette: false,
     },
 
     // Roller Blinds
@@ -42,13 +44,15 @@ export const CATEGORY_CUSTOMIZATIONS: Record<string, ProductFeatures> = {
         hasBracketType: false,
         hasChainColor: true,
         hasWrappedCassette: false,
-        hasCassetteMatchingBar: true,
+        hasCassetteMatchingBar: false,
         hasMotorization: true,
         hasBlindColor: false,
         hasFrameColor: false,
         hasOpeningDirection: false,
         hasBottomBar: true,
         hasRollStyle: true,
+        hasPvcFabric: false,
+        hasRollerCassette: true,
     },
 
     // Roman Blinds
@@ -71,6 +75,8 @@ export const CATEGORY_CUSTOMIZATIONS: Record<string, ProductFeatures> = {
         hasOpeningDirection: false,
         hasBottomBar: false,
         hasRollStyle: false,
+        hasPvcFabric: false,
+        hasRollerCassette: false,
     },
 
     // Venetian Blinds
@@ -93,6 +99,8 @@ export const CATEGORY_CUSTOMIZATIONS: Record<string, ProductFeatures> = {
         hasOpeningDirection: false,
         hasBottomBar: false,
         hasRollStyle: false,
+        hasPvcFabric: false,
+        hasRollerCassette: false,
     },
 
     // Day and Night Blinds (Zebra Blinds / Dual Zebra Shades)
@@ -116,6 +124,8 @@ export const CATEGORY_CUSTOMIZATIONS: Record<string, ProductFeatures> = {
         hasOpeningDirection: false,
         hasBottomBar: false,
         hasRollStyle: false,
+        hasPvcFabric: false,
+        hasRollerCassette: false,
     },
 
 
@@ -139,6 +149,8 @@ export const CATEGORY_CUSTOMIZATIONS: Record<string, ProductFeatures> = {
         hasOpeningDirection: false,
         hasBottomBar: false,
         hasRollStyle: false,
+        hasPvcFabric: false,
+        hasRollerCassette: false,
     },
 
     // Wooden Blinds (similar to venetian)
@@ -161,6 +173,8 @@ export const CATEGORY_CUSTOMIZATIONS: Record<string, ProductFeatures> = {
         hasOpeningDirection: false,
         hasBottomBar: false,
         hasRollStyle: false,
+        hasPvcFabric: false,
+        hasRollerCassette: false,
     },
 
     // No Drill Blinds (similar to roller)
@@ -183,6 +197,8 @@ export const CATEGORY_CUSTOMIZATIONS: Record<string, ProductFeatures> = {
         hasOpeningDirection: false,
         hasBottomBar: false,
         hasRollStyle: false,
+        hasPvcFabric: false,
+        hasRollerCassette: false,
     },
 
     // Motorized Blinds (similar to roller with motorized control)
@@ -205,6 +221,8 @@ export const CATEGORY_CUSTOMIZATIONS: Record<string, ProductFeatures> = {
         hasOpeningDirection: false,
         hasBottomBar: false,
         hasRollStyle: false,
+        hasPvcFabric: false,
+        hasRollerCassette: false,
     },
 
     // Pleated Blinds
@@ -227,6 +245,8 @@ export const CATEGORY_CUSTOMIZATIONS: Record<string, ProductFeatures> = {
         hasOpeningDirection: false,
         hasBottomBar: false,
         hasRollStyle: false,
+        hasPvcFabric: false,
+        hasRollerCassette: false,
     },
 
     // EclipseCore Shades
@@ -249,6 +269,8 @@ export const CATEGORY_CUSTOMIZATIONS: Record<string, ProductFeatures> = {
         hasOpeningDirection: true,
         hasBottomBar: false,
         hasRollStyle: false,
+        hasPvcFabric: false,
+        hasRollerCassette: false,
     },
 
     // Default fallback for uncategorized products
@@ -271,6 +293,8 @@ export const CATEGORY_CUSTOMIZATIONS: Record<string, ProductFeatures> = {
         hasOpeningDirection: false,
         hasBottomBar: false,
         hasRollStyle: false,
+        hasPvcFabric: false,
+        hasRollerCassette: false,
     },
 };
 

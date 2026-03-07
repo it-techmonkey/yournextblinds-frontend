@@ -50,6 +50,8 @@ export interface ProductFeatures {
   hasOpeningDirection: boolean;
   hasBottomBar: boolean;
   hasRollStyle: boolean;
+  hasPvcFabric: boolean;
+  hasRollerCassette: boolean;
 }
 
 export interface Product {
@@ -245,6 +247,8 @@ export const DEFAULT_PRODUCT_FEATURES: ProductFeatures = {
   hasOpeningDirection: false,
   hasBottomBar: false,
   hasRollStyle: false,
+  hasPvcFabric: false,
+  hasRollerCassette: false,
 };
 
 export const DEFAULT_ESTIMATED_DELIVERY = '22 December 2025';

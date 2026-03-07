@@ -507,6 +507,13 @@ export function transformProduct(apiProduct: ApiProduct): Product {
   // Get category-specific customization features (pass all categories to handle multiple)
   const features = getCategoryCustomizations(categorySlugs);
 
+  // Enable pet-friendly chain option for waterproof vertical blinds
+  // 'waterproof-blackout-vertical-blinds' is a nav slug; backend products use category 'vertical-blinds' + 'waterproof' tag
+  const tagSlugs = apiProduct.tags.map(t => t.slug.toLowerCase());
+  const hasPvcFabric = categorySlugs.some(s => s.toLowerCase() === 'vertical-blinds') &&
+    tagSlugs.includes('waterproof');
+  features.hasPvcFabric = hasPvcFabric;
+
   return {
     id: apiProduct.id,
     name: apiProduct.title,
