@@ -59,6 +59,7 @@ export interface Product {
   name: string;
   slug: string;
   category: string;
+  tags: string[];
   price: number;
   currency: string;
   rating: number;

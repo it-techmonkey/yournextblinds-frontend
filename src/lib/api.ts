@@ -519,6 +519,7 @@ export function transformProduct(apiProduct: ApiProduct): Product {
     name: apiProduct.title,
     slug: apiProduct.slug,
     category: categoryName,
+    tags: apiProduct.tags.map(t => t.slug),
     price: formatPrice(price),
     currency: 'USD',
     rating: DEFAULT_RATING,

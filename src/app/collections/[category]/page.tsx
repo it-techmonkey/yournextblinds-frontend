@@ -5,8 +5,7 @@ import { Product, ApiProduct } from '@/types';
 import CategoryHero from '@/components/collection/CategoryHero';
 import ProductGridWithFilters from '@/components/collection/ProductGridWithFilters';
 import ComingSoon from '@/components/collection/ComingSoon';
-import CategoryInfoSection from '@/components/collection/CategoryInfoSection';
-import { ALL_COLLECTION_SLUGS, COLLECTION_DISPLAY_NAMES, NAVIGATION_SLUG_MAPPING, NAVIGATION_TAG_FILTERS, NAVIGATION_CATEGORY_FILTERS } from '@/data/navigation';
+import { ALL_COLLECTION_SLUGS, COLLECTION_DISPLAY_NAMES, COLLECTION_DESCRIPTIONS, NAVIGATION_SLUG_MAPPING, NAVIGATION_TAG_FILTERS, NAVIGATION_CATEGORY_FILTERS } from '@/data/navigation';
 
 interface PageProps {
   params: Promise<{ category: string }>;
@@ -101,8 +100,9 @@ export default async function CollectionPage({ params }: PageProps) {
   const categoryName = COLLECTION_DISPLAY_NAMES[categorySlug] || backendCategory?.name ||
     categorySlug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 
-  const categoryDescription = backendCategory?.description ||
-    `Explore our beautiful collection of ${categoryName.toLowerCase()} for your home.`;
+  const categoryDescription = COLLECTION_DESCRIPTIONS[categorySlug]
+    ?? backendCategory?.description
+    ?? `Explore our beautiful collection of ${categoryName.toLowerCase()} for your home.`;
 
   // Fetch products if we have a backend category
   let apiProducts: ApiProduct[] = [];
@@ -166,7 +166,6 @@ export default async function CollectionPage({ params }: PageProps) {
           </div>
         </div>
 
-        <CategoryInfoSection categorySlug={backendSlug} />
         <FlashSale />
         <FAQ />
       </main>

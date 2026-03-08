@@ -3,9 +3,12 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import categoryContent from '@/data/categoryContent';
+import { NAVIGATION_SLUG_MAPPING, NAVIGATION_TAG_FILTERS } from '@/data/navigation';
 
 interface CategoryInfoSectionProps {
   categorySlug: string;
+  /** Product tag slugs — used on product pages to resolve the most specific content */
+  productTags?: string[];
 }
 
 interface AccordionItem {
@@ -36,9 +39,49 @@ function AccordionRow({ item, isOpen, onToggle }: { item: AccordionItem; isOpen:
   );
 }
 
-export default function CategoryInfoSection({ categorySlug }: CategoryInfoSectionProps) {
+/**
+ * Given a backend category slug and the product's tag slugs, find the most
+ * specific content key.  e.g. category "vertical-blinds" + tags ["blackout"]
+ * → "blackout-vertical-blinds" content (if it exists).
+ */
+function resolveContentSlug(categorySlug: string, tags: string[]): string {
+  // Build a list of candidate nav slugs that map to the same backend category
+  const candidates: { slug: string; matchCount: number }[] = [];
+
+  for (const [navSlug, requiredTags] of Object.entries(NAVIGATION_TAG_FILTERS)) {
+    const backendSlug = NAVIGATION_SLUG_MAPPING[navSlug];
+    if (backendSlug !== categorySlug) continue;
+
+    // Check if the product has ALL tags required by this nav slug
+    const allMatch = requiredTags.every(t => tags.includes(t));
+    if (allMatch) {
+      candidates.push({ slug: navSlug, matchCount: requiredTags.length });
+    }
+  }
+
+  // Pick the most specific match (most tags matched)
+  candidates.sort((a, b) => b.matchCount - a.matchCount);
+
+  for (const c of candidates) {
+    if (categoryContent[c.slug]) return c.slug;
+  }
+
+  return categorySlug;
+}
+
+export default function CategoryInfoSection({ categorySlug, productTags }: CategoryInfoSectionProps) {
   const [openId, setOpenId] = useState<string | null>(null);
-  const content = categoryContent[categorySlug];
+
+  // On product pages productTags is provided — resolve the most specific content.
+  // On collection pages the slug is already the nav slug — try it directly,
+  // then fall back through the mapping.
+  let resolvedSlug = categorySlug;
+  if (productTags) {
+    // Product page: category is a backend slug like "vertical-blinds"
+    resolvedSlug = resolveContentSlug(categorySlug, productTags);
+  }
+  const content = categoryContent[resolvedSlug]
+    ?? categoryContent[NAVIGATION_SLUG_MAPPING[resolvedSlug] ?? ''];
 
   const toggle = (id: string) => setOpenId(prev => (prev === id ? null : id));
 
@@ -194,9 +237,11 @@ export default function CategoryInfoSection({ categorySlug }: CategoryInfoSectio
     },
   ];
 
+  const warrantyYears = resolvedSlug === 'waterproof-blackout-vertical-blinds' ? 10 : 5;
+
   return (
     <section className="bg-white border-t border-gray-100">
-      {/* 5-Year Guarantee — cohesive callout strip */}
+      {/* Guarantee — cohesive callout strip */}
       <div className="bg-[#f0fdf9] border-b border-[#00473c]/10 px-4 md:px-6 lg:px-20 py-8 md:py-10">
         <div className="max-w-[1400px] mx-auto flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-8">
           {/* Icon + badge */}
@@ -207,7 +252,7 @@ export default function CategoryInfoSection({ categorySlug }: CategoryInfoSectio
               </svg>
             </div>
             <div>
-              <p className="text-base font-semibold text-[#1a1a1a] leading-tight">5-Year Guarantee</p>
+              <p className="text-base font-semibold text-[#1a1a1a] leading-tight">{warrantyYears}-Year Guarantee</p>
               <p className="text-xs text-[#00473c]/70 font-medium">Manufacturer backed</p>
             </div>
           </div>
@@ -215,7 +260,7 @@ export default function CategoryInfoSection({ categorySlug }: CategoryInfoSectio
           <div className="hidden sm:block h-10 w-px bg-[#00473c]/15 shrink-0" />
           {/* Text */}
           <p className="text-sm text-[#484848] leading-relaxed">
-            Every blind we make is backed by a 5-Year Manufacturer Guarantee. If you experience a manufacturing
+            Every blind we make is backed by a {warrantyYears}-Year Manufacturer Guarantee. If you experience a manufacturing
             defect, contact us at{' '}
             <a href="mailto:info@yournextblinds.com" className="text-[#00473c] hover:underline">
               info@yournextblinds.com
