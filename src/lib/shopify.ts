@@ -387,16 +387,22 @@ async function getMinimumPrices(): Promise<Record<string, number>> {
     return cachedMinimumPrices;
   }
 
-  const base = getApiBaseUrl();
   const isServerSide = typeof window === 'undefined';
+
+  // On the server, call pricing service directly instead of HTTP-calling our own API route.
+  // This avoids 401 issues on Vercel deployments with protection enabled.
+  if (isServerSide) {
+    const pricingService = await import('@/lib/server/pricing.service');
+    cachedMinimumPrices = await pricingService.getMinimumPricesByHandle();
+    pricesCacheTime = now;
+    return cachedMinimumPrices;
+  }
+
+  const base = getApiBaseUrl();
 
   const fetchOptions: RequestInit & { next?: { revalidate: number } } = {
     headers: { 'Content-Type': 'application/json' },
   };
-
-  if (isServerSide) {
-    fetchOptions.next = { revalidate: 60 };
-  }
 
   const response = await fetch(`${base}/api/pricing/minimum-prices`, fetchOptions);
 
