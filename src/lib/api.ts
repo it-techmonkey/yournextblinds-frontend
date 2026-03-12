@@ -21,20 +21,17 @@ import { getCategoryCustomizations } from '@/data/categoryCustomizations';
 // API Configuration
 // ============================================
 
-const API_BASE_URL = (() => {
-  const envUrl = process.env.NEXT_PUBLIC_API_URL || process.env.API_URL;
-  if (envUrl) {
-    return envUrl.endsWith('/') ? envUrl.slice(0, -1) : envUrl;
-  }
+// API routes are now local Next.js Route Handlers.
+// On the server side, we need the full origin; on the client side, relative URLs work.
+function getApiBaseUrl(): string {
   if (typeof window !== 'undefined') {
-    return 'http://localhost:5000';
+    return ''; // Client-side: relative URLs
   }
-  return 'http://127.0.0.1:5000';
-})();
-
-// Log API URL in development
-if (typeof window === 'undefined' && process.env.NODE_ENV === 'development') {
-  console.log('[API] Backend URL:', API_BASE_URL);
+  // Server-side: need absolute URL for fetch
+  const vercelUrl = process.env.VERCEL_URL;
+  if (vercelUrl) return `https://${vercelUrl}`;
+  const port = process.env.PORT || '3000';
+  return `http://localhost:${port}`;
 }
 
 // ============================================
@@ -42,28 +39,23 @@ if (typeof window === 'undefined' && process.env.NODE_ENV === 'development') {
 // ============================================
 
 async function apiFetch<T>(endpoint: string, options?: RequestInit, retries: number = 2): Promise<T> {
-  // Ensure endpoint starts with / and API_BASE_URL doesn't end with /
   const normalizedEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
-  const normalizedBase = API_BASE_URL.endsWith('/') ? API_BASE_URL.slice(0, -1) : API_BASE_URL;
-  const url = `${normalizedBase}${normalizedEndpoint}`;
+  const base = getApiBaseUrl();
+  const url = `${base}${normalizedEndpoint}`;
   const isBuildTime = typeof window === 'undefined' && process.env.NODE_ENV !== 'development';
   const isServerSide = typeof window === 'undefined';
 
-  // Create AbortController for timeout
-  // Use longer timeout for server-side requests (30s) vs client-side (10s)
   const controller = new AbortController();
   const timeout = isServerSide ? 30000 : 10000;
   const timeoutId = setTimeout(() => controller.abort(), timeout);
 
   try {
-    // Build fetch options - only include 'next' option for Next.js server-side fetches
     const fetchOptions: RequestInit = {
       headers: { 'Content-Type': 'application/json' },
       signal: controller.signal,
       ...options,
     };
 
-    // Only add Next.js cache options for server-side requests
     if (isServerSide) {
       (fetchOptions as any).next = { revalidate: 60 };
     }
@@ -84,7 +76,6 @@ async function apiFetch<T>(endpoint: string, options?: RequestInit, retries: num
   } catch (error: any) {
     clearTimeout(timeoutId);
 
-    // Handle connection refused errors during build time gracefully
     const isConnectionError = error.code === 'ECONNREFUSED' || 
                               error.cause?.code === 'ECONNREFUSED' ||
                               (error.cause as any)?.code === 'ECONNREFUSED' ||
@@ -93,22 +84,17 @@ async function apiFetch<T>(endpoint: string, options?: RequestInit, retries: num
                               (error.cause as any)?.errors?.some((e: any) => e.code === 'ECONNREFUSED');
 
     if (isBuildTime && isConnectionError) {
-      // During build, if backend is not available, throw a special error
-      // that calling functions can catch and handle gracefully
       const buildError = new Error(`Backend unavailable during build: ${endpoint}`);
       (buildError as any).isBuildTimeError = true;
       throw buildError;
     }
 
-    // Retry logic for network errors (but not during build)
     if (!isBuildTime && retries > 0 && (error.name === 'AbortError' || error.code === 'UND_ERR_CONNECT_TIMEOUT' || error.message?.includes('timeout'))) {
       console.warn(`Retrying fetch (${retries} attempts remaining): ${url}`);
-      // Wait 1 second before retry
       await new Promise(resolve => setTimeout(resolve, 1000));
       return apiFetch<T>(endpoint, options, retries - 1);
     }
 
-    // Only log errors in development or client-side
     if (!isBuildTime) {
       console.error('Fetch error:', error);
       console.error('Attempted URL:', url);

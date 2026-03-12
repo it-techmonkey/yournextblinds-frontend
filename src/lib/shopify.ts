@@ -3,7 +3,7 @@
 // ============================================
 // Fetches product catalog data (titles, descriptions, images,
 // collections, tags) directly from Shopify's public Storefront API.
-// Pricing and checkout remain on our Express backend.
+// Pricing and checkout use local Next.js API routes.
 
 import type { ApiProduct, ApiCategory, ApiTag } from '@/types';
 
@@ -373,23 +373,21 @@ let cachedMinimumPrices: Record<string, number> | null = null;
 let pricesCacheTime = 0;
 const PRICES_CACHE_TTL = 60_000; // 60 seconds
 
+function getApiBaseUrl(): string {
+  if (typeof window !== 'undefined') return '';
+  const vercelUrl = process.env.VERCEL_URL;
+  if (vercelUrl) return `https://${vercelUrl}`;
+  const port = process.env.PORT || '3000';
+  return `http://localhost:${port}`;
+}
+
 async function getMinimumPrices(): Promise<Record<string, number>> {
   const now = Date.now();
   if (cachedMinimumPrices && now - pricesCacheTime < PRICES_CACHE_TTL) {
     return cachedMinimumPrices;
   }
 
-  const API_BASE_URL = (() => {
-    const envUrl = process.env.NEXT_PUBLIC_API_URL || process.env.API_URL;
-    if (envUrl) {
-      return envUrl.endsWith('/') ? envUrl.slice(0, -1) : envUrl;
-    }
-    if (typeof window !== 'undefined') {
-      return 'http://localhost:5000';
-    }
-    return 'http://127.0.0.1:5000';
-  })();
-
+  const base = getApiBaseUrl();
   const isServerSide = typeof window === 'undefined';
 
   const fetchOptions: RequestInit & { next?: { revalidate: number } } = {
@@ -400,7 +398,7 @@ async function getMinimumPrices(): Promise<Record<string, number>> {
     fetchOptions.next = { revalidate: 60 };
   }
 
-  const response = await fetch(`${API_BASE_URL}/api/pricing/minimum-prices`, fetchOptions);
+  const response = await fetch(`${base}/api/pricing/minimum-prices`, fetchOptions);
 
   if (!response.ok) {
     throw new Error(`Failed to fetch minimum prices: ${response.status}`);
