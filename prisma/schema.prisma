@@ -112,6 +112,16 @@ model Order {
   @@index([createdAt])
 }
 
+model CustomerCart {
+  id            String   @id @default(cuid())
+  customerEmail String   @unique
+  items         Json
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([customerEmail])
+}
+
 enum OrderStatus {
   PENDING
   CONFIRMED

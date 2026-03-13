@@ -390,7 +390,8 @@ export const ModelName = {
   PriceCell: 'PriceCell',
   CustomizationOption: 'CustomizationOption',
   CustomizationPricing: 'CustomizationPricing',
-  Order: 'Order'
+  Order: 'Order',
+  CustomerCart: 'CustomerCart'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -406,7 +407,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "priceBand" | "widthBand" | "heightBand" | "priceCell" | "customizationOption" | "customizationPricing" | "order"
+    modelProps: "priceBand" | "widthBand" | "heightBand" | "priceCell" | "customizationOption" | "customizationPricing" | "order" | "customerCart"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -928,6 +929,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    CustomerCart: {
+      payload: Prisma.$CustomerCartPayload<ExtArgs>
+      fields: Prisma.CustomerCartFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.CustomerCartFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CustomerCartPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.CustomerCartFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CustomerCartPayload>
+        }
+        findFirst: {
+          args: Prisma.CustomerCartFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CustomerCartPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.CustomerCartFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CustomerCartPayload>
+        }
+        findMany: {
+          args: Prisma.CustomerCartFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CustomerCartPayload>[]
+        }
+        create: {
+          args: Prisma.CustomerCartCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CustomerCartPayload>
+        }
+        createMany: {
+          args: Prisma.CustomerCartCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.CustomerCartCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CustomerCartPayload>[]
+        }
+        delete: {
+          args: Prisma.CustomerCartDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CustomerCartPayload>
+        }
+        update: {
+          args: Prisma.CustomerCartUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CustomerCartPayload>
+        }
+        deleteMany: {
+          args: Prisma.CustomerCartDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.CustomerCartUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.CustomerCartUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CustomerCartPayload>[]
+        }
+        upsert: {
+          args: Prisma.CustomerCartUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CustomerCartPayload>
+        }
+        aggregate: {
+          args: Prisma.CustomerCartAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateCustomerCart>
+        }
+        groupBy: {
+          args: Prisma.CustomerCartGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.CustomerCartGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.CustomerCartCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.CustomerCartCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -1058,6 +1133,17 @@ export const OrderScalarFieldEnum = {
 export type OrderScalarFieldEnum = (typeof OrderScalarFieldEnum)[keyof typeof OrderScalarFieldEnum]
 
 
+export const CustomerCartScalarFieldEnum = {
+  id: 'id',
+  customerEmail: 'customerEmail',
+  items: 'items',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type CustomerCartScalarFieldEnum = (typeof CustomerCartScalarFieldEnum)[keyof typeof CustomerCartScalarFieldEnum]
+
+
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -1072,6 +1158,13 @@ export const NullableJsonNullValueInput = {
 } as const
 
 export type NullableJsonNullValueInput = (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput]
+
+
+export const JsonNullValueInput = {
+  JsonNull: JsonNull
+} as const
+
+export type JsonNullValueInput = (typeof JsonNullValueInput)[keyof typeof JsonNullValueInput]
 
 
 export const QueryMode = {
@@ -1311,6 +1404,7 @@ export type GlobalOmitConfig = {
   customizationOption?: Prisma.CustomizationOptionOmit
   customizationPricing?: Prisma.CustomizationPricingOmit
   order?: Prisma.OrderOmit
+  customerCart?: Prisma.CustomerCartOmit
 }
 
 /* Types for Logging */
