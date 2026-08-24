@@ -44,6 +44,26 @@ export interface ProductVariant {
   selectedOptions: ProductVariantOption[];
 }
 
+/**
+ * Structured marketing copy from the `custom.product_content` metafield, rendered
+ * as sections below the configurator. Mirrors the section order of the supplier
+ * copy verbatim — nothing is reworded in transit.
+ */
+export interface ProductContentSection {
+  /** Verbatim heading from the source copy, e.g. "Features & Benefits". */
+  heading: string;
+  /** How the body renders: a bullet list, or a run of paragraphs. */
+  kind: 'list' | 'prose';
+  items: string[];
+}
+
+export interface ProductContent {
+  /** Opening paragraphs, before the first heading. */
+  description: string[];
+  /** Headed sections, in source order. */
+  sections: ProductContentSection[];
+}
+
 export interface ProductFeatures {
   hasSize: boolean;
   hasHeadrail: boolean;
@@ -83,6 +103,8 @@ export interface Product {
   variants?: ProductVariant[];
   videos?: string[];
   features: ProductFeatures;
+  /** Structured marketing copy shown below the configurator; null when unset. */
+  productContent?: ProductContent | null;
   reviews: ProductReview[];
   relatedProducts: string[];
 }
@@ -295,6 +317,7 @@ export interface ApiProduct {
   specifications?: string | null;
   measuringInstallation?: string | null;
   deliveryReturns?: string | null;
+  productContent?: ProductContent | null;
   categories: ApiCategory[];
   tags: ApiTag[];
 }

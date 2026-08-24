@@ -5,7 +5,7 @@
 // collections, tags) directly from Shopify's public Storefront API.
 // Pricing and checkout use local Next.js API routes.
 
-import type { ApiProduct, ApiCategory, ApiTag } from '@/types';
+import type { ApiProduct, ApiCategory, ApiTag, ProductContent, ProductContentSection } from '@/types';
 
 // ============================================
 // Configuration
@@ -172,6 +172,7 @@ const PRODUCT_FIELDS = `
     { namespace: "custom", key: "specifications" }
     { namespace: "custom", key: "measuring_installation" }
     { namespace: "custom", key: "delivery_returns" }
+    { namespace: "custom", key: "product_content" }
   ]) {
     key
     namespace
@@ -374,9 +375,41 @@ function mapStorefrontProduct(
     specifications: metafields.specifications || null,
     measuringInstallation: metafields.measuring_installation || null,
     deliveryReturns: metafields.delivery_returns || null,
+    productContent: parseProductContent(metafields.product_content),
     categories,
     tags,
   };
+}
+
+/**
+ * `custom.product_content` holds structured marketing copy as JSON. Bad or absent
+ * values must never break the product page, so parse defensively and drop any
+ * section that is not an array of strings.
+ */
+function parseProductContent(raw: string | undefined): ProductContent | null {
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
+    const list = (value: unknown): string[] =>
+      Array.isArray(value) ? value.filter((v): v is string => typeof v === 'string' && v.trim().length > 0) : [];
+
+    const sections: ProductContentSection[] = (Array.isArray(parsed.sections) ? parsed.sections : [])
+      .map((entry): ProductContentSection | null => {
+        if (!entry || typeof entry !== 'object') return null;
+        const { heading, kind, items } = entry as Record<string, unknown>;
+        if (typeof heading !== 'string' || !heading.trim()) return null;
+        const parsedItems = list(items);
+        if (!parsedItems.length) return null;
+        return { heading, kind: kind === 'list' ? 'list' : 'prose', items: parsedItems };
+      })
+      .filter((section): section is ProductContentSection => section !== null);
+
+    const description = list(parsed.description);
+    if (!description.length && !sections.length) return null;
+    return { description, sections };
+  } catch {
+    return null;
+  }
 }
 
 // ============================================

@@ -273,7 +273,7 @@ export const CATEGORY_CUSTOMIZATIONS: Record<string, ProductFeatures> = {
         hasRollerCassette: false,
     },
 
-    // Honeycomb Cellular Shades (hidden, direct-link-only product; bespoke selector
+    // Honeycomb Cellular Shades (19-product family; the bespoke selector
     // handles color/control/motorization, so only size + installation method are flagged here)
     'honeycomb-cellular-shades': {
         hasSize: true,

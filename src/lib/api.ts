@@ -22,10 +22,7 @@ import {
   HIDDEN_TEST_PRODUCT_TAG,
 } from '@/data/dayNightBandH';
 import { ROLLER_BAND_F_TAG } from '@/data/rollerBandF';
-import {
-  HONEYCOMB_CELLULAR_PRODUCT_HANDLE,
-  HONEYCOMB_CELLULAR_TAG,
-} from '@/data/honeycombCellular';
+import { HONEYCOMB_CELLULAR_TAG } from '@/data/honeycombCellular';
 import type { CuratedCollection, CuratedClause, CuratedRule } from '@/data/curatedCollections';
 import type { StoreSessionContext } from '@/lib/store-events';
 
@@ -653,10 +650,9 @@ export function transformProduct(apiProduct: ApiProduct): Product {
     }
   }
 
-  // Honeycomb Cellular Shades: hidden, direct-link-only product (not in any real
-  // Shopify collection), so force its feature category regardless of collection membership.
-  const isHoneycombCellular =
-    apiProduct.slug === HONEYCOMB_CELLULAR_PRODUCT_HANDLE || apiTagSlugs.includes(HONEYCOMB_CELLULAR_TAG);
+  // Honeycomb Cellular Shades: the 19 products live in a curated collection rather
+  // than a real Shopify collection, so force the feature category from the tag.
+  const isHoneycombCellular = apiTagSlugs.includes(HONEYCOMB_CELLULAR_TAG);
   if (isHoneycombCellular && !categorySlugs.includes('honeycomb-cellular-shades')) {
     categorySlugs = ['honeycomb-cellular-shades', ...categorySlugs];
   }
@@ -689,6 +685,7 @@ export function transformProduct(apiProduct: ApiProduct): Product {
     variants: apiProduct.variants || [],
     videos: apiProduct.videos || [],
     features: features,
+    productContent: apiProduct.productContent ?? null,
     reviews: [],
     relatedProducts: [],
   };

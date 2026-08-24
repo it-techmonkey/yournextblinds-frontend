@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
 import { TopBar, Header, NavBar, Footer, FlashSale, FAQ } from '@/components';
 import { fetchCategories, fetchProductsByCategory, fetchProductsForCuratedCollection, transformProduct, extractFilterOptions, isRealBuildPhase } from '@/lib/api';
@@ -7,6 +8,11 @@ import ProductGridWithFilters from '@/components/collection/ProductGridWithFilte
 import ComingSoon from '@/components/collection/ComingSoon';
 import { ALL_COLLECTION_SLUGS, COLLECTION_DISPLAY_NAMES, COLLECTION_DESCRIPTIONS, NAVIGATION_SLUG_MAPPING, NAVIGATION_TAG_FILTERS, NAVIGATION_CATEGORY_FILTERS } from '@/data/navigation';
 import { CURATED_COLLECTION_SLUGS, getCuratedCollection } from '@/data/curatedCollections';
+import { HONEYCOMB_CELLULAR_COLLECTION_SLUG } from '@/data/honeycombCellular';
+import {
+  HONEYCOMB_SUBCATEGORY_CARDS,
+  HONEYCOMB_SUBCATEGORIES_BY_HANDLE,
+} from '@/data/honeycombCellularCatalog';
 import type { CollectionContext } from '@/components/product/ProductCard';
 
 interface PageProps {
@@ -186,6 +192,11 @@ export default async function CollectionPage({ params }: PageProps) {
     categorySlug === 'blackout-roller-shades' || categorySlug === 'blackout-roller-shades-category' ? 'blackout' :
     undefined;
 
+  // Honeycomb/Cellular is the only collection with sub-category cards so far.
+  const isHoneycombCellular = categorySlug === HONEYCOMB_CELLULAR_COLLECTION_SLUG;
+  const subCategories = isHoneycombCellular ? HONEYCOMB_SUBCATEGORY_CARDS : undefined;
+  const subCategoriesByHandle = isHoneycombCellular ? HONEYCOMB_SUBCATEGORIES_BY_HANDLE : undefined;
+
   return (
     <div className="min-h-screen bg-[#fafafa]">
       <header className="sticky top-0 z-50 bg-white shadow-sm">
@@ -207,13 +218,19 @@ export default async function CollectionPage({ params }: PageProps) {
             {showComingSoon ? (
               <ComingSoon categoryName={categoryName} />
             ) : (
-              <ProductGridWithFilters
-                products={products}
-                filterOptions={filterOptions}
-                categoryName={categoryName}
-                preselectedMotorization={preselectedMotorization}
-                collectionContext={collectionContext}
-              />
+              // ProductGridWithFilters reads `?sub=` via useSearchParams, which
+              // needs a Suspense boundary inside a statically rendered route.
+              <Suspense fallback={<div className="min-h-[50vh]" />}>
+                <ProductGridWithFilters
+                  products={products}
+                  filterOptions={filterOptions}
+                  categoryName={categoryName}
+                  preselectedMotorization={preselectedMotorization}
+                  collectionContext={collectionContext}
+                  subCategories={subCategories}
+                  subCategoriesByHandle={subCategoriesByHandle}
+                />
+              </Suspense>
             )}
           </div>
         </div>

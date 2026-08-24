@@ -1,12 +1,12 @@
 {
-  "generatedAt": "2026-07-02T07:35:06.193Z",
-  "source": "manual+phase1-multi-table (Roller Band F G1-4, Dayandnight Band H G1-2)",
-  "checksum": "8016529fbf182759353f3c716309fea0aa29f7f40343d0d69566d2e8a02135a4",
+  "generatedAt": "2026-08-24T09:51:33.642Z",
+  "source": "manual+phase1-multi-table (Roller Band F G1-4, Dayandnight Band H G1-2)+honeycomb-cellular-g1-12",
+  "checksum": "6b1b044656f44f73d29f218dafa00aaaac20fd62743b76e2a8cde8e6146446ed",
   "counts": {
-    "priceBands": 27,
+    "priceBands": 38,
     "widthBands": 58,
     "heightBands": 43,
-    "priceCells": 5261,
+    "priceCells": 6557,
     "customizationOptions": 90,
     "customizationPricings": 174
   },
@@ -37,7 +37,18 @@
     "Roller - Band F - Group 4",
     "Dayandnight - Band H - Group 1",
     "Dayandnight - Band H - Group 2",
-    "Honeycomb Cellular - Band 1"
+    "Honeycomb Cellular - Group 1",
+    "Honeycomb Cellular - Group 2",
+    "Honeycomb Cellular - Group 3",
+    "Honeycomb Cellular - Group 4",
+    "Honeycomb Cellular - Group 5",
+    "Honeycomb Cellular - Group 6",
+    "Honeycomb Cellular - Group 7",
+    "Honeycomb Cellular - Group 8",
+    "Honeycomb Cellular - Group 9",
+    "Honeycomb Cellular - Group 10",
+    "Honeycomb Cellular - Group 11",
+    "Honeycomb Cellular - Group 12"
   ],
   "validation": {
     "errors": [],

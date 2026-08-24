@@ -10,6 +10,7 @@ import { isSampleEligible, MAX_FREE_SAMPLES } from '@/data/samples';
 import ProductGallery from './ProductGallery';
 import ProductReviews from './ProductReviews';
 import RelatedProducts from './RelatedProducts';
+import ProductContentSections from './ProductContentSections';
 import StarRating from './StarRating';
 import CategoryInfoSection from '@/components/collection/CategoryInfoSection';
 import { formatPrice, formatPriceWithCurrency, fetchPriceMatrix, fetchCustomizationPricing, validateCartPrice, createCheckout } from '@/lib/api';
@@ -94,7 +95,6 @@ import {
   HONEYCOMB_CELLULAR_CONTROL_OPTIONS,
   HONEYCOMB_CELLULAR_MOTORIZATION_OPTIONS,
   HONEYCOMB_CELLULAR_SIZE_LIMITS,
-  HONEYCOMB_CELLULAR_COMPARE_AT_PRICE,
   isHoneycombCellularProduct,
 } from '@/data/honeycombCellular';
 import { ROOM_TYPE_OPTIONS } from '@/data/roomTypes';
@@ -309,6 +309,9 @@ const ProductPage = ({
 
   // Preselect motorization when arriving from a motorised collection page (e.g. Motorised EclipseCore)
   const preselectMotorization = searchParams.get('motorized') === 'true';
+  // Preselect a specific control option when arriving from a control-specific
+  // collection card (e.g. the Cordless honeycomb sub-category card).
+  const preselectControlOption = searchParams.get('control');
   const defaultMotorizationOption = isBandHProduct
     ? DAY_NIGHT_BAND_H_MOTORIZATION_OPTIONS[0]?.id ?? null
     : isRollerBandF
@@ -368,6 +371,21 @@ const ProductPage = ({
           ? prev.motorization
           : defaultMotorizationOption,
       }));
+    }
+
+    // Preselect a control option when arriving from a control-specific collection
+    // card (e.g. the Cordless honeycomb card). Validated against this product's
+    // own option list so an arbitrary query string can't inject config.
+    if (preselectControlOption && isHoneycombCellular) {
+      const valid = HONEYCOMB_CELLULAR_CONTROL_OPTIONS.some((o) => o.id === preselectControlOption);
+      if (valid) {
+        setConfig((prev) => ({
+          ...prev,
+          controlOption: preselectControlOption,
+          controlSide: null,
+          motorization: null,
+        }));
+      }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -938,10 +956,7 @@ const ProductPage = ({
   const displayedPrice = showMinPriceIndicator
     ? product.price + blackoutSurcharge
     : totalPrice;
-  const flashSaleCompareAtPrice = displayedPrice / (1 - FLASH_SALE_DISCOUNT_PERCENT / 100);
-  // Honeycomb Cellular uses a flat, product-specific compare-at price rather than the
-  // sitewide 50%-off formula (which doesn't produce $50 -> $150).
-  const compareAtPrice = isHoneycombCellular ? HONEYCOMB_CELLULAR_COMPARE_AT_PRICE : flashSaleCompareAtPrice;
+  const compareAtPrice = displayedPrice / (1 - FLASH_SALE_DISCOUNT_PERCENT / 100);
 
   const honeycombControlOptionName = (() => {
     if (isMotorizationActive) {
@@ -2701,6 +2716,11 @@ const ProductPage = ({
             </div>
           </div>
         </section>
+      )}
+
+      {/* Long-form copy from the custom.product_content metafield, when present */}
+      {product.productContent && (
+        <ProductContentSections content={product.productContent} productName={displayProductName} />
       )}
 
       {/* Product Details Section - Full Width */}

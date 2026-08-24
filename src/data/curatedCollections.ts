@@ -34,7 +34,13 @@ export interface CuratedRule {
   anyOf?: CuratedClause[];
 }
 
-export type CuratedGroup = 'window-type' | 'feature' | 'room';
+/**
+ * `product-family` collections are whole product lines rather than a facet of the
+ * catalogue. They deliberately have no nav menu of their own — curatedLinks() and
+ * curatedRoomCards() only read the other three groups — so adding one here will
+ * not leak it into "Shop By Features" or the room cards.
+ */
+export type CuratedGroup = 'window-type' | 'feature' | 'room' | 'product-family';
 
 export interface CuratedCollection {
   slug: string;
@@ -366,6 +372,24 @@ export const CURATED_COLLECTIONS: Record<string, CuratedCollection> = {
         { categories: ['roller-blinds', 'day-and-night-blinds'], tagsAny: ['blackout', 'room-darkening'] },
       ],
     },
+  },
+
+  // The 19-product Honeycomb/Cellular line. Every product carries the
+  // `honeycomb-cellular-shades` tag, so the tagSlug override (>=5 tagged products)
+  // selects the whole family directly; `include` is the pre-provisioning fallback.
+  // Sub-category cards on this page filter client-side from the generated
+  // catalogue (see HONEYCOMB_SUBCATEGORY_CARDS), not from Shopify tags.
+  'honeycomb-cellular-shades': {
+    slug: 'honeycomb-cellular-shades',
+    title: 'Honeycomb / Cellular Shades',
+    description:
+      'Cellular shades built from honeycomb-shaped cells that trap air at the window, so rooms hold their temperature and stay quieter. Choose single or double cell, light filtering through to full room darkening, and finishes from plain weaves to printed, metallic sheer and waterproof fabrics.',
+    heroImage: '/collections/honeycomb-cellular/all.webp',
+    group: 'product-family',
+    navLabel: 'Honeycomb / Cellular Shades',
+    navIcon: '/collections/honeycomb-cellular/all.webp',
+    tagSlug: 'honeycomb-cellular-shades',
+    include: { anyOf: [{ tagsAny: ['honeycomb-cellular-shades'] }] },
   },
 };
 

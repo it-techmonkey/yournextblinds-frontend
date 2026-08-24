@@ -27,6 +27,8 @@ interface ProductCardProps {
   };
   className?: string;
   preselectedMotorization?: boolean;
+  /** Control option id to preselect on the product page (e.g. 'hc-cordless'). */
+  preselectedControlOption?: string;
   collectionContext?: CollectionContext;
   // 'grid': full-width cards (collection/category/search grids) — on mobile
   // (where the grid is a single column) this switches to an Amazon-style
@@ -39,14 +41,20 @@ interface ProductCardProps {
 
 const ROLLER_BAND_F_TAG_CLIENT = 'roller-band-f';
 
-export default function ProductCard({ product, className = '', preselectedMotorization = false, collectionContext, layout = 'carousel' }: ProductCardProps) {
+export default function ProductCard({ product, className = '', preselectedMotorization = false, preselectedControlOption, collectionContext, layout = 'carousel' }: ProductCardProps) {
   const router = useRouter();
   const imageUrl = product.image || product.images?.[0] || '';
   const currency = product.currency || 'USD';
   const motorizedParam = preselectedMotorization ? '&motorized=true' : '';
 
   const isBandF = product.tags?.includes(ROLLER_BAND_F_TAG_CLIENT);
-  const contextParam = isBandF && collectionContext ? `collectionContext=${collectionContext}` : '';
+  const controlParam = preselectedControlOption
+    ? `control=${encodeURIComponent(preselectedControlOption)}`
+    : '';
+  const contextParam = [
+    isBandF && collectionContext ? `collectionContext=${collectionContext}` : '',
+    controlParam,
+  ].filter(Boolean).join('&');
   const displayPrice =
     isBandF && collectionContext === 'blackout'
       ? product.price + BLACKOUT_ROOM_DARKENING_SURCHARGE

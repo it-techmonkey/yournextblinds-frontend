@@ -22,6 +22,7 @@ const IMAGE_MAP: Record<string, string> = {
   '/collections/blackout-vertical-blinds-category':  '/home/categories/blackout%20vertical%20blinds.webp',
   '/collections/eclipsecore-shades':                 '/home/categories/eclipse%20core%20shades.webp',
   '/product/non-driii-honeycomb-blackout-blinds':    '/home/categories/eclipse%20core%20shades.webp',
+  '/collections/honeycomb-cellular-shades':          '/collections/honeycomb-cellular/all.webp',
 };
 
 // Only the product-family menus become homepage cards. The situational menus

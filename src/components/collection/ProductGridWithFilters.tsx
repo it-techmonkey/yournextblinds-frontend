@@ -1,9 +1,12 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Product } from '@/types';
 import { ProductCard } from '@/components/product';
 import type { CollectionContext } from '@/components/product/ProductCard';
+import SubCategoryCards from './SubCategoryCards';
+import type { HoneycombSubCategoryCard } from '@/data/honeycombCellularCatalog';
 
 interface FilterOptions {
   colors: string[];
@@ -16,9 +19,15 @@ interface ProductGridWithFiltersProps {
   categoryName: string;
   preselectedMotorization?: boolean;
   collectionContext?: CollectionContext;
+  /** Optional sub-category cards shown above the grid, acting as an extra filter. */
+  subCategories?: HoneycombSubCategoryCard[];
+  /** handle -> sub-category ids, used to resolve the active card to products. */
+  subCategoriesByHandle?: Record<string, string[]>;
 }
 
 type SortOption = 'best-selling' | 'price-low' | 'price-high' | 'name-az' | 'name-za';
+
+const DEFAULT_SUB_CATEGORY = 'all';
 
 export default function ProductGridWithFilters({
   products,
@@ -26,13 +35,24 @@ export default function ProductGridWithFilters({
   categoryName,
   preselectedMotorization = false,
   collectionContext,
+  subCategories,
+  subCategoriesByHandle,
 }: ProductGridWithFiltersProps) {
+  // `?sub=<id>` deep-links a sub-category card.
+  const searchParams = useSearchParams();
+  const subFromUrl = searchParams.get('sub');
+  const initialSubCategory =
+    subFromUrl && subCategories?.some((c) => c.id === subFromUrl) ? subFromUrl : DEFAULT_SUB_CATEGORY;
+
   // Filter state
   const [selectedColors, setSelectedColors] = useState<string[]>([]);
   const [selectedPatterns, setSelectedPatterns] = useState<string[]>([]);
+  const [activeSubCategory, setActiveSubCategory] = useState<string>(initialSubCategory);
   const [sortBy, setSortBy] = useState<SortOption>('best-selling');
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [visibleCount, setVisibleCount] = useState(24);
+
+  const activeCard = subCategories?.find((c) => c.id === activeSubCategory);
 
   // Color display names with hex values
   const colorMap: Record<string, { name: string; hex: string }> = {
@@ -71,6 +91,16 @@ export default function ProductGridWithFilters({
   const filteredProducts = useMemo(() => {
     let result = [...products];
 
+    // Filter by sub-category card. Membership comes from the generated catalogue
+    // rather than product tags — several cards (cordless, motorized, no drill,
+    // top down bottom up) are control options every product supports, so tagging
+    // for them would be both meaningless here and destructive elsewhere.
+    if (subCategoriesByHandle && activeSubCategory !== DEFAULT_SUB_CATEGORY) {
+      result = result.filter((product) =>
+        subCategoriesByHandle[product.slug]?.includes(activeSubCategory)
+      );
+    }
+
     // Filter by colors (check product name for color keywords)
     if (selectedColors.length > 0) {
       result = result.filter((product) => {
@@ -107,7 +137,7 @@ export default function ProductGridWithFilters({
     }
 
     return result;
-  }, [products, selectedColors, selectedPatterns, sortBy]);
+  }, [products, selectedColors, selectedPatterns, sortBy, activeSubCategory, subCategoriesByHandle]);
 
   const displayedProducts = filteredProducts.slice(0, visibleCount);
   const hasMore = visibleCount < filteredProducts.length;
@@ -126,9 +156,15 @@ export default function ProductGridWithFilters({
     setVisibleCount(24);
   };
 
+  const selectSubCategory = (id: string) => {
+    setActiveSubCategory(id);
+    setVisibleCount(24);
+  };
+
   const clearAllFilters = () => {
     setSelectedColors([]);
     setSelectedPatterns([]);
+    setActiveSubCategory(DEFAULT_SUB_CATEGORY);
     setVisibleCount(24);
   };
 
@@ -241,7 +277,16 @@ export default function ProductGridWithFilters({
   );
 
   return (
-    <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
+    <div>
+      {subCategories && subCategories.length > 0 && (
+        <SubCategoryCards
+          cards={subCategories}
+          activeId={activeSubCategory}
+          onSelect={selectSubCategory}
+        />
+      )}
+
+      <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
       {/* Desktop Sidebar */}
       <aside className="hidden lg:block w-64 shrink-0">
         <div className="bg-white p-4 rounded-lg border border-gray-200 sticky top-24">
@@ -326,7 +371,8 @@ export default function ProductGridWithFilters({
                     ...product,
                     image: product.images[0],
                   }}
-                  preselectedMotorization={preselectedMotorization}
+                  preselectedMotorization={preselectedMotorization || activeCard?.preselect === 'motorized'}
+                  preselectedControlOption={activeCard?.preselect === 'cordless' ? 'hc-cordless' : undefined}
                   collectionContext={collectionContext}
                   layout="grid"
                 />
@@ -386,6 +432,7 @@ export default function ProductGridWithFilters({
           </div>
         </>
       )}
+      </div>
     </div>
   );
 }
