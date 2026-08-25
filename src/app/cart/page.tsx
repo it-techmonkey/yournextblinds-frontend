@@ -54,6 +54,11 @@ import {
   ROLLER_BAND_F_ROOM_DARKENING_OPTIONS,
   ROLLER_BAND_F_ROLL_OPTIONS,
 } from '@/data/rollerBandF';
+import {
+  HONEYCOMB_CELLULAR_CONTROL_OPTIONS,
+  HONEYCOMB_CELLULAR_MOTORIZATION_OPTIONS,
+  HONEYCOMB_CELLULAR_NO_DRILL_UPGRADE_OPTION,
+} from '@/data/honeycombCellular';
 import { ROOM_TYPE_OPTIONS } from '@/data/roomTypes';
 
 export default function CartPage() {
@@ -208,7 +213,7 @@ export default function CartPage() {
       { key: 'headrail', label: 'Headrail', options: [...HEADRAIL_OPTIONS, ...DAY_NIGHT_BAND_H_HEADRAIL_OPTIONS, ...ROLLER_BAND_F_HEADRAIL_OPTIONS] },
       { key: 'headrailColour', label: 'Headrail Colour', options: HEADRAIL_COLOUR_OPTIONS },
       { key: 'installationMethod', label: 'Installation', options: [...INSTALLATION_METHOD_OPTIONS, ...ROLLER_INSTALLATION_OPTIONS] },
-      { key: 'controlOption', label: 'Control', options: [...CONTROL_OPTIONS, ...ROLLER_CONTROL_OPTIONS, ...DAY_NIGHT_BAND_H_CONTROL_OPTIONS, ...ROLLER_BAND_F_CONTROL_OPTIONS] },
+      { key: 'controlOption', label: 'Control', options: [...CONTROL_OPTIONS, ...ROLLER_CONTROL_OPTIONS, ...DAY_NIGHT_BAND_H_CONTROL_OPTIONS, ...ROLLER_BAND_F_CONTROL_OPTIONS, ...HONEYCOMB_CELLULAR_CONTROL_OPTIONS] },
       { key: 'stacking', label: 'Stacking', options: Object.values(VERTICAL_STACKING_OPTIONS).flat() },
       { key: 'controlSide', label: 'Control Side', options: CONTROL_SIDE_OPTIONS },
       { key: 'bottomChain', label: 'Bottom Weight/Chain', options: BOTTOM_CHAIN_OPTIONS },
@@ -216,7 +221,8 @@ export default function CartPage() {
       { key: 'chainColor', label: 'Chain Color', options: CHAIN_COLOR_OPTIONS },
       { key: 'wrappedCassette', label: 'Wrapped Cassette', options: [...WRAPPED_CASSETTE_OPTIONS, ...DAY_NIGHT_BAND_H_WRAPPED_CASSETTE_OPTIONS, ...ROLLER_BAND_F_WRAPPED_CASSETTE_OPTIONS] },
       { key: 'cassetteMatchingBar', label: 'Cassette Bar', options: [...CASSETTE_MATCHING_BAR_OPTIONS, ...ROLLER_CASSETTE_OPTIONS] },
-      { key: 'motorization', label: 'Motorisation', options: [...MOTORIZATION_OPTIONS, ...DAY_NIGHT_BAND_H_MOTORIZATION_OPTIONS, ...ROLLER_BAND_F_MOTORIZATION_OPTIONS] },
+      { key: 'motorization', label: 'Motorisation', options: [...MOTORIZATION_OPTIONS, ...DAY_NIGHT_BAND_H_MOTORIZATION_OPTIONS, ...ROLLER_BAND_F_MOTORIZATION_OPTIONS, ...HONEYCOMB_CELLULAR_MOTORIZATION_OPTIONS] },
+      { key: 'noDrillUpgrade', label: 'No Drill Upgrade', options: [HONEYCOMB_CELLULAR_NO_DRILL_UPGRADE_OPTION] },
       { key: 'blindColor', label: 'Blind Color', options: BLIND_COLOR_OPTIONS },
       { key: 'frameColor', label: 'Frame Color', options: FRAME_COLOR_OPTIONS },
       { key: 'openingDirection', label: 'Opening Direction', options: OPENING_DIRECTION_OPTIONS },
@@ -280,7 +286,8 @@ export default function CartPage() {
     if (config.controlOption) {
       const option = CONTROL_OPTIONS.find(opt => opt.id === config.controlOption) ||
         ROLLER_CONTROL_OPTIONS.find(opt => opt.id === config.controlOption) ||
-        DAY_NIGHT_BAND_H_CONTROL_OPTIONS.find(opt => opt.id === config.controlOption);
+        DAY_NIGHT_BAND_H_CONTROL_OPTIONS.find(opt => opt.id === config.controlOption) ||
+        HONEYCOMB_CELLULAR_CONTROL_OPTIONS.find(opt => opt.id === config.controlOption);
       if (option?.price && option.price > 0) {
         costs.push({ label: option.name, price: option.price });
       }
@@ -344,9 +351,17 @@ export default function CartPage() {
     }
 
     if (config.motorization && config.motorization !== 'none') {
-      const option = [...MOTORIZATION_OPTIONS, ...DAY_NIGHT_BAND_H_MOTORIZATION_OPTIONS]
+      const option = [...MOTORIZATION_OPTIONS, ...DAY_NIGHT_BAND_H_MOTORIZATION_OPTIONS, ...HONEYCOMB_CELLULAR_MOTORIZATION_OPTIONS]
         .find(opt => opt.id === config.motorization);
       costs.push({ label: 'Motorisation motor', price: 95 });
+      if (option?.price && option.price > 0) {
+        costs.push({ label: option.name, price: option.price });
+      }
+    }
+
+    // No Drill System upgrade (Honeycomb Cellular)
+    if (config.noDrillUpgrade) {
+      const option = [HONEYCOMB_CELLULAR_NO_DRILL_UPGRADE_OPTION].find(opt => opt.id === config.noDrillUpgrade);
       if (option?.price && option.price > 0) {
         costs.push({ label: option.name, price: option.price });
       }

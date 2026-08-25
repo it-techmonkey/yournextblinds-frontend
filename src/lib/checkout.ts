@@ -41,6 +41,7 @@ export function buildCheckoutItem(
     selectedVariantImage: config.selectedVariantImage || undefined,
     selectedVariantOptionName: config.selectedVariantOptionName || undefined,
     selectedVariantOptionValue: config.selectedVariantOptionValue || undefined,
+    noDrillUpgrade: config.noDrillUpgrade || undefined,
   };
 
   return {

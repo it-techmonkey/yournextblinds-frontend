@@ -121,6 +121,7 @@ function configToCustomizations(config: CheckoutItemRequest['configuration']): P
     bottomBar: 'bottom-bar',
     rollStyle: 'roll-style',
     roomDarkening: 'room-darkening',
+    noDrillUpgrade: 'no-drill-upgrade',
   };
 
   for (const [configKey, category] of Object.entries(mappings)) {
@@ -174,6 +175,7 @@ function buildLineItemProperties(
     bottomBar: 'Bottom Bar',
     rollStyle: 'Roll Style',
     roomDarkening: 'Room Darkening',
+    noDrillUpgrade: 'No Drill Upgrade',
   };
 
   for (const [key, label] of Object.entries(labelMap)) {

@@ -424,6 +424,7 @@ const CartItemEditModal = ({ item, onClose, onSave }: CartItemEditModalProps) =>
     rollStyle: visibleOptions.showRollStyle ? normalizedConfig.rollStyle : null,
     roomDarkening: normalizedConfig.roomDarkening,
     rollOption: normalizedConfig.rollOption,
+    noDrillUpgrade: normalizedConfig.noDrillUpgrade,
   }), [isBandHProduct, isRollerBandF, normalizedConfig, product.features.hasRollerCassette, visibleOptions]);
 
   const priceCalculation = useMemo(() => {
