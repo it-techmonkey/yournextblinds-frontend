@@ -20,6 +20,7 @@ import { PRODUCT_GUIDES } from '@/data/guides';
 import { PROMO_CODE, PROMO_CODE_PERCENT, FLASH_SALE_DISCOUNT_PERCENT } from '@/data/promo';
 import { trackShopifyProductView } from '@/lib/shopify-analytics';
 import { trackStoreProductView, trackStoreCheckoutInitiated, getStoreSessionContext } from '@/lib/store-events';
+import { getEstimatedDispatchDateRange } from '@/lib/dispatch-date';
 import {
   calculateTotalPrice,
   configToCustomizations,
@@ -106,6 +107,7 @@ import {
   isHoneycombCellularProduct,
 } from '@/data/honeycombCellular';
 import { ROOM_TYPE_OPTIONS } from '@/data/roomTypes';
+import { HONEYCOMB_CELLULAR_COLOR_CODES } from '@/data/honeycombCellularColorCodes';
 import { CONTINUOUS_CHAIN_CARD, CONTINUOUS_CHAIN_CARD_ROLLER, CONTINUOUS_CHAIN_CARD_ZEBRA, CASSETTE_CARD, CASSETTE_CARD_ROLLER, CASSETTE_CARD_ZEBRA, MOTORIZATION_CARD, BOTTOM_BAR_CARD } from '@/data/optionalCustomizations';
 import Image from 'next/image';
 
@@ -197,6 +199,29 @@ function getVariantDisplayOption(variant: ProductVariant) {
     name: colorOption?.name ?? 'Color',
     value: colorOption?.value ?? variant.title,
   };
+}
+
+/**
+ * Splits a color option value into its fabric code (e.g. R12001, Z100349D,
+ * H45100WD) and the plain color name, so the code can be displayed in front
+ * of the name. Roller Band F / Dayandnight Band H embed the code directly in
+ * the option value (e.g. "Spiced Gingerbread Z100370D"); honeycomb/cellular
+ * values are just the plain name, so those fall back to the CSV-derived
+ * name -> code lookup.
+ */
+const FABRIC_CODE_REGEX = /[RZH]\d{4,}[A-Z]{0,2}/;
+function getVariantCodeAndName(value: string | null | undefined): { code: string | null; name: string } {
+  if (!value) return { code: null, name: value ?? '' };
+
+  const match = value.toUpperCase().match(FABRIC_CODE_REGEX);
+  if (match) {
+    const code = match[0];
+    const name = value.replace(new RegExp(code, 'i'), '').trim();
+    return { code, name: name || value };
+  }
+
+  const code = HONEYCOMB_CELLULAR_COLOR_CODES[value.trim().toLowerCase()] ?? null;
+  return { code, name: value };
 }
 
 const ProductPage = ({
@@ -1182,7 +1207,12 @@ const ProductPage = ({
       >
         <div className="mb-5 flex items-center justify-between gap-3">
           <h3 className="min-w-0 text-lg font-semibold text-[#1f1f1f] sm:text-xl">
-            Color - {selectedBandHVariantOption?.value ?? 'Select Color'}
+            {selectedBandHVariantOption
+              ? (() => {
+                  const { code, name } = getVariantCodeAndName(selectedBandHVariantOption.value);
+                  return `Color - ${code ? `${code} ` : ''}${name}`;
+                })()
+              : 'Color - Select Color'}
           </h3>
           {productSampleEligible && sampleCount > 0 && (
             <Link
@@ -1197,6 +1227,7 @@ const ProductPage = ({
         <div className="grid grid-cols-5 gap-3 sm:grid-cols-6">
           {bandHColorVariants.map((variant) => {
             const option = getVariantDisplayOption(variant);
+            const { code: variantCode, name: variantName } = getVariantCodeAndName(option.value);
             const isSelected = config.selectedVariantId === variant.id;
             const inSampleBasket = isInBasket(variant.id);
 
@@ -1230,6 +1261,14 @@ const ProductPage = ({
                     unoptimized
                   />
                 </button>
+
+                {variantCode && (
+                  <span className="text-center text-[11px] leading-tight text-gray-600">
+                    <span className="font-semibold text-[#00473c]">{variantCode}</span>
+                    {' '}
+                    {variantName}
+                  </span>
+                )}
 
                 {productSampleEligible && (
                   <button
@@ -1381,7 +1420,9 @@ const ProductPage = ({
                 <div className="ml-2 md:ml-3">
                   <div className="text-[10px] md:text-xs text-gray-500">Estimated Dispatch Date</div>
                   <div className="text-xs md:text-sm font-semibold text-[#00473c]">
-                    {isBandHProduct || isHoneycombCellular ? '5 - 7 Working Days' : '8 - 12 Working Days'}
+                    {isBandHProduct || isHoneycombCellular
+                      ? getEstimatedDispatchDateRange(5, 7)
+                      : getEstimatedDispatchDateRange(8, 12)}
                   </div>
                 </div>
               </div>

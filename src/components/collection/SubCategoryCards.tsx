@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import type { HoneycombSubCategoryCard } from '@/data/honeycombCellularCatalog';
 
@@ -10,11 +11,53 @@ interface SubCategoryCardsProps {
 }
 
 /**
+ * Every label besides "all" already ends in "Cellular Shades" (redundant next
+ * to the "Shop by type" heading and the page's own ".../ Cellular Shades"
+ * title), so the mobile chip strip strips it to leave room for the word that
+ * actually distinguishes the type, e.g. "Top Down Bottom Up" instead of
+ * "Top Down Bottom Up Cellular Shades".
+ */
+function getChipLabel(card: HoneycombSubCategoryCard): string {
+  if (card.id === 'all') return 'All';
+  return card.label.replace(/ Cellular Shades$/i, '').trim() || card.label;
+}
+
+/**
  * Sub-category cards shown above a collection's product grid. Unlike the
  * homepage CategoryGrid these navigate nowhere — each one filters the grid in
  * place, so they are buttons with aria-pressed rather than links.
  */
 const SubCategoryCards = ({ cards, activeId, onSelect }: SubCategoryCardsProps) => {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  // Fraction of the strip that's visible (thumb width) and how far scrolled
+  // (thumb position), so the indicator bar below the chips tracks 1:1 with
+  // the swipe instead of a fixed step count.
+  const [scrollThumb, setScrollThumb] = useState({ widthPct: 100, leftPct: 0 });
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+
+    const updateThumb = () => {
+      const { scrollWidth, clientWidth, scrollLeft } = el;
+      if (scrollWidth <= clientWidth) {
+        setScrollThumb({ widthPct: 100, leftPct: 0 });
+        return;
+      }
+      const widthPct = (clientWidth / scrollWidth) * 100;
+      const leftPct = (scrollLeft / (scrollWidth - clientWidth)) * (100 - widthPct);
+      setScrollThumb({ widthPct, leftPct });
+    };
+
+    updateThumb();
+    el.addEventListener('scroll', updateThumb, { passive: true });
+    window.addEventListener('resize', updateThumb);
+    return () => {
+      el.removeEventListener('scroll', updateThumb);
+      window.removeEventListener('resize', updateThumb);
+    };
+  }, [cards]);
+
   if (cards.length === 0) return null;
 
   return (
@@ -23,7 +66,66 @@ const SubCategoryCards = ({ cards, activeId, onSelect }: SubCategoryCardsProps) 
         Shop by type
       </h2>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:gap-4 lg:grid-cols-5">
+      {/* Mobile (<sm): a horizontal strip of compact circular chips — the tall
+          2-col image grid below cost 5+ screens of scroll before any product
+          was visible, so on small screens this trades big photos for a single
+          swipeable row that fits the "shop by type" step in ~140px. */}
+      <div className="sm:hidden">
+        <div ref={scrollRef} className="-mx-4 overflow-x-auto scrollbar-hide">
+          <div className="flex gap-4 px-4">
+            {cards.map((card) => {
+              const isActive = card.id === activeId;
+              return (
+                <button
+                  key={card.id}
+                  type="button"
+                  onClick={() => onSelect(card.id)}
+                  aria-pressed={isActive}
+                  title={card.label}
+                  className="flex w-[72px] shrink-0 flex-col items-center gap-1.5 text-center"
+                >
+                  <span
+                    className={`relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border-2 transition-colors ${
+                      isActive ? 'border-[#00473c]' : 'border-transparent'
+                    }`}
+                  >
+                    <span className="relative h-full w-full overflow-hidden rounded-full bg-gray-50">
+                      <Image
+                        src={card.image}
+                        alt={card.label}
+                        fill
+                        sizes="64px"
+                        className="object-cover"
+                      />
+                    </span>
+                  </span>
+                  <span
+                    className={`line-clamp-2 text-xs leading-tight font-medium ${
+                      isActive ? 'text-[#00473c]' : 'text-[#3a3a3a]'
+                    }`}
+                  >
+                    {getChipLabel(card)}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Scroll-position indicator — only meaningful once the strip actually
+            overflows (widthPct < 100), so a short list of cards renders no bar. */}
+        {scrollThumb.widthPct < 100 && (
+          <div className="mt-2.5 h-1 w-full rounded-full bg-gray-200">
+            <div
+              className="h-1 rounded-full bg-[#00473c] transition-[width,left] duration-150"
+              style={{ width: `${scrollThumb.widthPct}%`, marginLeft: `${scrollThumb.leftPct}%` }}
+            />
+          </div>
+        )}
+      </div>
+
+      {/* sm and up: the original photo-card grid. */}
+      <div className="hidden sm:grid sm:grid-cols-3 sm:gap-4 lg:grid-cols-5">
         {cards.map((card) => {
           const isActive = card.id === activeId;
           return (
@@ -43,7 +145,7 @@ const SubCategoryCards = ({ cards, activeId, onSelect }: SubCategoryCardsProps) 
                   src={card.image}
                   alt={card.label}
                   fill
-                  sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
+                  sizes="(max-width: 1024px) 33vw, 20vw"
                   className="object-cover transition-transform duration-300 group-hover:scale-105"
                 />
                 {isActive && (

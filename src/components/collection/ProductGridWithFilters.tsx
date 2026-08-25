@@ -29,6 +29,14 @@ type SortOption = 'best-selling' | 'price-low' | 'price-high' | 'name-az' | 'nam
 
 const DEFAULT_SUB_CATEGORY = 'all';
 
+// Opacity/light-control isn't tagged on products (color/pattern come from
+// tags via extractFilterOptions), but it's reliably in the product name for
+// every collection that has more than one — e.g. "Lumina Room Darkening
+// Cellular Honeycomb Shade", "Blackout Roller Shade". Computed from the
+// products actually in this collection rather than hardcoded, so a phrase
+// only shows up as a filter when it would actually narrow something down.
+const OPACITY_PHRASES = ['Light Filtering', 'Room Darkening', 'Blackout'];
+
 export default function ProductGridWithFilters({
   products,
   filterOptions,
@@ -47,12 +55,30 @@ export default function ProductGridWithFilters({
   // Filter state
   const [selectedColors, setSelectedColors] = useState<string[]>([]);
   const [selectedPatterns, setSelectedPatterns] = useState<string[]>([]);
+  const [selectedOpacities, setSelectedOpacities] = useState<string[]>([]);
+  const [priceMin, setPriceMin] = useState('');
+  const [priceMax, setPriceMax] = useState('');
   const [activeSubCategory, setActiveSubCategory] = useState<string>(initialSubCategory);
   const [sortBy, setSortBy] = useState<SortOption>('best-selling');
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [visibleCount, setVisibleCount] = useState(24);
 
   const activeCard = subCategories?.find((c) => c.id === activeSubCategory);
+
+  // Only surfaced when a collection actually has more than one opacity —
+  // otherwise every product would match and the filter narrows nothing.
+  const opacityOptions = useMemo(() => {
+    const found = OPACITY_PHRASES.filter((phrase) =>
+      products.some((product) => product.name.toLowerCase().includes(phrase.toLowerCase()))
+    );
+    return found.length > 1 ? found : [];
+  }, [products]);
+
+  const priceBounds = useMemo(() => {
+    if (products.length === 0) return { min: 0, max: 0 };
+    const prices = products.map((product) => product.price);
+    return { min: Math.floor(Math.min(...prices)), max: Math.ceil(Math.max(...prices)) };
+  }, [products]);
 
   // Color display names with hex values
   const colorMap: Record<string, { name: string; hex: string }> = {
@@ -117,6 +143,24 @@ export default function ProductGridWithFilters({
       });
     }
 
+    // Filter by opacity/light control (check product name for the phrase)
+    if (selectedOpacities.length > 0) {
+      result = result.filter((product) => {
+        const productName = product.name.toLowerCase();
+        return selectedOpacities.some((opacity) => productName.includes(opacity.toLowerCase()));
+      });
+    }
+
+    // Filter by price range
+    const minPrice = priceMin ? parseFloat(priceMin) : null;
+    const maxPrice = priceMax ? parseFloat(priceMax) : null;
+    if (minPrice !== null && !Number.isNaN(minPrice)) {
+      result = result.filter((product) => product.price >= minPrice);
+    }
+    if (maxPrice !== null && !Number.isNaN(maxPrice)) {
+      result = result.filter((product) => product.price <= maxPrice);
+    }
+
     // Sort
     switch (sortBy) {
       case 'price-low':
@@ -137,7 +181,17 @@ export default function ProductGridWithFilters({
     }
 
     return result;
-  }, [products, selectedColors, selectedPatterns, sortBy, activeSubCategory, subCategoriesByHandle]);
+  }, [
+    products,
+    selectedColors,
+    selectedPatterns,
+    selectedOpacities,
+    priceMin,
+    priceMax,
+    sortBy,
+    activeSubCategory,
+    subCategoriesByHandle,
+  ]);
 
   const displayedProducts = filteredProducts.slice(0, visibleCount);
   const hasMore = visibleCount < filteredProducts.length;
@@ -156,6 +210,13 @@ export default function ProductGridWithFilters({
     setVisibleCount(24);
   };
 
+  const toggleOpacity = (opacity: string) => {
+    setSelectedOpacities((prev) =>
+      prev.includes(opacity) ? prev.filter((o) => o !== opacity) : [...prev, opacity]
+    );
+    setVisibleCount(24);
+  };
+
   const selectSubCategory = (id: string) => {
     setActiveSubCategory(id);
     setVisibleCount(24);
@@ -164,11 +225,19 @@ export default function ProductGridWithFilters({
   const clearAllFilters = () => {
     setSelectedColors([]);
     setSelectedPatterns([]);
+    setSelectedOpacities([]);
+    setPriceMin('');
+    setPriceMax('');
     setActiveSubCategory(DEFAULT_SUB_CATEGORY);
     setVisibleCount(24);
   };
 
-  const hasActiveFilters = selectedColors.length > 0 || selectedPatterns.length > 0;
+  const activeFilterCount =
+    selectedColors.length +
+    selectedPatterns.length +
+    selectedOpacities.length +
+    (priceMin !== '' || priceMax !== '' ? 1 : 0);
+  const hasActiveFilters = activeFilterCount > 0;
 
   // Filter sidebar content
   const FilterContent = () => (
@@ -210,6 +279,34 @@ export default function ProductGridWithFilters({
                 </svg>
               </button>
             ))}
+            {selectedOpacities.map((opacity) => (
+              <button
+                key={opacity}
+                onClick={() => toggleOpacity(opacity)}
+                className="flex items-center gap-1 px-2 py-1 bg-[#00473c]/10 text-[#00473c] text-xs rounded-full"
+              >
+                <span>{opacity}</span>
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            ))}
+            {(priceMin !== '' || priceMax !== '') && (
+              <button
+                onClick={() => {
+                  setPriceMin('');
+                  setPriceMax('');
+                }}
+                className="flex items-center gap-1 px-2 py-1 bg-[#00473c]/10 text-[#00473c] text-xs rounded-full"
+              >
+                <span>
+                  {priceMin || priceBounds.min} – {priceMax || priceBounds.max}
+                </span>
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -273,6 +370,81 @@ export default function ProductGridWithFilters({
           </div>
         </div>
       )}
+
+      {/* Opacity Filter */}
+      {opacityOptions.length > 0 && (
+        <div>
+          <h3 className="text-sm font-semibold text-gray-900 mb-3">Light Control</h3>
+          <div className="space-y-2">
+            {opacityOptions.map((opacity) => {
+              const isSelected = selectedOpacities.includes(opacity);
+              return (
+                <button
+                  key={opacity}
+                  onClick={() => toggleOpacity(opacity)}
+                  className="flex items-center gap-2 w-full text-left"
+                >
+                  <div className={`w-4 h-4 rounded border transition-colors ${
+                    isSelected ? 'bg-[#00473c] border-[#00473c]' : 'border-gray-300'
+                  }`}>
+                    {isSelected && (
+                      <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                      </svg>
+                    )}
+                  </div>
+                  <span className="text-sm text-gray-700">{opacity}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Price Range Filter */}
+      {priceBounds.max > priceBounds.min && (
+        <div>
+          <h3 className="text-sm font-semibold text-gray-900 mb-3">Price</h3>
+          <div className="flex items-center gap-2">
+            {/* FilterContent renders twice (desktop sidebar + mobile drawer), so
+                these use aria-label rather than a label[for] + id pair — a
+                static id would collide between the two copies in the DOM. */}
+            <div className="flex-1">
+              <input
+                type="number"
+                inputMode="decimal"
+                aria-label="Minimum price"
+                min={priceBounds.min}
+                max={priceBounds.max}
+                placeholder={`$${priceBounds.min}`}
+                value={priceMin}
+                onChange={(e) => {
+                  setPriceMin(e.target.value);
+                  setVisibleCount(24);
+                }}
+                className="w-full px-2 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#00473c]"
+              />
+            </div>
+            <span className="text-gray-400">–</span>
+            <div className="flex-1">
+              <input
+                type="number"
+                inputMode="decimal"
+                aria-label="Maximum price"
+                min={priceBounds.min}
+                max={priceBounds.max}
+                placeholder={`$${priceBounds.max}`}
+                value={priceMax}
+                onChange={(e) => {
+                  setPriceMax(e.target.value);
+                  setVisibleCount(24);
+                }}
+                className="w-full px-2 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#00473c]"
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 
@@ -310,7 +482,7 @@ export default function ProductGridWithFilters({
             <span>Filters</span>
             {hasActiveFilters && (
               <span className="bg-white text-[#00473c] text-xs font-bold px-1.5 py-0.5 rounded-full">
-                {selectedColors.length + selectedPatterns.length}
+                {activeFilterCount}
               </span>
             )}
           </button>
