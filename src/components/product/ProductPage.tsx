@@ -80,6 +80,9 @@ import {
 import {
   DAY_NIGHT_BAND_H_MOTORIZATION_OPTIONS,
   DAY_NIGHT_BAND_H_SIZE_LIMITS,
+  getDayNightBandHSizeLimits,
+  intersectDayNightBandHSizeLimits,
+  isDayAndNightCategoryProduct,
   isDayNightBandHProduct,
   supportsBandHWrappedCassette,
 } from '@/data/dayNightBandH';
@@ -87,7 +90,11 @@ import {
   ROLLER_BAND_F_MOTORIZATION_OPTIONS,
   ROLLER_BAND_F_SIZE_LIMITS,
   ROLLER_BAND_F_ROOM_DARKENING_OPTIONS,
+  applyRollerBandFRoomDarkeningCap,
+  getRollerBandFSizeLimits,
+  intersectRollerBandFSizeLimits,
   isRollerBandFProduct,
+  isRollerCategoryProduct,
   supportsRollerBandFWrappedCassette,
   rollerBandFShowsRollOption,
 } from '@/data/rollerBandF';
@@ -95,6 +102,7 @@ import {
   HONEYCOMB_CELLULAR_CONTROL_OPTIONS,
   HONEYCOMB_CELLULAR_MOTORIZATION_OPTIONS,
   HONEYCOMB_CELLULAR_SIZE_LIMITS,
+  HONEYCOMB_CELLULAR_INSTALLATION_OPTIONS,
   isHoneycombCellularProduct,
 } from '@/data/honeycombCellular';
 import { ROOM_TYPE_OPTIONS } from '@/data/roomTypes';
@@ -202,7 +210,9 @@ const ProductPage = ({
   const productSampleEligible = useMemo(() => isSampleEligible(product), [product]);
   const searchParams = useSearchParams();
   const isBandHProduct = useMemo(() => isDayNightBandHProduct(product), [product]);
+  const isDayAndNightProduct = useMemo(() => isDayAndNightCategoryProduct(product), [product]);
   const isRollerBandF = useMemo(() => isRollerBandFProduct(product), [product]);
+  const isRollerProduct = useMemo(() => isRollerCategoryProduct(product), [product]);
   const isHoneycombCellular = useMemo(() => isHoneycombCellularProduct(product), [product]);
 
   // Context set by the collection page the user navigated from — affects name prefix and room darkening
@@ -514,7 +524,9 @@ const ProductPage = ({
 
   // No auto-preselection: user must explicitly pick a color variant.
 
-  const installationOptions = isDayNight
+  const installationOptions = isHoneycombCellular
+    ? HONEYCOMB_CELLULAR_INSTALLATION_OPTIONS
+    : isDayNight
     ? ZEBRA_INSTALLATION_OPTIONS
     : isRollerOrDayNight
     ? ROLLER_INSTALLATION_OPTIONS
@@ -687,8 +699,9 @@ const ProductPage = ({
       rollStyle: visibleOptions.showRollStyle ? config.rollStyle : null,
       roomDarkening: cartConfiguration.roomDarkening,
       rollOption: cartConfiguration.rollOption,
+      noDrillUpgrade: isHoneycombCellular ? config.noDrillUpgrade : null,
     });
-  }, [cartConfiguration, config, isBandHProduct, isRollerBandF, product.features.hasRollerCassette, visibleOptions]);
+  }, [cartConfiguration, config, isBandHProduct, isRollerBandF, isHoneycombCellular, product.features.hasRollerCassette, visibleOptions]);
 
   const requiredCustomizationVisibility = useMemo(() => {
     if (isBandHProduct) {
@@ -774,6 +787,38 @@ const ProductPage = ({
     return { minWidth, maxWidth, minHeight, maxHeight };
   }, [priceMatrix]);
 
+  // Zebra/Day-and-Night size limits depend on which control system is
+  // selected (CCL / Cordless / Motorized each have their own
+  // supplier-specified range), intersected with the price matrix's own
+  // bounds when available. Non-Band-H day-and-night products (Band A-G)
+  // only ever offer Continuous Chain or Motorization, never Cordless.
+  const bandHSizeLimits = useMemo(() => {
+    if (!isDayAndNightProduct) return null;
+    const controlOption = isBandHProduct ? cartConfiguration.controlOption : 'continuous-chain';
+    const controlLimits = getDayNightBandHSizeLimits(controlOption, isMotorizationActive);
+    return intersectDayNightBandHSizeLimits(controlLimits, sizeRanges);
+  }, [isDayAndNightProduct, isBandHProduct, cartConfiguration.controlOption, isMotorizationActive, sizeRanges]);
+
+  // Roller size limits depend on control system (CCL/Cordless/Motorized),
+  // plus No Drill Headrail (with Cordless) and Room Darkening + Flat Headrail
+  // nuances that only apply to Band F. Non-Band-F roller products (Band A-E)
+  // only ever offer Continuous Chain or Motorization.
+  const rollerSizeLimits = useMemo(() => {
+    if (!isRollerProduct) return null;
+    const controlOption = isRollerBandF ? cartConfiguration.controlOption : 'roller-f-continuous-chain';
+    const controlLimits = getRollerBandFSizeLimits(controlOption, isMotorizationActive, cartConfiguration.headrail);
+    const intersected = intersectRollerBandFSizeLimits(controlLimits, sizeRanges);
+    return applyRollerBandFRoomDarkeningCap(intersected, cartConfiguration.headrail, cartConfiguration.roomDarkening);
+  }, [
+    isRollerProduct,
+    isRollerBandF,
+    cartConfiguration.controlOption,
+    cartConfiguration.headrail,
+    cartConfiguration.roomDarkening,
+    isMotorizationActive,
+    sizeRanges,
+  ]);
+
   const missingRequiredCustomizations = useMemo(() => {
     const missingCustomizations = getMissingRequiredCustomizations(
       cartConfiguration,
@@ -784,7 +829,7 @@ const ProductPage = ({
       missingCustomizations.push({ key: 'colorVariant', label: 'color' });
     }
 
-    const isBandProduct = isBandHProduct || isRollerBandF || isHoneycombCellular;
+    const isBandProduct = isDayAndNightProduct || isRollerProduct || isHoneycombCellular;
     if (!isBandProduct || cartConfiguration.width <= 0 || cartConfiguration.height <= 0) {
       return missingCustomizations;
     }
@@ -800,13 +845,14 @@ const ProductPage = ({
       cartConfiguration.heightUnit
     );
     // Use variant-specific sizeRanges (includes per-color maxWidthInches cap) when available,
-    // fall back to static product-type limits.
-    const staticLimits = isBandHProduct
-      ? DAY_NIGHT_BAND_H_SIZE_LIMITS
-      : isRollerBandF
-      ? ROLLER_BAND_F_SIZE_LIMITS
-      : HONEYCOMB_CELLULAR_SIZE_LIMITS;
-    const limits = sizeRanges ?? staticLimits;
+    // fall back to static product-type limits. Day-and-Night and Roller products
+    // additionally narrow by the selected control system (see bandHSizeLimits /
+    // rollerSizeLimits above).
+    const limits = isDayAndNightProduct
+      ? bandHSizeLimits ?? DAY_NIGHT_BAND_H_SIZE_LIMITS
+      : isRollerProduct
+      ? rollerSizeLimits ?? ROLLER_BAND_F_SIZE_LIMITS
+      : sizeRanges ?? HONEYCOMB_CELLULAR_SIZE_LIMITS;
     const isOutOfRange =
       widthInches < limits.minWidth ||
       widthInches > limits.maxWidth ||
@@ -828,10 +874,14 @@ const ProductPage = ({
       : missingCustomizations;
   }, [
     bandHColorVariants,
+    bandHSizeLimits,
+    rollerSizeLimits,
     cartConfiguration,
     config.selectedVariantId,
     isBandHProduct,
+    isDayAndNightProduct,
     isRollerBandF,
+    isRollerProduct,
     isHoneycombCellular,
     requiredCustomizationVisibility,
     sizeRanges,
@@ -960,8 +1010,7 @@ const ProductPage = ({
 
   const honeycombControlOptionName = (() => {
     if (isMotorizationActive) {
-      const remoteName = HONEYCOMB_CELLULAR_MOTORIZATION_OPTIONS.find((o) => o.id === config.motorization)?.name;
-      return `Motorization – ${remoteName ?? 'Select remote'}`;
+      return HONEYCOMB_CELLULAR_MOTORIZATION_OPTIONS.find((o) => o.id === config.motorization)?.name ?? 'Motorized Wand';
     }
     const optionName = HONEYCOMB_CELLULAR_CONTROL_OPTIONS.find((o) => o.id === config.controlOption)?.name;
     if (!optionName) return null;
@@ -1313,17 +1362,9 @@ const ProductPage = ({
                   </svg>
                 </div>
                 <div className="ml-2 md:ml-3">
-                  <div className="text-[10px] md:text-xs text-gray-500">Estimated Delivery Date</div>
+                  <div className="text-[10px] md:text-xs text-gray-500">Estimated Dispatch Date</div>
                   <div className="text-xs md:text-sm font-semibold text-[#00473c]">
-                    {(() => {
-                      const fmt = (d: Date) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-                      const addDays = (d: Date, n: number) => { const r = new Date(d); r.setDate(r.getDate() + n); return r; };
-                      const today = new Date();
-                      if (isBandHProduct) {
-                        return `${fmt(addDays(today, 5))} - ${fmt(addDays(today, 7))}`;
-                      }
-                      return `${fmt(addDays(today, 8))} - ${fmt(addDays(today, 12))}`;
-                    })()}
+                    {isBandHProduct || isHoneycombCellular ? '5 - 7 Working Days' : '8 - 12 Working Days'}
                   </div>
                 </div>
               </div>
@@ -1404,10 +1445,10 @@ const ProductPage = ({
                             onHeightChange={(value) => setConfig({ ...config, height: value })}
                             onHeightFractionChange={(value) => setConfig({ ...config, heightFraction: value })}
                             onUnitChange={(unit) => setConfig({ ...config, widthUnit: unit, heightUnit: unit })}
-                            minWidth={sizeRanges?.minWidth ?? (isBandHProduct ? DAY_NIGHT_BAND_H_SIZE_LIMITS.minWidth : isRollerBandF ? ROLLER_BAND_F_SIZE_LIMITS.minWidth : isHoneycombCellular ? HONEYCOMB_CELLULAR_SIZE_LIMITS.minWidth : undefined)}
-                            maxWidth={sizeRanges?.maxWidth ?? (isBandHProduct ? DAY_NIGHT_BAND_H_SIZE_LIMITS.maxWidth : isRollerBandF ? ROLLER_BAND_F_SIZE_LIMITS.maxWidth : isHoneycombCellular ? HONEYCOMB_CELLULAR_SIZE_LIMITS.maxWidth : undefined)}
-                            minHeight={sizeRanges?.minHeight ?? (isBandHProduct ? DAY_NIGHT_BAND_H_SIZE_LIMITS.minHeight : isRollerBandF ? ROLLER_BAND_F_SIZE_LIMITS.minHeight : isHoneycombCellular ? HONEYCOMB_CELLULAR_SIZE_LIMITS.minHeight : undefined)}
-                            maxHeight={sizeRanges?.maxHeight ?? (isBandHProduct ? DAY_NIGHT_BAND_H_SIZE_LIMITS.maxHeight : isRollerBandF ? ROLLER_BAND_F_SIZE_LIMITS.maxHeight : isHoneycombCellular ? HONEYCOMB_CELLULAR_SIZE_LIMITS.maxHeight : undefined)}
+                            minWidth={isDayAndNightProduct ? bandHSizeLimits?.minWidth : isRollerProduct ? rollerSizeLimits?.minWidth : sizeRanges?.minWidth ?? (isHoneycombCellular ? HONEYCOMB_CELLULAR_SIZE_LIMITS.minWidth : undefined)}
+                            maxWidth={isDayAndNightProduct ? bandHSizeLimits?.maxWidth : isRollerProduct ? rollerSizeLimits?.maxWidth : sizeRanges?.maxWidth ?? (isHoneycombCellular ? HONEYCOMB_CELLULAR_SIZE_LIMITS.maxWidth : undefined)}
+                            minHeight={isDayAndNightProduct ? bandHSizeLimits?.minHeight : isRollerProduct ? rollerSizeLimits?.minHeight : sizeRanges?.minHeight ?? (isHoneycombCellular ? HONEYCOMB_CELLULAR_SIZE_LIMITS.minHeight : undefined)}
+                            maxHeight={isDayAndNightProduct ? bandHSizeLimits?.maxHeight : isRollerProduct ? rollerSizeLimits?.maxHeight : sizeRanges?.maxHeight ?? (isHoneycombCellular ? HONEYCOMB_CELLULAR_SIZE_LIMITS.maxHeight : undefined)}
                           />
                         </RequiredFieldWrapper>
                       )}
@@ -1430,14 +1471,16 @@ const ProductPage = ({
 
 
 
-                      {/* Blind Name Selector (Room Type dropdown AND input) */}
-                      <RoomTypeSelector
-                        options={ROOM_TYPE_OPTIONS}
-                        selectedRoomType={config.roomType}
-                        onRoomTypeChange={(roomTypeId) => setConfig({ ...config, roomType: roomTypeId })}
-                        blindName={config.blindName}
-                        onBlindNameChange={(value) => setConfig({ ...config, blindName: value || null })}
-                      />
+                      {/* Blind Name Selector (Room Type dropdown AND input) — not used for Honeycomb Cellular */}
+                      {!isHoneycombCellular && (
+                        <RoomTypeSelector
+                          options={ROOM_TYPE_OPTIONS}
+                          selectedRoomType={config.roomType}
+                          onRoomTypeChange={(roomTypeId) => setConfig({ ...config, roomType: roomTypeId })}
+                          blindName={config.blindName}
+                          onBlindNameChange={(value) => setConfig({ ...config, blindName: value || null })}
+                        />
+                      )}
 
                       {/* Roll Style Selector */}
                       {product.features.hasRollStyle && visibleOptions.showRollStyle && (

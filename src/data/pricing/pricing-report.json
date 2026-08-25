@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-08-24T09:51:33.642Z",
+  "generatedAt": "2026-08-25T10:00:32.282Z",
   "source": "manual+phase1-multi-table (Roller Band F G1-4, Dayandnight Band H G1-2)+honeycomb-cellular-g1-12",
-  "checksum": "6b1b044656f44f73d29f218dafa00aaaac20fd62743b76e2a8cde8e6146446ed",
+  "checksum": "5cd4227230195a2ab6703271d5b84e8d49a3fd822cdc7a0c890d9b73c90ae843",
   "counts": {
     "priceBands": 38,
     "widthBands": 58,

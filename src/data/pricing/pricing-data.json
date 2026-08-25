@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-08-24T09:51:33.642Z",
+  "generatedAt": "2026-08-25T10:00:32.282Z",
   "source": "manual+phase1-multi-table (Roller Band F G1-4, Dayandnight Band H G1-2)+honeycomb-cellular-g1-12",
   "priceBands": [
     {
@@ -47411,20 +47411,20 @@
       "sortOrder": 1
     },
     {
-      "id": "opt-hc-single-channel",
+      "id": "opt-hc-motorized-wand",
       "category": "motorization",
-      "optionId": "hc-single-channel",
-      "name": "Single Channel",
+      "optionId": "hc-motorized-wand",
+      "name": "Motorized Wand",
       "description": null,
       "sortOrder": 0
     },
     {
-      "id": "opt-hc-multi-channel",
-      "category": "motorization",
-      "optionId": "hc-multi-channel",
-      "name": "Multi Channel",
+      "id": "opt-hc-no-drill-upgrade",
+      "category": "no-drill-upgrade",
+      "optionId": "hc-no-drill-upgrade",
+      "name": "Upgrade to No Drill System",
       "description": null,
-      "sortOrder": 1
+      "sortOrder": 0
     }
   ],
   "customizationPricings": [
@@ -48633,21 +48633,21 @@
       "isPerUnit": false
     },
     {
-      "id": "price-hc-single-channel",
-      "customizationOptionId": "opt-hc-single-channel",
+      "id": "price-hc-motorized-wand",
+      "customizationOptionId": "opt-hc-motorized-wand",
       "widthBandId": null,
-      "price": 24,
+      "price": 0,
       "isPerUnit": false
     },
     {
-      "id": "price-hc-multi-channel",
-      "customizationOptionId": "opt-hc-multi-channel",
+      "id": "price-hc-no-drill-upgrade",
+      "customizationOptionId": "opt-hc-no-drill-upgrade",
       "widthBandId": null,
       "price": 39,
       "isPerUnit": false
     }
   ],
-  "checksum": "6b1b044656f44f73d29f218dafa00aaaac20fd62743b76e2a8cde8e6146446ed",
+  "checksum": "5cd4227230195a2ab6703271d5b84e8d49a3fd822cdc7a0c890d9b73c90ae843",
   "variantCodeBands": [
     {
       "code": "Z10010002",

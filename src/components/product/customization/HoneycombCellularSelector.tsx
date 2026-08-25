@@ -5,6 +5,7 @@ import { ProductConfiguration } from '@/types';
 import {
   HONEYCOMB_CELLULAR_CONTROL_OPTIONS,
   HONEYCOMB_CELLULAR_MOTORIZATION_OPTIONS,
+  HONEYCOMB_CELLULAR_NO_DRILL_UPGRADE_OPTION,
 } from '@/data/honeycombCellular';
 import { CONTROL_SIDE_OPTIONS } from '@/data/customizations';
 import SimpleDropdown from './SimpleDropdown';
@@ -38,6 +39,8 @@ const HoneycombCellularSelector = ({
       motorization: null,
     });
   };
+
+  const isNoDrillUpgradeSelected = config.noDrillUpgrade === HONEYCOMB_CELLULAR_NO_DRILL_UPGRADE_OPTION.id;
 
   const selectMotorization = () => {
     onMotorizationSelectedChange(true);
@@ -136,41 +139,49 @@ const HoneycombCellularSelector = ({
                 className="flex flex-1 flex-row items-center gap-3 text-left md:flex-col md:items-stretch"
               >
                 <div className="relative h-16 w-16 shrink-0 rounded-md bg-gray-50 overflow-hidden flex items-center justify-center md:h-[100px] md:w-full md:mb-3">
-                  <Image src="/products/control/motorised-option.webp" alt="Motorization" width={130} height={100} className="object-contain" />
+                  <Image src="/products/control/motorised-option.webp" alt="Motorized Wand" width={130} height={100} className="object-contain" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-base font-semibold text-[#3a3a3a] pr-8">Motorization</p>
-                  <p className="text-sm text-gray-500 mt-1">Motorized control with remote selection.</p>
+                  <p className="text-base font-semibold text-[#3a3a3a] pr-8">Motorized Wand</p>
+                  <p className="text-sm text-gray-500 mt-1">Motorized control operated by wand.</p>
                   <span className="mt-3 inline-flex w-fit rounded-md bg-[#00473c] px-2.5 py-1 text-xs font-semibold text-white">
                     +$95.00
                   </span>
                 </div>
               </button>
-
-              {isMotorizationSelected && (
-                <RequiredFieldWrapper
-                  fieldKey="motorization"
-                  label="motorization option"
-                  error={missingFieldKeys.has('motorization')}
-                  registerFieldRef={registerFieldRef}
-                  className="mt-4 border-t border-gray-100 pt-4"
-                >
-                  <SimpleDropdown
-                    label="Select Remote"
-                    options={HONEYCOMB_CELLULAR_MOTORIZATION_OPTIONS}
-                    selectedValue={config.motorization}
-                    onChange={(optionId) => updateConfig({ motorization: optionId })}
-                    placeholder="Select remote"
-                    portal
-                    menuMinWidth={320}
-                    portalPlacement="bottom"
-                  />
-                </RequiredFieldWrapper>
-              )}
             </div>
           </div>
         </section>
       </RequiredFieldWrapper>
+
+      {/* No Drill System upgrade */}
+      <section className="space-y-3">
+        <label
+          className={`flex cursor-pointer items-start gap-3 rounded-lg border-2 p-4 transition-all ${isNoDrillUpgradeSelected ? selectedClass : unselectedClass}`}
+        >
+          <input
+            type="checkbox"
+            className="mt-0.5 h-5 w-5 shrink-0 accent-[#00473c]"
+            checked={isNoDrillUpgradeSelected}
+            onChange={(e) =>
+              updateConfig({
+                noDrillUpgrade: e.target.checked ? HONEYCOMB_CELLULAR_NO_DRILL_UPGRADE_OPTION.id : null,
+              })
+            }
+          />
+          <span className="min-w-0">
+            <span className="block text-base font-semibold text-[#3a3a3a]">
+              {HONEYCOMB_CELLULAR_NO_DRILL_UPGRADE_OPTION.name}
+            </span>
+            <span className="mt-1 block text-sm text-gray-500">
+              {HONEYCOMB_CELLULAR_NO_DRILL_UPGRADE_OPTION.description}
+            </span>
+            <span className="mt-3 inline-flex w-fit rounded-md bg-[#00473c] px-2.5 py-1 text-xs font-semibold text-white">
+              +${HONEYCOMB_CELLULAR_NO_DRILL_UPGRADE_OPTION.price.toFixed(2)}
+            </span>
+          </span>
+        </label>
+      </section>
     </div>
   );
 };

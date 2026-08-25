@@ -33,13 +33,20 @@ import { ROOM_TYPE_OPTIONS } from '@/data/roomTypes';
 import {
   DAY_NIGHT_BAND_H_MOTORIZATION_OPTIONS,
   DAY_NIGHT_BAND_H_SIZE_LIMITS,
+  getDayNightBandHSizeLimits,
+  intersectDayNightBandHSizeLimits,
+  isDayAndNightCategoryProduct,
   isDayNightBandHProduct,
   supportsBandHWrappedCassette,
 } from '@/data/dayNightBandH';
 import {
   ROLLER_BAND_F_MOTORIZATION_OPTIONS,
   ROLLER_BAND_F_SIZE_LIMITS,
+  applyRollerBandFRoomDarkeningCap,
+  getRollerBandFSizeLimits,
+  intersectRollerBandFSizeLimits,
   isRollerBandFProduct,
+  isRollerCategoryProduct,
   supportsRollerBandFWrappedCassette,
   rollerBandFShowsRollOption,
 } from '@/data/rollerBandF';
@@ -89,7 +96,9 @@ const CartItemEditModal = ({ item, onClose, onSave }: CartItemEditModalProps) =>
 
   const product = item.product;
   const isBandHProduct = isDayNightBandHProduct(product);
+  const isDayAndNightProduct = isDayAndNightCategoryProduct(product);
   const isRollerBandF = isRollerBandFProduct(product);
+  const isRollerProduct = isRollerCategoryProduct(product);
   const defaultMotorizationOption = getFirstMotorizationOption(isBandHProduct, isRollerBandF);
   const activeMotorizationOptions = isBandHProduct
     ? DAY_NIGHT_BAND_H_MOTORIZATION_OPTIONS
@@ -295,10 +304,59 @@ const CartItemEditModal = ({ item, onClose, onSave }: CartItemEditModalProps) =>
     visibleOptions,
   ]);
 
+  // Size ranges from the selected variant's matrix (per-color max width applied).
+  const sizeRanges = useMemo(() => {
+    if (!priceMatrix || priceMatrix.widthBands.length === 0 || priceMatrix.heightBands.length === 0) {
+      return null;
+    }
+    const bandMaxWidth = Math.max(...priceMatrix.widthBands.map((b) => b.inches));
+    return {
+      minWidth: Math.min(...priceMatrix.widthBands.map((b) => b.inches)),
+      maxWidth:
+        typeof priceMatrix.maxWidthInches === 'number'
+          ? Math.min(bandMaxWidth, priceMatrix.maxWidthInches)
+          : bandMaxWidth,
+      minHeight: Math.min(...priceMatrix.heightBands.map((b) => b.inches)),
+      maxHeight: Math.max(...priceMatrix.heightBands.map((b) => b.inches)),
+    };
+  }, [priceMatrix]);
+
+  // Zebra/Day-and-Night size limits depend on which control system is
+  // selected (CCL / Cordless / Motorized each have their own
+  // supplier-specified range), intersected with the price matrix's own
+  // bounds when available. Non-Band-H day-and-night products (Band A-G)
+  // only ever offer Continuous Chain or Motorization, never Cordless.
+  const bandHSizeLimits = useMemo(() => {
+    if (!isDayAndNightProduct) return null;
+    const controlOption = isBandHProduct ? normalizedConfig.controlOption : 'continuous-chain';
+    const controlLimits = getDayNightBandHSizeLimits(controlOption, isMotorizationActive);
+    return intersectDayNightBandHSizeLimits(controlLimits, sizeRanges);
+  }, [isDayAndNightProduct, isBandHProduct, normalizedConfig.controlOption, isMotorizationActive, sizeRanges]);
+
+  // Roller size limits depend on control system (CCL/Cordless/Motorized),
+  // plus No Drill Headrail (with Cordless) and Room Darkening + Flat Headrail
+  // nuances that only apply to Band F. Non-Band-F roller products (Band A-E)
+  // only ever offer Continuous Chain or Motorization.
+  const rollerSizeLimits = useMemo(() => {
+    if (!isRollerProduct) return null;
+    const controlOption = isRollerBandF ? normalizedConfig.controlOption : 'roller-f-continuous-chain';
+    const controlLimits = getRollerBandFSizeLimits(controlOption, isMotorizationActive, normalizedConfig.headrail);
+    const intersected = intersectRollerBandFSizeLimits(controlLimits, sizeRanges);
+    return applyRollerBandFRoomDarkeningCap(intersected, normalizedConfig.headrail, normalizedConfig.roomDarkening);
+  }, [
+    isRollerProduct,
+    isRollerBandF,
+    normalizedConfig.controlOption,
+    normalizedConfig.headrail,
+    normalizedConfig.roomDarkening,
+    isMotorizationActive,
+    sizeRanges,
+  ]);
+
   const missingCustomizations = useMemo(() => {
     const missing = getMissingRequiredCustomizations(normalizedConfig, requiredVisibility);
 
-    const isBandProduct = isBandHProduct || isRollerBandF;
+    const isBandProduct = isDayAndNightProduct || isRollerProduct;
     if (!isBandProduct || normalizedConfig.width <= 0 || normalizedConfig.height <= 0) {
       return missing;
     }
@@ -313,7 +371,9 @@ const CartItemEditModal = ({ item, onClose, onSave }: CartItemEditModalProps) =>
       normalizedConfig.heightFraction,
       normalizedConfig.heightUnit
     );
-    const limits = isBandHProduct ? DAY_NIGHT_BAND_H_SIZE_LIMITS : ROLLER_BAND_F_SIZE_LIMITS;
+    const limits = isDayAndNightProduct
+      ? bandHSizeLimits ?? DAY_NIGHT_BAND_H_SIZE_LIMITS
+      : rollerSizeLimits ?? ROLLER_BAND_F_SIZE_LIMITS;
     const isOutOfRange =
       widthInches < limits.minWidth ||
       widthInches > limits.maxWidth ||
@@ -323,12 +383,21 @@ const CartItemEditModal = ({ item, onClose, onSave }: CartItemEditModalProps) =>
     return isOutOfRange
       ? [
           ...missing,
-          isBandHProduct
-            ? { key: 'bandHSize', label: 'valid Band H size' }
-            : { key: 'rollerBandFSize', label: 'valid Roller Band F size' },
+          isDayAndNightProduct
+            ? { key: 'bandHSize', label: isBandHProduct ? 'valid Band H size' : 'valid size' }
+            : { key: 'rollerBandFSize', label: isRollerBandF ? 'valid Roller Band F size' : 'valid size' },
         ]
       : missing;
-  }, [isBandHProduct, isRollerBandF, normalizedConfig, requiredVisibility]);
+  }, [
+    bandHSizeLimits,
+    rollerSizeLimits,
+    isBandHProduct,
+    isDayAndNightProduct,
+    isRollerBandF,
+    isRollerProduct,
+    normalizedConfig,
+    requiredVisibility,
+  ]);
 
   const selectedCustomizations = useMemo(() => configToCustomizations({
     headrail: visibleOptions.showHeadrail ? normalizedConfig.headrail : null,
@@ -392,23 +461,6 @@ const CartItemEditModal = ({ item, onClose, onSave }: CartItemEditModalProps) =>
     );
     return widthInches > 93 ? 100 : 0;
   }, [isRollerBandF, normalizedConfig.width, normalizedConfig.widthFraction, normalizedConfig.widthUnit]);
-
-  // Size ranges from the selected variant's matrix (per-color max width applied).
-  const sizeRanges = useMemo(() => {
-    if (!priceMatrix || priceMatrix.widthBands.length === 0 || priceMatrix.heightBands.length === 0) {
-      return null;
-    }
-    const bandMaxWidth = Math.max(...priceMatrix.widthBands.map((b) => b.inches));
-    return {
-      minWidth: Math.min(...priceMatrix.widthBands.map((b) => b.inches)),
-      maxWidth:
-        typeof priceMatrix.maxWidthInches === 'number'
-          ? Math.min(bandMaxWidth, priceMatrix.maxWidthInches)
-          : bandMaxWidth,
-      minHeight: Math.min(...priceMatrix.heightBands.map((b) => b.inches)),
-      maxHeight: Math.max(...priceMatrix.heightBands.map((b) => b.inches)),
-    };
-  }, [priceMatrix]);
 
   const editedPrice = priceCalculation
     ? priceCalculation.totalPrice + oversizeSurcharge
@@ -534,10 +586,10 @@ const CartItemEditModal = ({ item, onClose, onSave }: CartItemEditModalProps) =>
                 onHeightChange={(value) => updateConfig({ height: value })}
                 onHeightFractionChange={(value) => updateConfig({ heightFraction: value })}
                 onUnitChange={(unit) => updateConfig({ widthUnit: unit, heightUnit: unit })}
-                minWidth={sizeRanges?.minWidth ?? (isBandHProduct ? DAY_NIGHT_BAND_H_SIZE_LIMITS.minWidth : isRollerBandF ? ROLLER_BAND_F_SIZE_LIMITS.minWidth : undefined)}
-                maxWidth={sizeRanges?.maxWidth ?? (isBandHProduct ? DAY_NIGHT_BAND_H_SIZE_LIMITS.maxWidth : isRollerBandF ? ROLLER_BAND_F_SIZE_LIMITS.maxWidth : undefined)}
-                minHeight={sizeRanges?.minHeight ?? (isBandHProduct ? DAY_NIGHT_BAND_H_SIZE_LIMITS.minHeight : isRollerBandF ? ROLLER_BAND_F_SIZE_LIMITS.minHeight : undefined)}
-                maxHeight={sizeRanges?.maxHeight ?? (isBandHProduct ? DAY_NIGHT_BAND_H_SIZE_LIMITS.maxHeight : isRollerBandF ? ROLLER_BAND_F_SIZE_LIMITS.maxHeight : undefined)}
+                minWidth={isDayAndNightProduct ? bandHSizeLimits?.minWidth : isRollerProduct ? rollerSizeLimits?.minWidth : sizeRanges?.minWidth}
+                maxWidth={isDayAndNightProduct ? bandHSizeLimits?.maxWidth : isRollerProduct ? rollerSizeLimits?.maxWidth : sizeRanges?.maxWidth}
+                minHeight={isDayAndNightProduct ? bandHSizeLimits?.minHeight : isRollerProduct ? rollerSizeLimits?.minHeight : sizeRanges?.minHeight}
+                maxHeight={isDayAndNightProduct ? bandHSizeLimits?.maxHeight : isRollerProduct ? rollerSizeLimits?.maxHeight : sizeRanges?.maxHeight}
               />
             )}
 

@@ -146,6 +146,8 @@ export interface ProductConfiguration {
   selectedVariantImage: string | null;
   selectedVariantOptionName: string | null;
   selectedVariantOptionValue: string | null;
+  /** Honeycomb Cellular only: optional "Upgrade to No Drill System" checkbox. */
+  noDrillUpgrade: string | null;
 }
 
 export const DEFAULT_CONFIGURATION: ProductConfiguration = {
@@ -181,6 +183,7 @@ export const DEFAULT_CONFIGURATION: ProductConfiguration = {
   selectedVariantImage: null,
   selectedVariantOptionName: null,
   selectedVariantOptionValue: null,
+  noDrillUpgrade: null,
 };
 
 // ============================================
