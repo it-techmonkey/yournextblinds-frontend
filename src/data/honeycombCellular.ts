@@ -6,24 +6,27 @@ export const HONEYCOMB_CELLULAR_TAG = 'honeycomb-cellular-shades';
 /** Collection page slug. Also the curated collection's tagSlug. */
 export const HONEYCOMB_CELLULAR_COLLECTION_SLUG = 'honeycomb-cellular-shades';
 
-// Fallback size bounds — only used before the server-fetched price matrix lands
-// (`sizeRanges` in ProductPage overrides these the instant it loads, which in
-// practice is immediately: the matrix ships via SSR as `initialPriceMatrix`).
+// Selectable size range for this product family, taken directly from the supplier
+// catalogue's "Size Considerations for All Shades" table
+// (HoneyComb_ProductCatalog_032626.pdf, p.1): min width 9" (Cordless), max width 96"
+// (107" is offered via Special Quote in the doc — not reachable here, since this
+// instant-quote flow has no special-quote path), min height 18", max height 120".
 //
-// The real, enforced range is whatever the price grid covers: 24-96"W x 36-96"H,
-// i.e. the 12 price groups in pricing-data.json. The supplier catalogue's "Size
-// Considerations for All Shades" table (HoneyComb_ProductCatalog_032626.pdf, p.1)
-// states a wider spec range — min
-// width 9" (Cordless), max width 96" (107" via Special Quote, not offered through
-// this instant-quote flow), min height 18", max height 120" — but none of 9-23"W,
-// 97-120"H has real per-size pricing behind it in the supplier's price grid (which
-// genuinely starts at 24"x36"), so it is intentionally NOT reachable here. Extending
-// it would mean inventing prices rather than reflecting the doc's own pricing data.
+// This range is WIDER than the price grid's own coverage (24-96"W x 36-96"H, the 12
+// groups in pricing-data.json). That is intentional and safe: ProductPage bypasses
+// the price-matrix-derived `sizeRanges` for Honeycomb Cellular specifically so these
+// bounds always win, and any size outside the grid is still priced correctly by the
+// existing ceiling logic — findCeilingWidthBand/findCeilingHeightBand (client:
+// src/lib/pricing.ts, server: src/lib/server/pricing.service.ts) round UP to the
+// smallest available band for a too-small size, and fall back to the LARGEST band's
+// price for a too-large one. So e.g. a 9"-wide order prices at the 24" rate, and a
+// 120"-tall order prices at the 96" rate — never undercharged, just not a bespoke
+// per-size price for the sizes the supplier hasn't priced individually.
 export const HONEYCOMB_CELLULAR_SIZE_LIMITS = {
-  minWidth: 24,
+  minWidth: 9,
   maxWidth: 96,
-  minHeight: 36,
-  maxHeight: 96,
+  minHeight: 18,
+  maxHeight: 120,
 };
 
 export const HONEYCOMB_CELLULAR_INSTALLATION_OPTIONS = [

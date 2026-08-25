@@ -4,14 +4,20 @@ export const ROLLER_BAND_F_PRODUCT_HANDLE = 'roller-blind-band-f-test';
 export const ROLLER_BAND_F_TAG = 'roller-band-f';
 export const ROLLER_BAND_F_PRICE_BAND_NAME = 'Roller - Band F';
 
-// Static fallback used only before the price matrix has loaded (so inputs
-// aren't left completely unbounded). Once pricing loads, the full price band
-// range takes over as the "nothing selected yet" bound instead of this.
+// Union of the per-system ranges below — used as the enforced range before a
+// control option is selected. The size range is exactly the supplier spec
+// sheet's numbers; it is NOT narrowed by which price bands happen to exist in
+// pricing-data.json. A width/height inside these bounds but outside the
+// price table's own coverage still prices correctly, because the ceiling-band
+// lookup (findCeilingWidthBand/findCeilingHeightBand in lib/pricing.ts and
+// lib/server/pricing.service.ts) already falls back to the nearest available
+// band in both directions — the smallest band when the request is below the
+// table's minimum, the largest band when it's above the table's maximum.
 export const ROLLER_BAND_F_SIZE_LIMITS = {
-  minWidth: 12,
-  maxWidth: 96,
-  minHeight: 12,
-  maxHeight: 108,
+  minWidth: 8,
+  maxWidth: 116,
+  minHeight: 11,
+  maxHeight: 144,
 };
 
 type RollerSizeRange = { minWidth: number; maxWidth: number; minHeight: number; maxHeight: number };
@@ -31,19 +37,14 @@ export const ROLLER_BAND_F_CORDLESS_NO_DRILL_SIZE_LIMITS: RollerSizeRange = {
   maxHeight: 96,
 };
 
-// Returns null when no control option is selected yet (and motorization isn't
-// active) — callers should fall back to the full price band range in that case
-// (see intersectRollerBandFSizeLimits), not a hardcoded system range.
 export function getRollerBandFSizeLimits(
   controlOption: string | null,
   isMotorizationActive: boolean,
   headrail: string | null
-): RollerSizeRange | null {
-  let limits: RollerSizeRange | null = isMotorizationActive
+): RollerSizeRange {
+  let limits: RollerSizeRange = isMotorizationActive
     ? ROLLER_BAND_F_CONTROL_SIZE_LIMITS.motorized
-    : (controlOption && ROLLER_BAND_F_CONTROL_SIZE_LIMITS[controlOption]) || null;
-
-  if (!limits) return null;
+    : (controlOption && ROLLER_BAND_F_CONTROL_SIZE_LIMITS[controlOption]) || ROLLER_BAND_F_SIZE_LIMITS;
 
   // No Drill Headrail is only offered alongside Cordless control.
   if (!isMotorizationActive && controlOption === 'roller-f-cordless' && headrail === 'roller-f-no-drill-headrail') {
@@ -58,23 +59,15 @@ export function getRollerBandFSizeLimits(
   return limits;
 }
 
-// Narrows the control-system limits to whatever the price matrix actually
-// covers (e.g. a fabric-specific maxWidthInches cap), when that data is
-// available. When no control option is selected yet (controlLimits is null),
-// the full price band range applies instead — falling back to the static
-// union only if pricing hasn't loaded at all.
-export function intersectRollerBandFSizeLimits(
-  controlLimits: RollerSizeRange | null,
-  priceMatrixRange: RollerSizeRange | null
+// Applies only the per-color fabric max-width cap (a real manufacturing limit
+// for that specific color, distinct from price-table coverage gaps) on top of
+// the sheet-based system limits.
+export function capRollerBandFSizeLimits(
+  limits: RollerSizeRange,
+  maxWidthInches: number | null | undefined
 ): RollerSizeRange {
-  if (!controlLimits) return priceMatrixRange ?? ROLLER_BAND_F_SIZE_LIMITS;
-  if (!priceMatrixRange) return controlLimits;
-  return {
-    minWidth: Math.max(controlLimits.minWidth, priceMatrixRange.minWidth),
-    maxWidth: Math.min(controlLimits.maxWidth, priceMatrixRange.maxWidth),
-    minHeight: Math.max(controlLimits.minHeight, priceMatrixRange.minHeight),
-    maxHeight: Math.min(controlLimits.maxHeight, priceMatrixRange.maxHeight),
-  };
+  if (typeof maxWidthInches !== 'number') return limits;
+  return { ...limits, maxWidth: Math.min(limits.maxWidth, maxWidthInches) };
 }
 
 // Room Darkening fabric paired with the flat/square headrail caps max height

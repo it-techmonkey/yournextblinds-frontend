@@ -80,8 +80,8 @@ import {
 import {
   DAY_NIGHT_BAND_H_MOTORIZATION_OPTIONS,
   DAY_NIGHT_BAND_H_SIZE_LIMITS,
+  capDayNightBandHSizeLimits,
   getDayNightBandHSizeLimits,
-  intersectDayNightBandHSizeLimits,
   isDayAndNightCategoryProduct,
   isDayNightBandHProduct,
   supportsBandHWrappedCassette,
@@ -91,8 +91,8 @@ import {
   ROLLER_BAND_F_SIZE_LIMITS,
   ROLLER_BAND_F_ROOM_DARKENING_OPTIONS,
   applyRollerBandFRoomDarkeningCap,
+  capRollerBandFSizeLimits,
   getRollerBandFSizeLimits,
-  intersectRollerBandFSizeLimits,
   isRollerBandFProduct,
   isRollerCategoryProduct,
   supportsRollerBandFWrappedCassette,
@@ -768,6 +768,14 @@ const ProductPage = ({
   ]);
 
   const sizeRanges = useMemo(() => {
+    // Honeycomb Cellular's selectable range is fixed to the supplier catalogue's
+    // stated spec (see HONEYCOMB_CELLULAR_SIZE_LIMITS), not to what the price grid
+    // happens to cover — sizes outside the grid are still priced correctly via the
+    // ceiling-to-nearest-band / clamp-to-max-band logic in calculateDimensionPrice
+    // (client) and findCeilingWidthBand/findCeilingHeightBand (server).
+    if (isHoneycombCellular) {
+      return null;
+    }
     if (!priceMatrix || !priceMatrix.widthBands || !priceMatrix.heightBands) {
       return null;
     }
@@ -785,30 +793,39 @@ const ProductPage = ({
     const minHeight = Math.min(...heightBands.map(b => b.inches));
     const maxHeight = Math.max(...heightBands.map(b => b.inches));
     return { minWidth, maxWidth, minHeight, maxHeight };
-  }, [priceMatrix]);
+  }, [priceMatrix, isHoneycombCellular]);
 
-  // Zebra/Day-and-Night size limits depend on which control system is
-  // selected (CCL / Cordless / Motorized each have their own
-  // supplier-specified range), intersected with the price matrix's own
-  // bounds when available. Non-Band-H day-and-night products (Band A-G)
-  // only ever offer Continuous Chain or Motorization, never Cordless.
+  // Zebra/Day-and-Night's selectable range is fixed to the supplier spec
+  // sheet's per-control-system numbers (CCL / Cordless / Motorized), not to
+  // what the price grid happens to cover — sizes outside the grid are still
+  // priced correctly via the ceiling-to-nearest-band / clamp-to-max-band logic
+  // in calculateDimensionPrice (client) and findCeilingWidthBand/
+  // findCeilingHeightBand (server). The only price-matrix input that still
+  // narrows the range is the genuine per-color fabric max-width cap.
+  // Non-Band-H day-and-night products (Band A-G) only ever offer Continuous
+  // Chain or Motorization, never Cordless.
   const bandHSizeLimits = useMemo(() => {
     if (!isDayAndNightProduct) return null;
     const controlOption = isBandHProduct ? cartConfiguration.controlOption : 'continuous-chain';
-    const controlLimits = getDayNightBandHSizeLimits(controlOption, isMotorizationActive);
-    return intersectDayNightBandHSizeLimits(controlLimits, sizeRanges);
-  }, [isDayAndNightProduct, isBandHProduct, cartConfiguration.controlOption, isMotorizationActive, sizeRanges]);
+    const limits = getDayNightBandHSizeLimits(controlOption, isMotorizationActive);
+    return capDayNightBandHSizeLimits(limits, priceMatrix?.maxWidthInches);
+  }, [isDayAndNightProduct, isBandHProduct, cartConfiguration.controlOption, isMotorizationActive, priceMatrix]);
 
-  // Roller size limits depend on control system (CCL/Cordless/Motorized),
-  // plus No Drill Headrail (with Cordless) and Room Darkening + Flat Headrail
-  // nuances that only apply to Band F. Non-Band-F roller products (Band A-E)
-  // only ever offer Continuous Chain or Motorization.
+  // Roller's selectable range is fixed to the supplier spec sheet's
+  // per-control-system numbers (CCL / Cordless / No-Drill / Motorized), not to
+  // what the price grid happens to cover — sizes outside the grid are still
+  // priced correctly via the ceiling-to-nearest-band / clamp-to-max-band logic
+  // in calculateDimensionPrice (client) and findCeilingWidthBand/
+  // findCeilingHeightBand (server). Room Darkening + Flat Headrail still caps
+  // max height, and the price matrix's genuine per-color fabric max-width cap
+  // still applies. Non-Band-F roller products (Band A-E) only ever offer
+  // Continuous Chain or Motorization.
   const rollerSizeLimits = useMemo(() => {
     if (!isRollerProduct) return null;
     const controlOption = isRollerBandF ? cartConfiguration.controlOption : 'roller-f-continuous-chain';
-    const controlLimits = getRollerBandFSizeLimits(controlOption, isMotorizationActive, cartConfiguration.headrail);
-    const intersected = intersectRollerBandFSizeLimits(controlLimits, sizeRanges);
-    return applyRollerBandFRoomDarkeningCap(intersected, cartConfiguration.headrail, cartConfiguration.roomDarkening);
+    const limits = getRollerBandFSizeLimits(controlOption, isMotorizationActive, cartConfiguration.headrail);
+    const darkened = applyRollerBandFRoomDarkeningCap(limits, cartConfiguration.headrail, cartConfiguration.roomDarkening);
+    return capRollerBandFSizeLimits(darkened, priceMatrix?.maxWidthInches);
   }, [
     isRollerProduct,
     isRollerBandF,
@@ -816,7 +833,7 @@ const ProductPage = ({
     cartConfiguration.headrail,
     cartConfiguration.roomDarkening,
     isMotorizationActive,
-    sizeRanges,
+    priceMatrix,
   ]);
 
   const missingRequiredCustomizations = useMemo(() => {
