@@ -29,6 +29,8 @@ export interface ProductReview {
   title: string;
   content: string;
   verified: boolean;
+  /** Public URLs of reviewer-submitted photos (from Judge.me). */
+  images?: string[];
 }
 
 export interface ProductVariantOption {

@@ -442,6 +442,34 @@ export const OPENING_DIRECTION_OPTIONS = [
   },
 ];
 
+// EclipseCore shades use their own opening-direction illustrations.
+export const OPENING_DIRECTION_OPTIONS_ECLIPSECORE = [
+  {
+    id: 'left-to-right',
+    name: 'Left To Right',
+    price: 0,
+    image: '/products/openingDirection/lefttoright-eclipsecore.webp',
+  },
+  {
+    id: 'right-to-left',
+    name: 'Right To Left',
+    price: 0,
+    image: '/products/openingDirection/righttoleft-eclipsecore.webp',
+  },
+  {
+    id: 'top-down',
+    name: 'Top Down',
+    price: 0,
+    image: '/products/openingDirection/topdown-eclipsecore.webp',
+  },
+  {
+    id: 'split',
+    name: 'Split',
+    price: 35,
+    image: '/products/openingDirection/split-eclipsecore.webp',
+  },
+];
+
 // Bottom Bar Options
 export const BOTTOM_BAR_OPTIONS = [
   {

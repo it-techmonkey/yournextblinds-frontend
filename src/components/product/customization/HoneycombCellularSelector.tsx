@@ -139,7 +139,7 @@ const HoneycombCellularSelector = ({
                 className="flex flex-1 flex-row items-center gap-3 text-left md:flex-col md:items-stretch"
               >
                 <div className="relative h-16 w-16 shrink-0 rounded-md bg-gray-50 overflow-hidden flex items-center justify-center md:h-[100px] md:w-full md:mb-3">
-                  <Image src="/products/control/motorised-option.webp" alt="Motorized Wand" width={130} height={100} className="object-contain" />
+                  <Image src={HONEYCOMB_CELLULAR_MOTORIZATION_OPTIONS[0].image} alt="Motorized Wand" width={130} height={100} className="object-contain" />
                 </div>
                 <div className="min-w-0">
                   <p className="text-base font-semibold text-[#3a3a3a] pr-8">Motorized Wand</p>

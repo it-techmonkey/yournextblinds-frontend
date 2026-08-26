@@ -1,6 +1,7 @@
 import { revalidatePath } from 'next/cache';
 import { NextResponse } from 'next/server';
 import { CURATED_COLLECTION_SLUGS } from '@/data/curatedCollections';
+import { HONEYCOMB_SUB_COLLECTION_SLUGS } from '@/data/honeycombSubCollections';
 
 // On-demand ISR revalidation. Lets an operator force specific static pages to
 // regenerate immediately — e.g. to clear a collection page that got stuck
@@ -18,6 +19,7 @@ const DEFAULT_PATHS = [
   // Curated collections draw from the whole catalog, so a stale pricing
   // snapshot affects all of them at once.
   ...CURATED_COLLECTION_SLUGS.map((slug) => `/collections/${slug}`),
+  ...HONEYCOMB_SUB_COLLECTION_SLUGS.map((slug) => `/collections/${slug}`),
 ];
 
 export async function GET(request: Request) {

@@ -8,7 +8,11 @@
  * Source of truth: scripts/data/honeycomb-cellular-products.json
  */
 
-/** A sub-category card shown at the top of the collection page, acting as a filter. */
+/**
+ * A sub-category card shown at the top of the honeycomb collection pages.
+ * Each links to its own standalone collection (src/data/honeycombSubCollections.ts);
+ * the `all` card is dropped from that list since the family page is the "all" view.
+ */
 export interface HoneycombSubCategoryCard {
   id: string;
   label: string;

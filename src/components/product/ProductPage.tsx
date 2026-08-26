@@ -75,6 +75,7 @@ import {
   BLIND_COLOR_OPTIONS,
   FRAME_COLOR_OPTIONS,
   OPENING_DIRECTION_OPTIONS,
+  OPENING_DIRECTION_OPTIONS_ECLIPSECORE,
   BOTTOM_BAR_OPTIONS,
   ROLL_STYLE_OPTIONS
 } from '@/data/customizations';
@@ -104,6 +105,7 @@ import {
   HONEYCOMB_CELLULAR_MOTORIZATION_OPTIONS,
   HONEYCOMB_CELLULAR_SIZE_LIMITS,
   HONEYCOMB_CELLULAR_INSTALLATION_OPTIONS,
+  HONEYCOMB_CELLULAR_NO_DRILL_UPGRADE_OPTION,
   isHoneycombCellularProduct,
 } from '@/data/honeycombCellular';
 import { ROOM_TYPE_OPTIONS } from '@/data/roomTypes';
@@ -239,6 +241,14 @@ const ProductPage = ({
   const isRollerBandF = useMemo(() => isRollerBandFProduct(product), [product]);
   const isRollerProduct = useMemo(() => isRollerCategoryProduct(product), [product]);
   const isHoneycombCellular = useMemo(() => isHoneycombCellularProduct(product), [product]);
+  const [reviewFormOpen, setReviewFormOpen] = useState(false);
+
+  const openReviewForm = () => {
+    setReviewFormOpen(true);
+    if (typeof document !== 'undefined') {
+      document.getElementById('reviews')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
 
   // Context set by the collection page the user navigated from — affects name prefix and room darkening
   const collectionContext = searchParams.get('collectionContext') as 'light-filtering' | 'blackout' | null;
@@ -347,6 +357,9 @@ const ProductPage = ({
   // Preselect a specific control option when arriving from a control-specific
   // collection card (e.g. the Cordless honeycomb sub-category card).
   const preselectControlOption = searchParams.get('control');
+  // Preselect the "Upgrade to No Drill System" option when arriving from the
+  // No Drill honeycomb sub-collection.
+  const preselectNoDrillUpgrade = searchParams.get('noDrill') === 'true';
   const defaultMotorizationOption = isBandHProduct
     ? DAY_NIGHT_BAND_H_MOTORIZATION_OPTIONS[0]?.id ?? null
     : isRollerBandF
@@ -421,6 +434,15 @@ const ProductPage = ({
           motorization: null,
         }));
       }
+    }
+
+    // Pre-check the No Drill System upgrade when arriving from the No Drill
+    // honeycomb sub-collection.
+    if (preselectNoDrillUpgrade && isHoneycombCellular) {
+      setConfig((prev) => ({
+        ...prev,
+        noDrillUpgrade: HONEYCOMB_CELLULAR_NO_DRILL_UPGRADE_OPTION.id,
+      }));
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -1355,8 +1377,22 @@ const ProductPage = ({
                 {displayProductName}
               </h1>
 
-              <div className="flex items-center gap-1 mb-4">
-                <StarRating rating={product.rating} />
+              <div className="flex items-center flex-wrap gap-x-3 gap-y-1 mb-4">
+                <div className="flex items-center gap-1.5">
+                  <StarRating rating={product.reviewCount > 0 ? product.rating : 0} />
+                  <a href="#reviews" className="text-xs text-gray-500 hover:text-[#00473c] underline-offset-2 hover:underline">
+                    {product.reviewCount > 0
+                      ? `(${product.reviewCount} ${product.reviewCount === 1 ? 'review' : 'reviews'})`
+                      : '(No reviews yet)'}
+                  </a>
+                </div>
+                <button
+                  type="button"
+                  onClick={openReviewForm}
+                  className="text-xs font-medium text-[#00473c] hover:underline underline-offset-2"
+                >
+                  Write a review
+                </button>
               </div>
 
               <div className="border border-gray-200 rounded-lg p-4 mb-4">
@@ -1404,8 +1440,22 @@ const ProductPage = ({
               </p>
 
               {/* Rating */}
-              <div className="hidden lg:flex items-center gap-1 mb-4 md:mb-6">
-                <StarRating rating={product.rating} />
+              <div className="hidden lg:flex items-center flex-wrap gap-x-3 gap-y-1 mb-4 md:mb-6">
+                <div className="flex items-center gap-1.5">
+                  <StarRating rating={product.reviewCount > 0 ? product.rating : 0} />
+                  <a href="#reviews" className="text-xs text-gray-500 hover:text-[#00473c] underline-offset-2 hover:underline">
+                    {product.reviewCount > 0
+                      ? `(${product.reviewCount} ${product.reviewCount === 1 ? 'review' : 'reviews'})`
+                      : '(No reviews yet)'}
+                  </a>
+                </div>
+                <button
+                  type="button"
+                  onClick={openReviewForm}
+                  className="text-xs font-medium text-[#00473c] hover:underline underline-offset-2"
+                >
+                  Write a review
+                </button>
               </div>
 
               {renderBandHColorSelector('mb-4 lg:hidden', 'colorVariant-mobile')}
@@ -1815,7 +1865,7 @@ const ProductPage = ({
                         >
                           <SimpleDropdown
                             label="Opening Direction"
-                            options={OPENING_DIRECTION_OPTIONS}
+                            options={isPleated ? OPENING_DIRECTION_OPTIONS_ECLIPSECORE : OPENING_DIRECTION_OPTIONS}
                             selectedValue={config.openingDirection}
                             onChange={(optionId) => setConfig({ ...config, openingDirection: optionId })}
                             placeholder="Select opening direction"
@@ -2834,18 +2884,19 @@ const ProductPage = ({
         productTags={product.tags}
       />
 
-      {/* Reviews Section — hidden */}
-      {false && product.slug !== 'non-driii-honeycomb-blackout-blinds' && (
-        <section className="px-4 md:px-6 lg:px-20 py-8 md:py-12 bg-white border-t border-gray-100">
-          <div className="max-w-[1400px] mx-auto px-4 md:px-6 lg:px-8">
-            <ProductReviews
-              reviews={product.reviews}
-              averageRating={product.rating}
-              totalReviews={product.reviewCount}
-            />
-          </div>
-        </section>
-      )}
+      {/* Reviews Section */}
+      <section className="px-4 md:px-6 lg:px-20 py-8 md:py-12 bg-white border-t border-gray-100">
+        <div className="max-w-[1400px] mx-auto px-4 md:px-6 lg:px-8">
+          <ProductReviews
+            productHandle={product.slug}
+            productName={displayProductName}
+            productExternalId={product.id?.match(/(\d+)\s*$/)?.[1] ?? null}
+            initialReviews={product.reviews}
+            formOpen={reviewFormOpen}
+            onFormOpenChange={setReviewFormOpen}
+          />
+        </div>
+      </section>
 
       {/* Related Products */}
       {product.slug !== 'non-driii-honeycomb-blackout-blinds' && relatedProducts.length > 0 && (

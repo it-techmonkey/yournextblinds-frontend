@@ -377,8 +377,9 @@ export const CURATED_COLLECTIONS: Record<string, CuratedCollection> = {
   // The 19-product Honeycomb/Cellular line. Every product carries the
   // `honeycomb-cellular-shades` tag, so the tagSlug override (>=5 tagged products)
   // selects the whole family directly; `include` is the pre-provisioning fallback.
-  // Sub-category cards on this page filter client-side from the generated
-  // catalogue (see HONEYCOMB_SUBCATEGORY_CARDS), not from Shopify tags.
+  // The "Shop by type" cards on this page link to standalone sub-collections
+  // (src/data/honeycombSubCollections.ts), each narrowed from the generated
+  // catalogue (HONEYCOMB_SUBCATEGORIES_BY_HANDLE), not from Shopify tags.
   'honeycomb-cellular-shades': {
     slug: 'honeycomb-cellular-shades',
     title: 'Honeycomb / Cellular Shades',

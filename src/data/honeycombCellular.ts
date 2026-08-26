@@ -66,7 +66,7 @@ export const HONEYCOMB_CELLULAR_CONTROL_OPTIONS = [
     name: 'Cordless',
     description: 'Child safe cordless operation.',
     price: 35.75,
-    image: '/products/control/cordless-zebra-shade.webp',
+    image: '/products/control/cordless-cellular.webp',
   },
 ];
 
@@ -80,7 +80,7 @@ export const HONEYCOMB_CELLULAR_MOTORIZATION_OPTIONS = [
     name: 'Motorized Wand',
     description: 'Motorized control operated by wand.',
     price: 0,
-    image: '/products/control/motorised-option.webp',
+    image: '/products/control/motorized-cellular.webp',
   },
 ];
 

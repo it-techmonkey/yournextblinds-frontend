@@ -2,13 +2,20 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import type { HoneycombSubCategoryCard } from '@/data/honeycombCellularCatalog';
+import { HONEYCOMB_SUB_COLLECTIONS } from '@/data/honeycombSubCollections';
 
 interface SubCategoryCardsProps {
   cards: HoneycombSubCategoryCard[];
+  /** Sub-category id of the page currently being viewed, highlighted as active. */
   activeId: string;
-  onSelect: (id: string) => void;
 }
+
+/** Sub-category id -> its standalone collection URL. */
+const HREF_BY_ID: Record<string, string> = Object.fromEntries(
+  HONEYCOMB_SUB_COLLECTIONS.map((c) => [c.subCategoryId, `/collections/${c.slug}`])
+);
 
 /**
  * Every label besides "all" already ends in "Cellular Shades" (redundant next
@@ -23,11 +30,12 @@ function getChipLabel(card: HoneycombSubCategoryCard): string {
 }
 
 /**
- * Sub-category cards shown above a collection's product grid. Unlike the
- * homepage CategoryGrid these navigate nowhere — each one filters the grid in
- * place, so they are buttons with aria-pressed rather than links.
+ * Sub-category cards shown above a collection's product grid. Each one links to
+ * its own standalone collection page (see src/data/honeycombSubCollections.ts) —
+ * they used to filter the grid in place, but now navigate like the homepage
+ * CategoryGrid. The card matching the current page is marked active.
  */
-const SubCategoryCards = ({ cards, activeId, onSelect }: SubCategoryCardsProps) => {
+const SubCategoryCards = ({ cards, activeId }: SubCategoryCardsProps) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   // Fraction of the strip that's visible (thumb width) and how far scrolled
   // (thumb position), so the indicator bar below the chips tracks 1:1 with
@@ -76,11 +84,10 @@ const SubCategoryCards = ({ cards, activeId, onSelect }: SubCategoryCardsProps) 
             {cards.map((card) => {
               const isActive = card.id === activeId;
               return (
-                <button
+                <Link
                   key={card.id}
-                  type="button"
-                  onClick={() => onSelect(card.id)}
-                  aria-pressed={isActive}
+                  href={HREF_BY_ID[card.id] ?? '#'}
+                  aria-current={isActive ? 'page' : undefined}
                   title={card.label}
                   className="flex w-[72px] shrink-0 flex-col items-center gap-1.5 text-center"
                 >
@@ -106,7 +113,7 @@ const SubCategoryCards = ({ cards, activeId, onSelect }: SubCategoryCardsProps) 
                   >
                     {getChipLabel(card)}
                   </span>
-                </button>
+                </Link>
               );
             })}
           </div>
@@ -129,11 +136,10 @@ const SubCategoryCards = ({ cards, activeId, onSelect }: SubCategoryCardsProps) 
         {cards.map((card) => {
           const isActive = card.id === activeId;
           return (
-            <button
+            <Link
               key={card.id}
-              type="button"
-              onClick={() => onSelect(card.id)}
-              aria-pressed={isActive}
+              href={HREF_BY_ID[card.id] ?? '#'}
+              aria-current={isActive ? 'page' : undefined}
               className={`group flex flex-col overflow-hidden rounded-sm border bg-white text-left transition-all duration-200 ${
                 isActive
                   ? 'border-[#00473c] shadow-md ring-1 ring-[#00473c]'
@@ -164,7 +170,7 @@ const SubCategoryCards = ({ cards, activeId, onSelect }: SubCategoryCardsProps) 
               >
                 {card.label}
               </span>
-            </button>
+            </Link>
           );
         })}
       </div>

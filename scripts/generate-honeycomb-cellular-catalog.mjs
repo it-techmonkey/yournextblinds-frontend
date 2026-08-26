@@ -68,7 +68,11 @@ function main() {
   lines.push(' * Source of truth: scripts/data/honeycomb-cellular-products.json');
   lines.push(' */');
   lines.push('');
-  lines.push('/** A sub-category card shown at the top of the collection page, acting as a filter. */');
+  lines.push('/**');
+  lines.push(' * A sub-category card shown at the top of the honeycomb collection pages.');
+  lines.push(' * Each links to its own standalone collection (src/data/honeycombSubCollections.ts);');
+  lines.push(' * the `all` card is dropped from that list since the family page is the "all" view.');
+  lines.push(' */');
   lines.push('export interface HoneycombSubCategoryCard {');
   lines.push('  id: string;');
   lines.push('  label: string;');

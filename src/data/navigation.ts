@@ -6,6 +6,7 @@ import {
   getCuratedCollectionsByGroup,
   type CuratedGroup,
 } from './curatedCollections';
+import { HONEYCOMB_SUB_COLLECTION_SLUGS } from './honeycombSubCollections';
 
 // Navigation interfaces
 export interface NavigationLink {
@@ -163,6 +164,7 @@ export const ALL_COLLECTION_SLUGS = [
 export const SITEMAP_COLLECTION_SLUGS = [
   ...ALL_COLLECTION_SLUGS,
   ...CURATED_COLLECTION_SLUGS,
+  ...HONEYCOMB_SUB_COLLECTION_SLUGS,
 ];
 
 // Custom descriptions for collection hero sections

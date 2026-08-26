@@ -5,6 +5,7 @@ import { ProductPage, CustomerReviewsSection, ProductFeatureSection, ProductComp
 import { TopBar, Header, FlashSale, FAQ, Footer, NavBar } from '@/components';
 import { fetchProductBySlug, fetchProducts, transformProduct } from '@/lib/api';
 import { getCustomizationPricing, getPriceBandMatrix, resolveHandleToPriceBand } from '@/lib/server/pricing.service';
+import { getProductReviews } from '@/lib/server/judgeme.service';
 import { getSiteUrl } from '@/lib/site';
 
 export const revalidate = 3_600;
@@ -84,6 +85,16 @@ export default async function ProductPageRoute({ params }: ProductPageProps) {
   }
 
   const product = transformProduct(productData);
+
+  // Reviews live in Judge.me; fetch published ones and fold the aggregate into
+  // the product so the hero stars, schema, and reviews section stay in sync.
+  const reviewData = await getProductReviews(product.slug);
+  product.reviews = reviewData.reviews;
+  product.reviewCount = reviewData.totalReviews;
+  if (reviewData.totalReviews > 0) {
+    product.rating = reviewData.averageRating;
+  }
+
   let initialPriceMatrix: PriceBandMatrix | null = null;
   let initialCustomizationPricing: CustomizationPricing[] = [];
 
@@ -96,6 +107,15 @@ export default async function ProductPageRoute({ params }: ProductPageProps) {
     image: product.images?.slice(0, 4),
     url: `${siteUrl}/product/${product.slug}`,
     brand: { '@type': 'Brand', name: 'Your Next Blinds' },
+    ...(product.reviewCount > 0
+      ? {
+          aggregateRating: {
+            '@type': 'AggregateRating',
+            ratingValue: product.rating,
+            reviewCount: product.reviewCount,
+          },
+        }
+      : {}),
     offers: {
       '@type': 'Offer',
       url: `${siteUrl}/product/${product.slug}`,

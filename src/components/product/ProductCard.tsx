@@ -29,6 +29,8 @@ interface ProductCardProps {
   preselectedMotorization?: boolean;
   /** Control option id to preselect on the product page (e.g. 'hc-cordless'). */
   preselectedControlOption?: string;
+  /** Honeycomb Cellular only: check the "Upgrade to No Drill System" option. */
+  preselectedNoDrillUpgrade?: boolean;
   collectionContext?: CollectionContext;
   // 'grid': full-width cards (collection/category/search grids) — on mobile
   // (where the grid is a single column) this switches to an Amazon-style
@@ -41,7 +43,7 @@ interface ProductCardProps {
 
 const ROLLER_BAND_F_TAG_CLIENT = 'roller-band-f';
 
-export default function ProductCard({ product, className = '', preselectedMotorization = false, preselectedControlOption, collectionContext, layout = 'carousel' }: ProductCardProps) {
+export default function ProductCard({ product, className = '', preselectedMotorization = false, preselectedControlOption, preselectedNoDrillUpgrade = false, collectionContext, layout = 'carousel' }: ProductCardProps) {
   const router = useRouter();
   const imageUrl = product.image || product.images?.[0] || '';
   const currency = product.currency || 'USD';
@@ -51,9 +53,11 @@ export default function ProductCard({ product, className = '', preselectedMotori
   const controlParam = preselectedControlOption
     ? `control=${encodeURIComponent(preselectedControlOption)}`
     : '';
+  const noDrillParam = preselectedNoDrillUpgrade ? 'noDrill=true' : '';
   const contextParam = [
     isBandF && collectionContext ? `collectionContext=${collectionContext}` : '',
     controlParam,
+    noDrillParam,
   ].filter(Boolean).join('&');
   const displayPrice =
     isBandF && collectionContext === 'blackout'

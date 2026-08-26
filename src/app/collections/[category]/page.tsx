@@ -1,4 +1,3 @@
-import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
 import { TopBar, Header, NavBar, Footer, FlashSale, FAQ } from '@/components';
 import { fetchCategories, fetchProductsByCategory, fetchProductsForCuratedCollection, transformProduct, extractFilterOptions, isRealBuildPhase } from '@/lib/api';
@@ -13,6 +12,10 @@ import {
   HONEYCOMB_SUBCATEGORY_CARDS,
   HONEYCOMB_SUBCATEGORIES_BY_HANDLE,
 } from '@/data/honeycombCellularCatalog';
+import {
+  HONEYCOMB_SUB_COLLECTION_SLUGS,
+  getHoneycombSubCollection,
+} from '@/data/honeycombSubCollections';
 import type { CollectionContext } from '@/components/product/ProductCard';
 
 interface PageProps {
@@ -24,7 +27,11 @@ export const revalidate = 3_600;
 // Generate static params from all possible collection slugs
 export async function generateStaticParams() {
   // Combine backend categories with frontend-defined slugs
-  const slugs = new Set([...ALL_COLLECTION_SLUGS, ...CURATED_COLLECTION_SLUGS]);
+  const slugs = new Set([
+    ...ALL_COLLECTION_SLUGS,
+    ...CURATED_COLLECTION_SLUGS,
+    ...HONEYCOMB_SUB_COLLECTION_SLUGS,
+  ]);
 
   try {
     const categories = await fetchCategories();
@@ -42,6 +49,16 @@ export async function generateStaticParams() {
 // Generate metadata for SEO
 export async function generateMetadata({ params }: PageProps) {
   const { category } = await params;
+
+  // Honeycomb / Cellular sub-collections (light filtering, blackout, cordless …)
+  // own their copy just like curated collections.
+  const honeycombSub = getHoneycombSubCollection(category);
+  if (honeycombSub) {
+    return {
+      title: `${honeycombSub.title} | Your Next Blinds`,
+      description: honeycombSub.description,
+    };
+  }
 
   // Curated collections own their copy and take precedence over the backend
   // category of the same handle (e.g. the empty `no-drill-blinds` collection).
@@ -93,11 +110,23 @@ export default async function CollectionPage({ params }: PageProps) {
     return mappedSlug;
   };
 
+  // Honeycomb / Cellular sub-collections (light filtering, blackout, cordless …)
+  // are standalone pages carved out of the honeycomb family. Membership isn't in
+  // Shopify tags, so they fetch the whole family via the parent curated
+  // collection and are narrowed to `subCategoryId` below.
+  const honeycombSub = getHoneycombSubCollection(categorySlug);
+
   // Curated collections (window type / feature / room) select products across
   // several Shopify collections at once, so they bypass the single-category
   // lookup below entirely — including where a same-named but empty backend
   // collection exists (`no-drill-blinds`).
   const curated = getCuratedCollection(categorySlug);
+
+  // Which curated definition actually drives the product fetch — the honeycomb
+  // parent for a sub-collection, otherwise this page's own curated collection.
+  const productCurated = honeycombSub
+    ? getCuratedCollection(HONEYCOMB_CELLULAR_COLLECTION_SLUG)
+    : curated;
 
   // Validate the slug exists in our defined collections
   const isValidSlug = ALL_COLLECTION_SLUGS.includes(categorySlug);
@@ -118,15 +147,16 @@ export default async function CollectionPage({ params }: PageProps) {
   const backendCategory = backendCategories.find((c) => c.slug === backendSlug);
 
   // If slug is not in our defined list AND not in backend, show 404
-  if (!curated && !isValidSlug && !backendCategory) {
+  if (!honeycombSub && !curated && !isValidSlug && !backendCategory) {
     notFound();
   }
 
   // Get display name (use custom name from COLLECTION_DISPLAY_NAMES if available)
-  const categoryName = curated?.title || COLLECTION_DISPLAY_NAMES[categorySlug] || backendCategory?.name ||
+  const categoryName = honeycombSub?.title || curated?.title || COLLECTION_DISPLAY_NAMES[categorySlug] || backendCategory?.name ||
     categorySlug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 
-  const categoryDescription = curated?.description
+  const categoryDescription = honeycombSub?.description
+    ?? curated?.description
     ?? COLLECTION_DESCRIPTIONS[categorySlug]
     ?? backendCategory?.description
     ?? `Explore our beautiful collection of ${categoryName.toLowerCase()} for your home.`;
@@ -135,9 +165,18 @@ export default async function CollectionPage({ params }: PageProps) {
   let apiProducts: ApiProduct[] = [];
   let products: Product[] = [];
 
-  if (curated) {
+  if (productCurated) {
     try {
-      apiProducts = await fetchProductsForCuratedCollection(curated);
+      apiProducts = await fetchProductsForCuratedCollection(productCurated);
+
+      // Narrow the honeycomb family down to this sub-collection. Membership is
+      // in the generated catalogue, not Shopify tags.
+      if (honeycombSub) {
+        apiProducts = apiProducts.filter((p) =>
+          HONEYCOMB_SUBCATEGORIES_BY_HANDLE[p.slug]?.includes(honeycombSub.subCategoryId)
+        );
+      }
+
       products = apiProducts.map(transformProduct);
     } catch (error) {
       if (process.env.NODE_ENV === 'development') {
@@ -173,18 +212,30 @@ export default async function CollectionPage({ params }: PageProps) {
   const filterOptions = extractFilterOptions(apiProducts);
 
   // Check if we should show coming soon (no backend category or no products)
-  const showComingSoon = (!curated && !backendCategory) || products.length === 0;
+  const showComingSoon = (!productCurated && !backendCategory) || products.length === 0;
 
   // Window-type and feature collections span several product families, so no
   // single photo represents them — they omit `heroImage` and `null` renders a
   // text-only hero. `undefined` keeps the existing title-lookup fallback.
-  const heroImage = curated ? (curated.heroImage ?? null) : undefined;
+  const heroImage = honeycombSub
+    ? honeycombSub.heroImage
+    : curated
+      ? (curated.heroImage ?? null)
+      : undefined;
 
   // Pre-select motorization when browsing motorised collections
   const preselectedMotorization =
     categorySlug === 'motorised-roller-shades' ||
     categorySlug === 'motorised-dual-zebra-shades' ||
-    categorySlug === 'motorised-eclipsecore';
+    categorySlug === 'motorised-eclipsecore' ||
+    honeycombSub?.card.preselect === 'motorized';
+
+  // The cordless honeycomb sub-collection carries its control choice through to the PDP.
+  const preselectedControlOption =
+    honeycombSub?.card.preselect === 'cordless' ? 'hc-cordless' : undefined;
+
+  // The No Drill honeycomb sub-collection pre-checks the "Upgrade to No Drill System" option.
+  const preselectedNoDrillUpgrade = honeycombSub?.subCategoryId === 'no-drill';
 
   // Collection context for Band F roller shades: controls name prefix and room darkening preselection
   const collectionContext: CollectionContext =
@@ -192,10 +243,15 @@ export default async function CollectionPage({ params }: PageProps) {
     categorySlug === 'blackout-roller-shades' || categorySlug === 'blackout-roller-shades-category' ? 'blackout' :
     undefined;
 
-  // Honeycomb/Cellular is the only collection with sub-category cards so far.
-  const isHoneycombCellular = categorySlug === HONEYCOMB_CELLULAR_COLLECTION_SLUG;
-  const subCategories = isHoneycombCellular ? HONEYCOMB_SUBCATEGORY_CARDS : undefined;
-  const subCategoriesByHandle = isHoneycombCellular ? HONEYCOMB_SUBCATEGORIES_BY_HANDLE : undefined;
+  // The "Shop by type" cards appear only on the honeycomb family page and link
+  // out to the standalone sub-collection pages. They are NOT shown on the
+  // sub-collection pages themselves. The parent "all" card is dropped — this
+  // family page is itself the "all" view.
+  const subCategories =
+    categorySlug === HONEYCOMB_CELLULAR_COLLECTION_SLUG
+      ? HONEYCOMB_SUBCATEGORY_CARDS.filter((c) => c.id !== 'all')
+      : undefined;
+  const activeSubCategoryId = honeycombSub?.subCategoryId ?? 'all';
 
   return (
     <div className="min-h-screen bg-[#fafafa]">
@@ -218,19 +274,17 @@ export default async function CollectionPage({ params }: PageProps) {
             {showComingSoon ? (
               <ComingSoon categoryName={categoryName} />
             ) : (
-              // ProductGridWithFilters reads `?sub=` via useSearchParams, which
-              // needs a Suspense boundary inside a statically rendered route.
-              <Suspense fallback={<div className="min-h-[50vh]" />}>
-                <ProductGridWithFilters
-                  products={products}
-                  filterOptions={filterOptions}
-                  categoryName={categoryName}
-                  preselectedMotorization={preselectedMotorization}
-                  collectionContext={collectionContext}
-                  subCategories={subCategories}
-                  subCategoriesByHandle={subCategoriesByHandle}
-                />
-              </Suspense>
+              <ProductGridWithFilters
+                products={products}
+                filterOptions={filterOptions}
+                categoryName={categoryName}
+                preselectedMotorization={preselectedMotorization}
+                preselectedControlOption={preselectedControlOption}
+                preselectedNoDrillUpgrade={preselectedNoDrillUpgrade}
+                collectionContext={collectionContext}
+                subCategories={subCategories}
+                activeSubCategoryId={activeSubCategoryId}
+              />
             )}
           </div>
         </div>
