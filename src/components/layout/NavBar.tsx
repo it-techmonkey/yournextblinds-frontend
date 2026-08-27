@@ -3,38 +3,62 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { navigationData, NavigationItem, NavigationLink } from '@/data/navigation';
+import { navigationData, NavigationItem } from '@/data/navigation';
 
-/**
- * Flatten every dropdown shape into a plain link list. The desktop header
- * renders mega-menu columns and room image cards, but on mobile they all
- * collapse into the same accordion.
- */
-const flattenNavLinks = (item: NavigationItem): NavigationLink[] => [
-  ...(item.submenu ?? []),
-  ...(item.megaMenu?.columns.flatMap((column) => column.links) ?? []),
-  ...(item.roomMenu?.map((room) => ({ label: room.name, href: room.href, icon: room.image })) ?? []),
-];
+const DEFAULT_NAV_ICON = '/nav-icons/vertical-blinds.webp';
+
+/** Does this item expand into a submenu / mega menu / room grid? */
+const hasDropdown = (item: NavigationItem): boolean =>
+  Boolean(item.submenu?.length || item.megaMenu?.columns.length || item.roomMenu?.length);
+
+/** One tappable link row inside a mobile accordion: icon tile + label. */
+const MobileLinkRow = ({
+  href,
+  label,
+  icon,
+  onClose,
+}: {
+  href?: string;
+  label: string;
+  icon?: string;
+  onClose: () => void;
+}) => {
+  const inner = (
+    <>
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#f4f2ec]">
+        <Image src={icon ?? DEFAULT_NAV_ICON} alt="" width={18} height={18} className="opacity-80" />
+      </span>
+      <span className="text-[15px] leading-tight text-gray-800">{label}</span>
+    </>
+  );
+  const className =
+    'flex min-h-11 items-center gap-3 rounded-lg px-2 py-1.5 transition-colors active:bg-[#f2f0ea]';
+  return href ? (
+    <Link href={href} className={className} onClick={onClose}>
+      {inner}
+    </Link>
+  ) : (
+    <div className={className}>{inner}</div>
+  );
+};
 
 // Mobile Menu Item Component with Accordion
 const MobileMenuItem = ({ item, onClose }: { item: NavigationItem; onClose: () => void }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const links = flattenNavLinks(item);
-  const hasSubmenu = links.length > 0;
 
-  if (!hasSubmenu) {
+  if (!hasDropdown(item)) {
     return (
       <div className="border-b border-gray-100 last:border-0">
         {item.href ? (
           <Link
             href={item.href}
-            className="flex items-center justify-between py-3 text-sm font-semibold text-black hover:text-[#00473c] transition-colors"
+            className="flex min-h-12 items-center py-3 text-[15px] font-semibold text-black transition-colors active:text-[#00473c]"
             onClick={onClose}
           >
             <span>{item.label}</span>
           </Link>
         ) : (
-          <div className="flex items-center justify-between py-3 text-sm font-semibold text-black">
+          <div className="flex min-h-12 items-center py-3 text-[15px] font-semibold text-black">
             <span>{item.label}</span>
           </div>
         )}
@@ -46,7 +70,8 @@ const MobileMenuItem = ({ item, onClose }: { item: NavigationItem; onClose: () =
     <div className="border-b border-gray-100 last:border-0">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center justify-between py-3 text-sm font-semibold text-black w-full"
+        aria-expanded={isOpen}
+        className="flex min-h-12 w-full items-center justify-between py-3 text-[15px] font-semibold text-black"
       >
         <span>{item.label}</span>
         <Image
@@ -54,31 +79,62 @@ const MobileMenuItem = ({ item, onClose }: { item: NavigationItem; onClose: () =
           alt=""
           width={12}
           height={12}
-          className={`opacity-60 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+          className={`opacity-60 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
         />
       </button>
 
       {isOpen && (
-        <div className="pb-3 pl-4">
-          <ul className="space-y-2">
-            {links.map((link: NavigationLink, linkIndex: number) => (
-              <li key={linkIndex}>
-                {link.href ? (
+        <div className="animate-fade-in space-y-4 pb-4">
+          {item.submenu && (
+            <ul className="space-y-0.5">
+              {item.submenu.map((link, linkIndex) => (
+                <li key={linkIndex}>
+                  <MobileLinkRow {...link} onClose={onClose} />
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {item.megaMenu?.columns.map((column, columnIndex) => (
+            <div key={columnIndex}>
+              {column.title && (
+                <p className="mb-1.5 px-2 text-[11px] font-bold uppercase tracking-[0.12em] text-[#00473c]">
+                  {column.title}
+                </p>
+              )}
+              <ul className="space-y-0.5">
+                {column.links.map((link, linkIndex) => (
+                  <li key={linkIndex}>
+                    <MobileLinkRow {...link} onClose={onClose} />
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+
+          {item.roomMenu && (
+            <div>
+              <p className="mb-2 px-2 text-[11px] font-bold uppercase tracking-[0.12em] text-[#00473c]">
+                Shop by Room
+              </p>
+              <div className="grid grid-cols-2 gap-2.5">
+                {item.roomMenu.map((room, roomIndex) => (
                   <Link
-                    href={link.href}
-                    className="text-sm text-gray-700 hover:text-[#00473c] transition-colors block py-1"
+                    key={roomIndex}
+                    href={room.href}
                     onClick={onClose}
+                    className="relative block aspect-16/10 overflow-hidden rounded-lg ring-1 ring-black/5"
                   >
-                    {link.label}
+                    <Image src={room.image} alt={room.name} fill className="object-cover" />
+                    <span className="absolute inset-0 bg-linear-to-t from-black/60 via-black/10 to-transparent" />
+                    <span className="absolute bottom-1.5 left-2 right-2 text-[13px] font-semibold text-white drop-shadow-sm">
+                      {room.name}
+                    </span>
                   </Link>
-                ) : (
-                  <div className="text-sm text-gray-700 block py-1">
-                    {link.label}
-                  </div>
-                )}
-              </li>
-            ))}
-          </ul>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -113,20 +169,20 @@ const NavBar = () => {
               className="fixed inset-0 bg-black/50 z-40 animate-fade-in"
               onClick={() => setMobileMenuOpen(false)}
             />
-            <div className="fixed inset-y-0 left-0 w-full max-w-xs bg-white z-50 shadow-2xl animate-slide-in-left overflow-y-auto">
-              <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-4 flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-black">Menu</h2>
+            <div className="fixed inset-y-0 left-0 z-50 flex w-[88%] max-w-sm flex-col overflow-hidden rounded-r-2xl bg-white shadow-2xl animate-slide-in-left">
+              <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4">
+                <h2 className="text-base font-semibold tracking-wide text-[#00473c]">Menu</h2>
                 <button
                   onClick={() => setMobileMenuOpen(false)}
-                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                  className="-mr-2 rounded-full p-2 transition-colors active:bg-gray-100"
                   aria-label="Close menu"
                 >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="h-6 w-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
               </div>
-              <div className="px-4 py-4">
+              <div className="flex-1 overflow-y-auto overscroll-contain px-4 pb-10 pt-2">
                 {navigationData.map((item, index) => (
                   <MobileMenuItem
                     key={index}

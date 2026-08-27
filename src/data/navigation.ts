@@ -63,14 +63,6 @@ const curatedRoomCards = (): RoomCard[] =>
     href: `/collections/${collection.slug}`,
   }));
 
-/** Split a link list into `count` balanced columns. */
-const intoColumns = (links: NavigationLink[], count: number): MegaMenuColumn[] => {
-  const perColumn = Math.ceil(links.length / count);
-  return Array.from({ length: count }, (_, index) => ({
-    links: links.slice(index * perColumn, (index + 1) * perColumn),
-  }));
-};
-
 // Navigation data - used by NavBar component
 export const navigationData: NavigationItem[] = [
   {
@@ -115,19 +107,16 @@ export const navigationData: NavigationItem[] = [
     ]
   },
   {
-    label: 'Shop By Window Type',
+    // Window type, feature and room used to be three separate menus. They now
+    // share one dropdown: two titled link columns (window type / feature) with
+    // the room image cards below (Header renders megaMenu + roomMenu together).
+    label: 'Shop By',
     megaMenu: {
-      columns: intoColumns(curatedLinks('window-type'), 2),
+      columns: [
+        { title: 'By Window Type', links: curatedLinks('window-type') },
+        { title: 'By Feature', links: curatedLinks('feature') },
+      ],
     },
-  },
-  {
-    label: 'Shop By Features',
-    megaMenu: {
-      columns: intoColumns(curatedLinks('feature'), 3),
-    },
-  },
-  {
-    label: 'Shop by Room',
     roomMenu: curatedRoomCards(),
   },
   {

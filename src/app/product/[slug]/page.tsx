@@ -7,6 +7,7 @@ import { fetchProductBySlug, fetchProducts, transformProduct } from '@/lib/api';
 import { getCustomizationPricing, getPriceBandMatrix, resolveHandleToPriceBand } from '@/lib/server/pricing.service';
 import { getProductReviews } from '@/lib/server/judgeme.service';
 import { getSiteUrl } from '@/lib/site';
+import ProductLoading from './loading';
 
 export const revalidate = 3_600;
 
@@ -234,7 +235,7 @@ export default async function ProductPageRoute({ params }: ProductPageProps) {
         <NavBar />
       </header>
       <main className="bg-white min-h-screen">
-        <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+        <Suspense fallback={<ProductLoading />}>
           <ProductPage
             product={product}
             relatedProducts={relatedProducts}

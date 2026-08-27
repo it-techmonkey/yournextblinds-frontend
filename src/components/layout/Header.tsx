@@ -5,10 +5,33 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useCart } from '@/context/CartContext';
 import { useSamples } from '@/context/SampleContext';
-import { navigationData } from '@/data/navigation';
+import { navigationData, type NavigationLink } from '@/data/navigation';
 import SearchPopup from './SearchPopup';
 
 const DEFAULT_NAV_ICON = '/nav-icons/vertical-blinds.webp';
+
+/** A single link row inside a desktop dropdown: icon tile + label, with a hover surface. */
+const NavDropdownLink = ({ link }: { link: NavigationLink }) => {
+  const inner = (
+    <>
+      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-[#f4f2ec] transition-colors group-hover/row:bg-[#e3ede9]">
+        <Image src={link.icon ?? DEFAULT_NAV_ICON} alt="" width={18} height={18} className="opacity-80" />
+      </span>
+      <span className="text-[14px] leading-tight text-gray-700 transition-colors group-hover/row:text-[#00473c]">
+        {link.label}
+      </span>
+    </>
+  );
+  const className =
+    'group/row flex items-center gap-3 rounded-lg px-2.5 py-2 transition-colors hover:bg-[#f7f6f2]';
+  return link.href ? (
+    <Link href={link.href} className={className}>
+      {inner}
+    </Link>
+  ) : (
+    <div className={className}>{inner}</div>
+  );
+};
 
 const Header = () => {
   const { cart } = useCart();
@@ -112,85 +135,77 @@ const Header = () => {
                 </div>
 
                 {/* Dropdown Menu */}
-                <div className="absolute left-0 right-0 top-full opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
-                  <div className="bg-white border-t-2 border-[#00473c] shadow-xl p-8 max-h-[70vh] overflow-y-auto">
-                    {/* Single-column list */}
-                    {item.submenu && (
-                      <div className="max-w-4xl mx-auto">
-                        <ul className="space-y-3">
+                <div className="absolute left-0 right-0 top-full z-50 translate-y-1 opacity-0 invisible transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100 group-hover:visible">
+                  <div className="max-h-[80vh] overflow-y-auto border-t-2 border-[#00473c] bg-white shadow-[0_24px_48px_-16px_rgba(0,0,0,0.18)]">
+                    <div className="mx-auto max-w-6xl px-10 py-9">
+                      {/* Single-column list */}
+                      {item.submenu && (
+                        <ul className="mx-auto max-w-xl space-y-0.5">
                           {item.submenu.map((link, linkIndex) => (
-                            <li key={linkIndex} className="flex items-start gap-2">
-                              <Image src={link.icon ?? DEFAULT_NAV_ICON} alt="" width={20} height={20} className="opacity-70 mt-0.5 shrink-0" />
-                              {link.href ? (
-                                <Link href={link.href} className="text-[15px] text-gray-700 hover:text-[#00473c] transition-colors">
-                                  {link.label}
-                                </Link>
-                              ) : (
-                                <span className="text-[15px] text-gray-700">
-                                  {link.label}
-                                </span>
-                              )}
+                            <li key={linkIndex}>
+                              <NavDropdownLink link={link} />
                             </li>
                           ))}
                         </ul>
-                      </div>
-                    )}
+                      )}
 
-                    {/* Multi-column mega menu */}
-                    {item.megaMenu && (
-                      <div className="max-w-4xl mx-auto">
+                      {/* Multi-column mega menu */}
+                      {item.megaMenu && (
                         <div
-                          className="grid gap-x-8 gap-y-3"
-                          style={{ gridTemplateColumns: `repeat(${item.megaMenu.columns.length}, minmax(0, 1fr))` }}
+                          className="grid gap-x-8 gap-y-8"
+                          style={{
+                            gridTemplateColumns: `repeat(${item.megaMenu.columns.length}, minmax(0, 1fr))`,
+                            maxWidth: `${item.megaMenu.columns.length * 20}rem`,
+                          }}
                         >
                           {item.megaMenu.columns.map((column, columnIndex) => (
-                            <ul key={columnIndex} className="space-y-3">
+                            <div key={columnIndex}>
                               {column.title && (
-                                <li className="text-xs font-semibold uppercase tracking-wider text-[#00473c]">
+                                <p className="mb-2.5 px-2.5 text-[11px] font-bold uppercase tracking-[0.14em] text-[#00473c]">
                                   {column.title}
-                                </li>
+                                </p>
                               )}
-                              {column.links.map((link, linkIndex) => (
-                                <li key={linkIndex} className="flex items-start gap-2">
-                                  <Image src={link.icon ?? DEFAULT_NAV_ICON} alt="" width={20} height={20} className="opacity-70 mt-0.5 shrink-0" />
-                                  {link.href ? (
-                                    <Link href={link.href} className="text-[15px] text-gray-700 hover:text-[#00473c] transition-colors">
-                                      {link.label}
-                                    </Link>
-                                  ) : (
-                                    <span className="text-[15px] text-gray-700">{link.label}</span>
-                                  )}
-                                </li>
-                              ))}
-                            </ul>
+                              <ul className="space-y-0.5">
+                                {column.links.map((link, linkIndex) => (
+                                  <li key={linkIndex}>
+                                    <NavDropdownLink link={link} />
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
                           ))}
                         </div>
-                      </div>
-                    )}
+                      )}
 
-                    {/* Image-card grid */}
-                    {item.roomMenu && (
-                      <div className="max-w-5xl mx-auto">
-                        <h3 className="text-lg font-semibold text-[#3a3a3a] mb-6">Rooms</h3>
-                        <div className="grid grid-cols-4 gap-x-6 gap-y-6">
-                          {item.roomMenu.map((room, roomIndex) => (
-                            <Link key={roomIndex} href={room.href} className="group/room text-center">
-                              <div className="relative w-full aspect-4/3 overflow-hidden rounded-sm">
+                      {/* Image-card grid */}
+                      {item.roomMenu && (
+                        <div className={item.megaMenu ? 'mt-8 border-t border-[#eaeaea] pt-7' : ''}>
+                          <p className="mb-4 px-2.5 text-[11px] font-bold uppercase tracking-[0.14em] text-[#00473c]">
+                            Shop by Room
+                          </p>
+                          <div className="grid grid-cols-4 gap-4">
+                            {item.roomMenu.map((room, roomIndex) => (
+                              <Link
+                                key={roomIndex}
+                                href={room.href}
+                                className="group/room relative block aspect-16/10 overflow-hidden rounded-lg ring-1 ring-black/5 transition-shadow hover:shadow-lg"
+                              >
                                 <Image
                                   src={room.image}
                                   alt={room.name}
                                   fill
-                                  className="object-cover transition-transform duration-300 group-hover/room:scale-105"
+                                  className="object-cover transition-transform duration-500 group-hover/room:scale-105"
                                 />
-                              </div>
-                              <span className="mt-2 block text-[15px] text-gray-700 group-hover/room:text-[#00473c] transition-colors">
-                                {room.name}
-                              </span>
-                            </Link>
-                          ))}
+                                <span className="absolute inset-0 bg-linear-to-t from-black/55 via-black/10 to-transparent" />
+                                <span className="absolute bottom-2.5 left-3 right-3 text-sm font-semibold text-white drop-shadow-sm">
+                                  {room.name}
+                                </span>
+                              </Link>
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
                 </div>
               </>

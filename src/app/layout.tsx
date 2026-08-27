@@ -7,6 +7,7 @@ import { CartProvider } from '@/context/CartContext';
 import { SampleProvider } from '@/context/SampleContext';
 import { AuthProvider } from '@/context/AuthContext';
 import { StorefrontPromoBar, StorefrontSubscribePopup } from '@/components/layout/StorefrontChrome';
+import ScrollToTop from '@/components/layout/ScrollToTop';
 import ShopifyAnalytics from '@/components/analytics/ShopifyAnalytics';
 import EngagementTracker from '@/components/analytics/EngagementTracker';
 import ChatWidget from '@/components/chat/ChatWidget';
@@ -76,6 +77,7 @@ export default function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
         />
+        <ScrollToTop />
         <Suspense fallback={null}>
           <ShopifyAnalytics />
           <EngagementTracker />

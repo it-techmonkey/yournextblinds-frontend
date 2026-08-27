@@ -1423,7 +1423,7 @@ const ProductPage = ({
                 images={productGalleryImages}
                 videos={product.videos}
                 productName={displayProductName}
-                selectedIndex={(isBandHProduct || isRollerBandF) ? selectedBandHVariantImageIndex : undefined}
+                selectedIndex={(isBandHProduct || isRollerBandF || isHoneycombCellular) ? selectedBandHVariantImageIndex : undefined}
               />
             </div>
 

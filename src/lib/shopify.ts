@@ -118,7 +118,12 @@ export interface ShopifyCustomer {
 // GraphQL Queries
 // ============================================
 
-const PRODUCT_FIELDS = `
+// `imageCount` is parameterised because the collection/list query multiplies it
+// by up to 250 products (Storefront API query-cost limits), while a single
+// product-detail fetch needs every media item — some products (e.g. the
+// Honeycomb Cellular shades) carry a per-colour fabric swatch AND a code image
+// per variant, so 40+ images is normal.
+const productFields = (imageCount: number) => `
   id
   handle
   title
@@ -129,7 +134,7 @@ const PRODUCT_FIELDS = `
   tags
   createdAt
   updatedAt
-  images(first: 20) {
+  images(first: ${imageCount}) {
     edges {
       node {
         url
@@ -181,6 +186,11 @@ const PRODUCT_FIELDS = `
   }
 `;
 
+// List/collection queries: kept small — they only ever use the first image.
+const PRODUCT_FIELDS = productFields(20);
+// Product-detail query: pull every media item (Storefront `first` maxes at 250).
+const PRODUCT_DETAIL_FIELDS = productFields(250);
+
 const PRODUCTS_QUERY = `
   query Products($first: Int!, $after: String, $query: String) {
     products(first: $first, after: $after, query: $query, sortKey: CREATED_AT, reverse: true) {
@@ -200,7 +210,7 @@ const PRODUCTS_QUERY = `
 const PRODUCT_BY_HANDLE_QUERY = `
   query ProductByHandle($handle: String!) {
     product(handle: $handle) {
-      ${PRODUCT_FIELDS}
+      ${PRODUCT_DETAIL_FIELDS}
     }
   }
 `;
