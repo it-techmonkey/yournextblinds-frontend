@@ -91,6 +91,7 @@ export const navigationData: NavigationItem[] = [
       { label: 'Blackout roller Shades', href: '/collections/blackout-roller-shades', icon: '/nav-icons/blackout-blinds.svg' },
       { label: 'Waterproof Blackout roller Shades', href: '/collections/waterproof-blackout-roller-shades', icon: '/nav-icons/waterproof-blinds.svg' },
       { label: 'Dual zebra Shades', href: '/collections/dual-zebra-shades', icon: '/nav-icons/day-night-blinds.webp' },
+      { label: 'Honeycomb / Cellular Shades', href: '/collections/honeycomb-cellular-shades', icon: '/collections/honeycomb-cellular/all.webp' },
       { label: 'All blinds and shades', href: '/collections', icon: '/nav-icons/roller-blinds.webp' },
     ]
   },

@@ -46,13 +46,6 @@ export const HONEYCOMB_CELLULAR_INSTALLATION_OPTIONS = [
   },
 ];
 
-// NOTE — deliberate deviation from the supplier catalogue (HoneyComb_ProductCatalog_032626.pdf).
-// The real control model is six systems with their own size limits and surcharges:
-//   Cordless $0 (13-84"W) · CCL $0 (15-96"W) · Motorized +$365 (24-96"W)
-//   TDBU +$83 · 2-on-1 headrail +$72 · No Drill +$13 · SafeWand +$63
-//   Single-Channel Remote +$88 · Multi-Channel +$116 · width over 93" +$100 freight
-// The options below are the phase-1 values (carried over from Roller Band F) and were
-// explicitly kept as-is by the owner. Revisit before treating these prices as correct.
 export const HONEYCOMB_CELLULAR_CONTROL_OPTIONS = [
   {
     id: 'hc-continuous-chain',
