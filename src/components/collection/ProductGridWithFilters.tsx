@@ -42,6 +42,58 @@ type SortOption = 'best-selling' | 'price-low' | 'price-high' | 'name-az' | 'nam
 // only shows up as a filter when it would actually narrow something down.
 const OPACITY_PHRASES = ['Light Filtering', 'Room Darkening', 'Blackout'];
 
+// Colour filter taxonomy. Product colours live in the variant option values
+// (e.g. "Lumina Warm Taupe", "Lumina Navy Charcoal Blackout"), not in tags, so
+// the filter groups those free-text names into a handful of families. A single
+// name can land in more than one family ("Navy Charcoal" → Blue + Charcoal) —
+// that's intentional, it just makes the product show under both filters.
+const COLOR_FAMILY_ORDER = [
+  'White', 'Cream', 'Beige', 'Taupe', 'Greige', 'Gold', 'Yellow', 'Orange',
+  'Red', 'Pink', 'Purple', 'Blue', 'Green', 'Grey', 'Brown', 'Charcoal', 'Black',
+] as const;
+
+const COLOR_FAMILY_HEX: Record<string, string> = {
+  White: '#FFFFFF', Cream: '#EFE9D8', Beige: '#D9C6A3', Taupe: '#B29B84',
+  Greige: '#A99E8D', Gold: '#C8A24A', Yellow: '#FCD34D', Orange: '#F97316',
+  Red: '#C0392B', Pink: '#EC4899', Purple: '#8B5CF6', Blue: '#3B6EA5',
+  Green: '#6B8E5A', Grey: '#9AA0A6', Brown: '#7A5230', Charcoal: '#454545',
+  Black: '#1A1A1A',
+};
+
+const COLOR_FAMILY_KEYWORDS: Record<string, string[]> = {
+  White: ['white', 'snow', 'chalk', 'arctic', 'cloud', 'paper', 'frost'],
+  Cream: ['cream', 'buttercream', 'ivory', 'vanilla', 'linen', 'eggshell', 'pearl', 'alabaster', 'almond', 'buttermilk'],
+  Beige: ['beige', 'sand', 'sandstone', 'tan', 'wheat', 'camel', 'oat', 'oatmeal', 'natural', 'khaki', 'driftwood', 'biscuit', 'parchment', 'putty'],
+  Taupe: ['taupe', 'mushroom'],
+  Greige: ['greige'],
+  Gold: ['gold', 'brass'],
+  Yellow: ['yellow', 'mustard', 'lemon'],
+  Orange: ['orange', 'terracotta', 'rust', 'amber', 'apricot'],
+  Red: ['red', 'crimson', 'burgundy', 'wine', 'ruby', 'scarlet'],
+  Pink: ['pink', 'rose', 'blush', 'mauve'],
+  Purple: ['purple', 'violet', 'plum', 'lavender', 'aubergine', 'eggplant'],
+  Blue: ['blue', 'navy', 'indigo', 'denim', 'teal', 'azure', 'cobalt'],
+  Green: ['green', 'sage', 'olive', 'moss', 'fern', 'forest', 'mint', 'eucalyptus', 'meadow'],
+  Grey: ['grey', 'gray', 'silver', 'pewter', 'ash', 'slate', 'granite', 'fog', 'pebble', 'smoke', 'nickel', 'steel'],
+  Brown: ['brown', 'walnut', 'oak', 'chestnut', 'espresso', 'mocha', 'coffee', 'cocoa', 'chocolate', 'mahogany', 'cinnamon', 'hazel', 'cognac', 'caramel', 'rustic', 'bronze', 'nutmeg', 'toffee'],
+  Charcoal: ['charcoal', 'graphite', 'anthracite', 'gunmetal'],
+  Black: ['black', 'onyx', 'ebony', 'jet', 'noir'],
+};
+
+// Match keywords on whole-word boundaries so "honey" doesn't match "honeycomb",
+// "tan" doesn't match "metropolitan", etc.
+const COLOR_FAMILY_MATCHERS: Array<{ family: string; re: RegExp }> = COLOR_FAMILY_ORDER.map(
+  (family) => ({
+    family,
+    re: new RegExp(`\\b(${COLOR_FAMILY_KEYWORDS[family].join('|')})\\b`, 'i'),
+  })
+);
+
+/** Every colour family a free-text colour string belongs to. */
+function colorFamiliesOf(text: string): string[] {
+  return COLOR_FAMILY_MATCHERS.filter((m) => m.re.test(text)).map((m) => m.family);
+}
+
 export default function ProductGridWithFilters({
   products,
   filterOptions,
@@ -78,26 +130,33 @@ export default function ProductGridWithFilters({
     return { min: Math.floor(Math.min(...prices)), max: Math.ceil(Math.max(...prices)) };
   }, [products]);
 
-  // Color display names with hex values
-  const colorMap: Record<string, { name: string; hex: string }> = {
-    white: { name: 'White', hex: '#FFFFFF' },
-    black: { name: 'Black', hex: '#1a1a1a' },
-    grey: { name: 'Grey', hex: '#808080' },
-    gray: { name: 'Grey', hex: '#808080' },
-    blue: { name: 'Blue', hex: '#3B82F6' },
-    red: { name: 'Red', hex: '#EF4444' },
-    green: { name: 'Green', hex: '#10B981' },
-    yellow: { name: 'Yellow', hex: '#FCD34D' },
-    orange: { name: 'Orange', hex: '#F97316' },
-    pink: { name: 'Pink', hex: '#EC4899' },
-    purple: { name: 'Purple', hex: '#8B5CF6' },
-    brown: { name: 'Brown', hex: '#8B4513' },
-    beige: { name: 'Beige', hex: '#F5F5DC' },
-    cream: { name: 'Cream', hex: '#E6E5DE' },
-    ivory: { name: 'Ivory', hex: '#FFFFF0' },
-    silver: { name: 'Silver', hex: '#C0C0C0' },
-    gold: { name: 'Gold', hex: '#FFD700' },
-  };
+  // Colour families present in this collection, derived from each product's
+  // variant colour options (plus its name/tags for older tag-driven collections).
+  const productColorFamilies = useMemo(() => {
+    const byProductId = new Map<string, Set<string>>();
+    for (const product of products) {
+      const families = new Set<string>();
+      const add = (text: string) => {
+        for (const family of colorFamiliesOf(text)) families.add(family);
+      };
+      add(product.name);
+      product.tags.forEach(add);
+      for (const variant of product.variants ?? []) {
+        const colorOption = variant.selectedOptions.find((o) => /colou?r/i.test(o.name));
+        if (colorOption) add(colorOption.value);
+      }
+      byProductId.set(product.id, families);
+    }
+    return byProductId;
+  }, [products]);
+
+  const availableColors = useMemo(() => {
+    const present = new Set<string>();
+    for (const families of productColorFamilies.values()) {
+      families.forEach((f) => present.add(f));
+    }
+    return COLOR_FAMILY_ORDER.filter((f) => present.has(f));
+  }, [productColorFamilies]);
 
   // Pattern display names
   const patternMap: Record<string, string> = {
@@ -115,11 +174,11 @@ export default function ProductGridWithFilters({
   const filteredProducts = useMemo(() => {
     let result = [...products];
 
-    // Filter by colors (check product name for color keywords)
+    // Filter by colour family (matches a product that has any variant in that family)
     if (selectedColors.length > 0) {
       result = result.filter((product) => {
-        const productName = product.name.toLowerCase();
-        return selectedColors.some((color) => productName.includes(color));
+        const families = productColorFamilies.get(product.id);
+        return !!families && selectedColors.some((color) => families.has(color));
       });
     }
 
@@ -171,6 +230,7 @@ export default function ProductGridWithFilters({
     return result;
   }, [
     products,
+    productColorFamilies,
     selectedColors,
     selectedPatterns,
     selectedOpacities,
@@ -241,7 +301,7 @@ export default function ProductGridWithFilters({
                 onClick={() => toggleColor(color)}
                 className="flex items-center gap-1 px-2 py-1 bg-[#00473c]/10 text-[#00473c] text-xs rounded-full"
               >
-                <span>{colorMap[color]?.name || color}</span>
+                <span>{color}</span>
                 <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
@@ -292,28 +352,25 @@ export default function ProductGridWithFilters({
       )}
 
       {/* Color Filter */}
-      {filterOptions.colors.length > 0 && (
+      {availableColors.length > 0 && (
         <div>
           <h3 className="text-sm font-semibold text-gray-900 mb-3">Color</h3>
-          <div className="grid grid-cols-5 gap-2">
-            {filterOptions.colors.map((color) => {
-              const colorInfo = colorMap[color];
+          <div className="space-y-2">
+            {availableColors.map((color) => {
               const isSelected = selectedColors.includes(color);
               return (
                 <button
                   key={color}
                   onClick={() => toggleColor(color)}
-                  className="group relative"
-                  title={colorInfo?.name || color}
+                  className="flex items-center gap-2 w-full text-left"
                 >
-                  <div
-                    className={`w-8 h-8 rounded-full transition-all border ${
-                      isSelected 
-                        ? 'ring-2 ring-[#00473c] ring-offset-1 scale-110' 
-                        : 'hover:scale-105 border-gray-200'
+                  <span
+                    className={`w-4 h-4 rounded-full shrink-0 border transition-all ${
+                      isSelected ? 'ring-2 ring-[#00473c] ring-offset-1 border-transparent' : 'border-gray-300'
                     }`}
-                    style={{ backgroundColor: colorInfo?.hex || '#ccc' }}
+                    style={{ backgroundColor: COLOR_FAMILY_HEX[color] ?? '#ccc' }}
                   />
+                  <span className="text-sm text-gray-700">{color}</span>
                 </button>
               );
             })}

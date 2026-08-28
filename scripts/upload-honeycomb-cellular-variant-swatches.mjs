@@ -40,17 +40,31 @@ const SOURCE_DIR = resolve(
     'Honeycomb-cellular/lumina light filtering cellular honeycomb shade - 25mm single cell'
 );
 
-/** "H25047 Lumina Midnight Navy .LTX.png" -> { code: "H25047", color: "Lumina Midnight Navy" } */
+/**
+ * "H25047 Lumina Midnight Navy .LTX.png" -> { code: "H25047", color: "Lumina Midnight Navy" }
+ * "H45145PD.png"                          -> { code: "H45145PD", color: null }  (code-only)
+ * Codes may carry a letter suffix (P / D / S / WD / PD / K / M).
+ */
 function parseSwatchFilename(file) {
   const stem = basename(file, extname(file)).replace(/\.LTX$/i, '').trim();
-  const m = stem.match(/^(H\d+)\s+(.*)$/i);
-  if (!m) return null;
-  return { code: m[1].toUpperCase(), color: m[2].replace(/\s+/g, ' ').trim() };
+  const withColor = stem.match(/^(H\d+[A-Z]*)\s+(.*)$/i);
+  if (withColor) {
+    return { code: withColor[1].toUpperCase(), color: withColor[2].replace(/\s+/g, ' ').trim() };
+  }
+  const codeOnly = stem.match(/^(H\d+[A-Z]*)$/i);
+  if (codeOnly) return { code: codeOnly[1].toUpperCase(), color: null };
+  return null;
 }
 
-/** Roller-Band-F style: "<CODE><ColorNoSpaces>.LTX.png" */
+/** basename without extension, e.g. ".../H45145PD.jpg?v=1" -> "H45145PD" */
+function imageStem(src) {
+  const path = new URL(src).pathname;
+  return basename(path, extname(path));
+}
+
+/** Roller-Band-F style: "<CODE><ColorNoSpaces>.LTX.png" (code-only files drop the colour part). */
 function uploadFilename(code, color, ext) {
-  return `${code}${color.replace(/\s+/g, '')}.LTX${ext}`;
+  return `${code}${color ? color.replace(/\s+/g, '') : ''}.LTX${ext}`;
 }
 
 const MIME = { '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp' };
@@ -99,9 +113,21 @@ async function main() {
       problems.push(`Cannot parse code/colour from "${file}"`);
       continue;
     }
-    const variant = variantByColor.get(parsed.color.toLowerCase());
+    // Colour name in the filename -> match by variant option value.
+    // Code only -> match by the code on the variant's current image (e.g.
+    // "H45145PD.png" anchors before the variant whose image is "H45145PD.jpg").
+    const variant = parsed.color
+      ? variantByColor.get(parsed.color.toLowerCase())
+      : variants.find((v) => {
+          const img = v.image_id ? imageById.get(v.image_id) : null;
+          return img && imageStem(img.src).toLowerCase() === parsed.code.toLowerCase();
+        });
     if (!variant) {
-      problems.push(`No variant for colour "${parsed.color}" (file "${file}")`);
+      problems.push(
+        parsed.color
+          ? `No variant for colour "${parsed.color}" (file "${file}")`
+          : `No variant whose image is "${parsed.code}" (file "${file}")`
+      );
       continue;
     }
     const existingImage = variant.image_id ? imageById.get(variant.image_id) : null;
