@@ -251,12 +251,15 @@ const ProductPage = ({
   };
 
   // Context set by the collection page the user navigated from — affects name prefix and room darkening
-  const collectionContext = searchParams.get('collectionContext') as 'light-filtering' | 'blackout' | null;
+  const collectionContext = searchParams.get('collectionContext') as 'light-filtering' | 'blackout' | 'top-down-bottom-up' | null;
   const isBlackoutContext = isRollerBandF && collectionContext === 'blackout';
+  const isTopDownBottomUpContext = isHoneycombCellular && collectionContext === 'top-down-bottom-up';
   const displayProductName = isRollerBandF && collectionContext === 'light-filtering'
     ? `Light Filtering ${product.name}`
     : isBlackoutContext
     ? `Blackout ${product.name}`
+    : isTopDownBottomUpContext
+    ? `Top Down Bottom Up ${product.name}`
     : product.name;
 
   useEffect(() => {
@@ -1682,6 +1685,7 @@ const ProductPage = ({
                           }
                           missingFieldKeys={showValidationErrors ? missingFieldKeys : EMPTY_MISSING_FIELD_KEYS}
                           registerFieldRef={registerFieldRef}
+                          cordlessOnly={isTopDownBottomUpContext}
                         />
                       ) : (
                         <>

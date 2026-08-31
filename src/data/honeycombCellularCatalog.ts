@@ -33,7 +33,7 @@ export const HONEYCOMB_SUBCATEGORY_CARDS: HoneycombSubCategoryCard[] = [
   { id: 'all', label: 'Cellular Honeycomb Shades', image: '/collections/honeycomb-cellular/all.webp' }, // 19 products
   { id: 'light-filtering', label: 'Light Filtering Cellular Shades', image: '/collections/honeycomb-cellular/light-filtering.webp' }, // 10 products
   { id: 'blackout', label: 'Blackout Cellular Shades', image: '/collections/honeycomb-cellular/blackout.webp' }, // 9 products
-  { id: 'top-down-bottom-up', label: 'Top Down Bottom Up Cellular Shades', image: '/collections/honeycomb-cellular/top-down-bottom-up.webp' }, // 19 products
+  { id: 'top-down-bottom-up', label: 'Top Down Bottom Up Cellular Shades', image: '/collections/honeycomb-cellular/top-down-bottom-up.webp' }, // 17 products
   { id: 'motorized', label: 'Motorized Cellular Shades', image: '/collections/honeycomb-cellular/motorized.webp', preselect: 'motorized' }, // 19 products
   { id: 'cordless', label: 'Cordless Cellular Shades', image: '/collections/honeycomb-cellular/cordless.webp', preselect: 'cordless' }, // 19 products
   { id: 'no-drill', label: 'No Drill Cellular Shades', image: '/collections/honeycomb-cellular/no-drill.webp' }, // 19 products
@@ -97,7 +97,7 @@ export const HONEYCOMB_CELLULAR_PRODUCTS: HoneycombCellularProduct[] = [
     title: 'Lumina Sheer Light Filtering Cellular Honeycomb Shade – 25mm Single Cell',
     priceBandName: 'Honeycomb Cellular - Group 5',
     priceGroup: 5,
-    subCategoryIds: ['all', 'light-filtering', 'metallic-sheer', 'cordless', 'motorized', 'no-drill', 'top-down-bottom-up'],
+    subCategoryIds: ['all', 'light-filtering', 'metallic-sheer', 'cordless', 'motorized', 'no-drill'],
   },
   {
     handle: 'element-38mm-double-cell-room-darkening-cellular-honeycomb-shade',
@@ -174,7 +174,7 @@ export const HONEYCOMB_CELLULAR_PRODUCTS: HoneycombCellularProduct[] = [
     title: 'Haven 45mm Single Cell Metallic Sheer Light Filtering Cellular Honeycomb Shade',
     priceBandName: 'Honeycomb Cellular - Group 12',
     priceGroup: 12,
-    subCategoryIds: ['all', 'light-filtering', 'metallic-sheer', 'cordless', 'motorized', 'no-drill', 'top-down-bottom-up'],
+    subCategoryIds: ['all', 'light-filtering', 'metallic-sheer', 'cordless', 'motorized', 'no-drill'],
   },
 ];
 

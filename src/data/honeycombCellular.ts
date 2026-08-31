@@ -52,7 +52,7 @@ export const HONEYCOMB_CELLULAR_CONTROL_OPTIONS = [
     name: 'Continuous Chain',
     description: 'Manual chain control with selectable left or right side.',
     price: 0,
-    image: '/products/control/continues-chain-picture.webp',
+    image: '/products/control/continuous-chain-cellular.png',
   },
   {
     id: 'hc-cordless',

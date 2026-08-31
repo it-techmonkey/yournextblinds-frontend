@@ -18,6 +18,11 @@ interface HoneycombCellularSelectorProps {
   onMotorizationSelectedChange: (selected: boolean) => void;
   missingFieldKeys: Set<string>;
   registerFieldRef: (key: string, el: HTMLDivElement | null) => void;
+  /**
+   * Top Down Bottom Up headrail only supports cordless lift — hides the
+   * Continuous Chain control option and the Motorized Wand card entirely.
+   */
+  cordlessOnly?: boolean;
 }
 
 const selectedClass = 'border-[#00473c] bg-[#f6fffd] shadow-sm';
@@ -30,7 +35,12 @@ const HoneycombCellularSelector = ({
   onMotorizationSelectedChange,
   missingFieldKeys,
   registerFieldRef,
+  cordlessOnly = false,
 }: HoneycombCellularSelectorProps) => {
+  const controlOptions = cordlessOnly
+    ? HONEYCOMB_CELLULAR_CONTROL_OPTIONS.filter((option) => option.id !== 'hc-continuous-chain')
+    : HONEYCOMB_CELLULAR_CONTROL_OPTIONS;
+
   const selectControlOption = (optionId: string) => {
     onMotorizationSelectedChange(false);
     updateConfig({
@@ -63,7 +73,7 @@ const HoneycombCellularSelector = ({
         <section className="space-y-4">
           <h3 className="text-lg font-medium text-[#3a3a3a]">Control Options</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {HONEYCOMB_CELLULAR_CONTROL_OPTIONS.map((option) => {
+            {controlOptions.map((option) => {
               const isSelected = config.controlOption === option.id && !isMotorizationSelected;
               return (
                 <div
@@ -123,33 +133,35 @@ const HoneycombCellularSelector = ({
             })}
 
             {/* Motorization card */}
-            <div
-              className={`relative flex flex-col border-2 rounded-lg p-4 text-left transition-all ${isMotorizationSelected ? selectedClass : unselectedClass}`}
-            >
-              {isMotorizationSelected && (
-                <span className="absolute top-3 right-3 z-10 w-6 h-6 bg-[#00473c] rounded-full flex items-center justify-center">
-                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                  </svg>
-                </span>
-              )}
-              <button
-                type="button"
-                onClick={selectMotorization}
-                className="flex flex-1 flex-row items-center gap-3 text-left md:flex-col md:items-stretch"
+            {!cordlessOnly && (
+              <div
+                className={`relative flex flex-col border-2 rounded-lg p-4 text-left transition-all ${isMotorizationSelected ? selectedClass : unselectedClass}`}
               >
-                <div className="relative h-16 w-16 shrink-0 rounded-md bg-gray-50 overflow-hidden flex items-center justify-center md:h-[100px] md:w-full md:mb-3">
-                  <Image src={HONEYCOMB_CELLULAR_MOTORIZATION_OPTIONS[0].image} alt="Motorized Wand" width={130} height={100} className="object-contain" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-base font-semibold text-[#3a3a3a] pr-8">Motorized Wand</p>
-                  <p className="text-sm text-gray-500 mt-1">Motorized control operated by wand.</p>
-                  <span className="mt-3 inline-flex w-fit rounded-md bg-[#00473c] px-2.5 py-1 text-xs font-semibold text-white">
-                    +$95.00
+                {isMotorizationSelected && (
+                  <span className="absolute top-3 right-3 z-10 w-6 h-6 bg-[#00473c] rounded-full flex items-center justify-center">
+                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                    </svg>
                   </span>
-                </div>
-              </button>
-            </div>
+                )}
+                <button
+                  type="button"
+                  onClick={selectMotorization}
+                  className="flex flex-1 flex-row items-center gap-3 text-left md:flex-col md:items-stretch"
+                >
+                  <div className="relative h-16 w-16 shrink-0 rounded-md bg-gray-50 overflow-hidden flex items-center justify-center md:h-[100px] md:w-full md:mb-3">
+                    <Image src={HONEYCOMB_CELLULAR_MOTORIZATION_OPTIONS[0].image} alt="Motorized Wand" width={130} height={100} className="object-contain" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-base font-semibold text-[#3a3a3a] pr-8">Motorized Wand</p>
+                    <p className="text-sm text-gray-500 mt-1">Motorized control operated by wand.</p>
+                    <span className="mt-3 inline-flex w-fit rounded-md bg-[#00473c] px-2.5 py-1 text-xs font-semibold text-white">
+                      +$95.00
+                    </span>
+                  </div>
+                </button>
+              </div>
+            )}
           </div>
         </section>
       </RequiredFieldWrapper>

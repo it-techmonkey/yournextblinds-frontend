@@ -230,17 +230,24 @@ export default async function CollectionPage({ params }: PageProps) {
     categorySlug === 'motorised-eclipsecore' ||
     honeycombSub?.card.preselect === 'motorized';
 
-  // The cordless honeycomb sub-collection carries its control choice through to the PDP.
+  // The cordless honeycomb sub-collection carries its control choice through to
+  // the PDP. Top Down Bottom Up shades only support cordless control (no
+  // continuous chain or motorized wand), so it preselects/forces cordless too.
   const preselectedControlOption =
-    honeycombSub?.card.preselect === 'cordless' ? 'hc-cordless' : undefined;
+    honeycombSub?.card.preselect === 'cordless' || honeycombSub?.subCategoryId === 'top-down-bottom-up'
+      ? 'hc-cordless'
+      : undefined;
 
   // The No Drill honeycomb sub-collection pre-checks the "Upgrade to No Drill System" option.
   const preselectedNoDrillUpgrade = honeycombSub?.subCategoryId === 'no-drill';
 
-  // Collection context for Band F roller shades: controls name prefix and room darkening preselection
+  // Collection context: controls name prefix (Band F roller shades) and room
+  // darkening preselection, or the Top Down Bottom Up name prefix / control
+  // option restriction for honeycomb cellular shades.
   const collectionContext: CollectionContext =
     categorySlug === 'light-filtering-roller-shades' ? 'light-filtering' :
     categorySlug === 'blackout-roller-shades' || categorySlug === 'blackout-roller-shades-category' ? 'blackout' :
+    honeycombSub?.subCategoryId === 'top-down-bottom-up' ? 'top-down-bottom-up' :
     undefined;
 
   // The "Shop by type" cards appear only on the honeycomb family page and link

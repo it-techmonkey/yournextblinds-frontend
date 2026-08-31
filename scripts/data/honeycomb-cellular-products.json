@@ -523,8 +523,7 @@
       "metallic-sheer",
       "cordless",
       "motorized",
-      "no-drill",
-      "top-down-bottom-up"
+      "no-drill"
     ],
     "colorCount": 3
   },
@@ -1402,8 +1401,7 @@
       "metallic-sheer",
       "cordless",
       "motorized",
-      "no-drill",
-      "top-down-bottom-up"
+      "no-drill"
     ],
     "colorCount": 3
   }
