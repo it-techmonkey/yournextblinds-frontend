@@ -3,6 +3,7 @@ import {
   Header,
   NavBar,
   Hero,
+  UspBar,
   WindowTypes,
   Categories,
   CategoryGrid,
@@ -28,12 +29,13 @@ export default function Home() {
       {/* Main Content */}
       <main>
         <Hero />
+        <UspBar />
         {/* <WindowTypes /> */}
         {/* <Categories /> */}
         <CategoryGrid />
-        {/* <Installation /> */}
         <BestSelling />
         <Craftsmanship />
+        {/* <Installation /> */}
         <FreeSamples />
         <FlashSale />
         <FAQ />

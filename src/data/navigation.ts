@@ -1,62 +1,123 @@
 // Navigation Data Structure
 // Each category has its own unique slug at /collections/[slug]
 
+import {
+  CURATED_COLLECTION_SLUGS,
+  getCuratedCollectionsByGroup,
+  type CuratedGroup,
+} from './curatedCollections';
+import { HONEYCOMB_SUB_COLLECTION_SLUGS } from './honeycombSubCollections';
+
 // Navigation interfaces
 export interface NavigationLink {
   label: string;
   href?: string;
+  /** Icon shown beside the link in the desktop dropdown. */
+  icon?: string;
+}
+
+export interface MegaMenuColumn {
+  title?: string;
+  links: NavigationLink[];
+}
+
+/** Image card used by the "Shop by Room" menu. */
+export interface RoomCard {
+  name: string;
+  image: string;
+  href: string;
 }
 
 export interface NavigationItem {
   label: string;
   href?: string;
+  /** Single-column dropdown. */
   submenu?: NavigationLink[];
+  /** Multi-column dropdown. */
+  megaMenu?: {
+    columns: MegaMenuColumn[];
+  };
+  /** Grid of image cards. */
+  roomMenu?: RoomCard[];
+  /**
+   * Whether this menu's links become cards in the home "Shop by Category" grid
+   * (src/components/home/CategoryGrid.tsx). Off by default so the situational
+   * menus below don't flood the homepage with 22 extra cards.
+   */
+  showInHomeGrid?: boolean;
 }
+
+// Build the situational menus straight from the curated collection definitions
+// so labels, icons and hrefs can never drift out of sync with the pages.
+const curatedLinks = (group: CuratedGroup): NavigationLink[] =>
+  getCuratedCollectionsByGroup(group).map((collection) => ({
+    label: collection.navLabel,
+    href: `/collections/${collection.slug}`,
+    icon: collection.navIcon,
+  }));
+
+const curatedRoomCards = (): RoomCard[] =>
+  getCuratedCollectionsByGroup('room').map((collection) => ({
+    name: collection.navLabel,
+    image: collection.navIcon,
+    href: `/collections/${collection.slug}`,
+  }));
 
 // Navigation data - used by NavBar component
 export const navigationData: NavigationItem[] = [
   {
     label: 'Blinds',
+    showInHomeGrid: true,
     submenu: [
-      { label: 'Light filtering Vertical blinds', href: '/collections/light-filtering-vertical-blinds' },
-      { label: 'Blackout vertical blinds', href: '/collections/blackout-vertical-blinds' },
-      { label: 'Waterproof Blackout vertical blinds', href: '/collections/waterproof-blackout-vertical-blinds' },
-      { label: 'All blinds and shades', href: '/collections' },
+      { label: 'Light filtering Vertical blinds', href: '/collections/light-filtering-vertical-blinds', icon: '/nav-icons/vertical-blinds.webp' },
+      { label: 'Blackout vertical blinds', href: '/collections/blackout-vertical-blinds', icon: '/nav-icons/blackout-blinds.svg' },
+      { label: 'Waterproof Blackout vertical blinds', href: '/collections/waterproof-blackout-vertical-blinds', icon: '/nav-icons/waterproof-blinds.svg' },
+      { label: 'All blinds and shades', href: '/collections', icon: '/nav-icons/roller-blinds.webp' },
     ]
   },
   {
     label: 'Shades',
+    showInHomeGrid: true,
     submenu: [
-      { label: 'Light filtering roller Shades', href: '/collections/light-filtering-roller-shades' },
-      { label: 'Blackout roller Shades', href: '/collections/blackout-roller-shades' },
-      { label: 'Waterproof Blackout roller Shades', href: '/collections/waterproof-blackout-roller-shades' },
-      { label: 'Dual zebra Shades', href: '/collections/dual-zebra-shades' },
-      { label: 'All blinds and shades', href: '/collections' },
+      { label: 'Light filtering roller Shades', href: '/collections/light-filtering-roller-shades', icon: '/nav-icons/roller-blinds.webp' },
+      { label: 'Blackout roller Shades', href: '/collections/blackout-roller-shades', icon: '/nav-icons/blackout-blinds.svg' },
+      { label: 'Waterproof Blackout roller Shades', href: '/collections/waterproof-blackout-roller-shades', icon: '/nav-icons/waterproof-blinds.svg' },
+      { label: 'Dual zebra Shades', href: '/collections/dual-zebra-shades', icon: '/nav-icons/day-night-blinds.webp' },
+      { label: 'Honeycomb / Cellular Shades', href: '/collections/honeycomb-cellular-shades', icon: '/collections/honeycomb-cellular/all.webp' },
+      { label: 'All blinds and shades', href: '/collections', icon: '/nav-icons/roller-blinds.webp' },
     ]
   },
   {
     label: 'Motorization',
+    showInHomeGrid: true,
     submenu: [
-      { label: 'Motorised roller shades', href: '/collections/motorised-roller-shades' },
-      { label: 'Motorised Dual zebra shades', href: '/collections/motorised-dual-zebra-shades' },
-      { label: 'Motorised EclipseCore', href: '/product/non-driii-honeycomb-blackout-blinds?motorized=true' },
+      { label: 'Motorised roller shades', href: '/collections/motorised-roller-shades', icon: '/nav-icons/roller-blinds.webp' },
+      { label: 'Motorised Dual zebra shades', href: '/collections/motorised-dual-zebra-shades', icon: '/nav-icons/day-night-blinds.webp' },
+      { label: 'Motorised EclipseCore', href: '/product/non-driii-honeycomb-blackout-blinds?motorized=true', icon: '/nav-icons/blackout-blinds.svg' },
     ]
   },
   {
     label: 'Blackout',
+    showInHomeGrid: true,
     submenu: [
-      { label: 'Blackout Roller Shades', href: '/collections/blackout-roller-shades-category' },
-      { label: 'Blackout Dual zebra shades', href: '/collections/blackout-dual-zebra-shades' },
-      { label: 'Blackout Vertical blinds', href: '/collections/blackout-vertical-blinds-category' },
-      { label: 'EclipseCore shades', href: '/product/non-driii-honeycomb-blackout-blinds' },
+      { label: 'Blackout Roller Shades', href: '/collections/blackout-roller-shades-category', icon: '/nav-icons/blackout-blinds.svg' },
+      { label: 'Blackout Dual zebra shades', href: '/collections/blackout-dual-zebra-shades', icon: '/nav-icons/day-night-blinds.webp' },
+      { label: 'Blackout Vertical blinds', href: '/collections/blackout-vertical-blinds-category', icon: '/nav-icons/vertical-blinds.webp' },
+      { label: 'Eclipse Complete Blackout Blinds', href: '/product/non-driii-honeycomb-blackout-blinds', icon: '/nav-icons/blackout-blinds.svg' },
     ]
   },
   {
-    label: 'Shop by',
-    submenu: [
-      { label: 'Shop by Feature' },
-      { label: 'Shop by room' },
-    ]
+    // Window type, feature and room used to be three separate menus. They now
+    // share one dropdown: two titled link columns (window type / feature) with
+    // the room image cards below (Header renders megaMenu + roomMenu together).
+    label: 'Shop By',
+    megaMenu: {
+      columns: [
+        { title: 'By Window Type', links: curatedLinks('window-type') },
+        { title: 'By Feature', links: curatedLinks('feature') },
+      ],
+    },
+    roomMenu: curatedRoomCards(),
   },
   {
     label: 'About us',
@@ -85,8 +146,15 @@ export const ALL_COLLECTION_SLUGS = [
   'blackout-dual-zebra-shades',
   'blackout-vertical-blinds-category',
   'eclipsecore-shades',
-  'shop-by-feature',
-  'shop-by-room',
+];
+
+// Every collection URL that should be indexed. Kept separate from
+// ALL_COLLECTION_SLUGS because that array also drives the NAVIGATION_SLUG_MAPPING /
+// NAVIGATION_TAG_FILTERS lookups below, which curated collections don't use.
+export const SITEMAP_COLLECTION_SLUGS = [
+  ...ALL_COLLECTION_SLUGS,
+  ...CURATED_COLLECTION_SLUGS,
+  ...HONEYCOMB_SUB_COLLECTION_SLUGS,
 ];
 
 // Custom descriptions for collection hero sections
@@ -121,8 +189,6 @@ export const COLLECTION_DISPLAY_NAMES: Record<string, string> = {
   'blackout-dual-zebra-shades': 'Dual zebra shades',
   'blackout-vertical-blinds-category': 'Vertical blinds',
   'eclipsecore-shades': 'EclipseCore shades',
-  'shop-by-feature': 'Shop by Feature',
-  'shop-by-room': 'Shop by room',
 };
 
 // Mapping of custom navigation slugs to their backend collection slugs
@@ -150,10 +216,6 @@ export const NAVIGATION_SLUG_MAPPING: Record<string, string> = {
   'blackout-dual-zebra-shades': 'day-and-night-blinds', // Primary: day-and-night-blinds, Tag: blackout
   'blackout-vertical-blinds-category': 'vertical-blinds', // Primary: vertical-blinds, Tag: blackout
   'eclipsecore-shades': 'pleated-blinds', // Primary: pleated-blinds
-
-  // Shop by - map to primary category (features are tags)
-  'shop-by-feature': 'roller-blinds', // Will filter by tags (thermal, blackout, etc.)
-  'shop-by-room': 'roller-blinds', // Will filter by room tags
 };
 
 // Mapping of navigation slugs to required tags for filtering

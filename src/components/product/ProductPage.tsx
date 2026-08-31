@@ -10,11 +10,17 @@ import { isSampleEligible, MAX_FREE_SAMPLES } from '@/data/samples';
 import ProductGallery from './ProductGallery';
 import ProductReviews from './ProductReviews';
 import RelatedProducts from './RelatedProducts';
+import ProductContentSections from './ProductContentSections';
 import StarRating from './StarRating';
 import CategoryInfoSection from '@/components/collection/CategoryInfoSection';
-import { formatPrice, formatPriceWithCurrency, fetchPriceMatrix, fetchCustomizationPricing, validateCartPrice } from '@/lib/api';
+import { formatPrice, formatPriceWithCurrency, fetchPriceMatrix, fetchCustomizationPricing, validateCartPrice, createCheckout } from '@/lib/api';
+import { buildCheckoutItem } from '@/lib/checkout';
+import StickyBottomBar from './StickyBottomBar';
 import { PRODUCT_GUIDES } from '@/data/guides';
+import { PROMO_CODE, PROMO_CODE_PERCENT, FLASH_SALE_DISCOUNT_PERCENT } from '@/data/promo';
 import { trackShopifyProductView } from '@/lib/shopify-analytics';
+import { trackStoreProductView, trackStoreCheckoutInitiated, getStoreSessionContext } from '@/lib/store-events';
+import { getEstimatedDispatchDateRange } from '@/lib/dispatch-date';
 import {
   calculateTotalPrice,
   configToCustomizations,
@@ -45,6 +51,9 @@ import {
   DayNightBandHSelector,
   RollerBandFSelector,
   RollerBandFRoomDarkeningSelector,
+  HoneycombCellularSelector,
+  ReviewSelectionsPanel,
+  RequiredFieldWrapper,
 } from './customization';
 import {
   HEADRAIL_OPTIONS,
@@ -66,12 +75,16 @@ import {
   BLIND_COLOR_OPTIONS,
   FRAME_COLOR_OPTIONS,
   OPENING_DIRECTION_OPTIONS,
+  OPENING_DIRECTION_OPTIONS_ECLIPSECORE,
   BOTTOM_BAR_OPTIONS,
   ROLL_STYLE_OPTIONS
 } from '@/data/customizations';
 import {
   DAY_NIGHT_BAND_H_MOTORIZATION_OPTIONS,
   DAY_NIGHT_BAND_H_SIZE_LIMITS,
+  capDayNightBandHSizeLimits,
+  getDayNightBandHSizeLimits,
+  isDayAndNightCategoryProduct,
   isDayNightBandHProduct,
   supportsBandHWrappedCassette,
 } from '@/data/dayNightBandH';
@@ -79,11 +92,24 @@ import {
   ROLLER_BAND_F_MOTORIZATION_OPTIONS,
   ROLLER_BAND_F_SIZE_LIMITS,
   ROLLER_BAND_F_ROOM_DARKENING_OPTIONS,
+  applyRollerBandFRoomDarkeningCap,
+  capRollerBandFSizeLimits,
+  getRollerBandFSizeLimits,
   isRollerBandFProduct,
+  isRollerCategoryProduct,
   supportsRollerBandFWrappedCassette,
   rollerBandFShowsRollOption,
 } from '@/data/rollerBandF';
+import {
+  HONEYCOMB_CELLULAR_CONTROL_OPTIONS,
+  HONEYCOMB_CELLULAR_MOTORIZATION_OPTIONS,
+  HONEYCOMB_CELLULAR_SIZE_LIMITS,
+  HONEYCOMB_CELLULAR_INSTALLATION_OPTIONS,
+  HONEYCOMB_CELLULAR_NO_DRILL_UPGRADE_OPTION,
+  isHoneycombCellularProduct,
+} from '@/data/honeycombCellular';
 import { ROOM_TYPE_OPTIONS } from '@/data/roomTypes';
+import { HONEYCOMB_CELLULAR_COLOR_CODES } from '@/data/honeycombCellularColorCodes';
 import { CONTINUOUS_CHAIN_CARD, CONTINUOUS_CHAIN_CARD_ROLLER, CONTINUOUS_CHAIN_CARD_ZEBRA, CASSETTE_CARD, CASSETTE_CARD_ROLLER, CASSETTE_CARD_ZEBRA, MOTORIZATION_CARD, BOTTOM_BAR_CARD } from '@/data/optionalCustomizations';
 import Image from 'next/image';
 
@@ -163,8 +189,8 @@ const BAND_H_INSTALLATION_GUIDE_LANGUAGES: Array<{
   { id: 'spanish', label: 'Spanish' },
 ];
 
-const BAND_H_PROMO_DISCOUNT_PERCENT = 50;
-const BAND_H_COUPON_CODE = 'Sale15';
+const FLASH_SALE_COUPON_CODE = PROMO_CODE;
+const EMPTY_MISSING_FIELD_KEYS = new Set<string>();
 
 function getVariantDisplayOption(variant: ProductVariant) {
   const colorOption =
@@ -175,6 +201,29 @@ function getVariantDisplayOption(variant: ProductVariant) {
     name: colorOption?.name ?? 'Color',
     value: colorOption?.value ?? variant.title,
   };
+}
+
+/**
+ * Splits a color option value into its fabric code (e.g. R12001, Z100349D,
+ * H45100WD) and the plain color name, so the code can be displayed in front
+ * of the name. Roller Band F / Dayandnight Band H embed the code directly in
+ * the option value (e.g. "Spiced Gingerbread Z100370D"); honeycomb/cellular
+ * values are just the plain name, so those fall back to the CSV-derived
+ * name -> code lookup.
+ */
+const FABRIC_CODE_REGEX = /[RZH]\d{4,}[A-Z]{0,2}/;
+function getVariantCodeAndName(value: string | null | undefined): { code: string | null; name: string } {
+  if (!value) return { code: null, name: value ?? '' };
+
+  const match = value.toUpperCase().match(FABRIC_CODE_REGEX);
+  if (match) {
+    const code = match[0];
+    const name = value.replace(new RegExp(code, 'i'), '').trim();
+    return { code, name: name || value };
+  }
+
+  const code = HONEYCOMB_CELLULAR_COLOR_CODES[value.trim().toLowerCase()] ?? null;
+  return { code, name: value };
 }
 
 const ProductPage = ({
@@ -188,19 +237,34 @@ const ProductPage = ({
   const productSampleEligible = useMemo(() => isSampleEligible(product), [product]);
   const searchParams = useSearchParams();
   const isBandHProduct = useMemo(() => isDayNightBandHProduct(product), [product]);
+  const isDayAndNightProduct = useMemo(() => isDayAndNightCategoryProduct(product), [product]);
   const isRollerBandF = useMemo(() => isRollerBandFProduct(product), [product]);
+  const isRollerProduct = useMemo(() => isRollerCategoryProduct(product), [product]);
+  const isHoneycombCellular = useMemo(() => isHoneycombCellularProduct(product), [product]);
+  const [reviewFormOpen, setReviewFormOpen] = useState(false);
+
+  const openReviewForm = () => {
+    setReviewFormOpen(true);
+    if (typeof document !== 'undefined') {
+      document.getElementById('reviews')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
 
   // Context set by the collection page the user navigated from — affects name prefix and room darkening
-  const collectionContext = searchParams.get('collectionContext') as 'light-filtering' | 'blackout' | null;
+  const collectionContext = searchParams.get('collectionContext') as 'light-filtering' | 'blackout' | 'top-down-bottom-up' | null;
   const isBlackoutContext = isRollerBandF && collectionContext === 'blackout';
+  const isTopDownBottomUpContext = isHoneycombCellular && collectionContext === 'top-down-bottom-up';
   const displayProductName = isRollerBandF && collectionContext === 'light-filtering'
     ? `Light Filtering ${product.name}`
     : isBlackoutContext
     ? `Blackout ${product.name}`
+    : isTopDownBottomUpContext
+    ? `Top Down Bottom Up ${product.name}`
     : product.name;
 
   useEffect(() => {
     trackShopifyProductView(product);
+    trackStoreProductView(product);
   }, [product]);
 
   const [config, setConfig] = useState<ProductConfiguration>({
@@ -230,11 +294,15 @@ const ProductPage = ({
   );
   const [pricingLoaded, setPricingLoaded] = useState(hasInitialPricing);
   const [isValidating, setIsValidating] = useState(false);
+  const [isBuyingNow, setIsBuyingNow] = useState(false);
+  const [quantity, setQuantity] = useState(1);
+  const [buyNowError, setBuyNowError] = useState<string | null>(null);
   const fetchingRef = useRef(false);
   const [isBandHInstallationGuideOpen, setIsBandHInstallationGuideOpen] = useState(false);
   const [isRollerBandFInstallationGuideOpen, setIsRollerBandFInstallationGuideOpen] = useState(false);
   const [isOpeningDirectionGuideOpen, setIsOpeningDirectionGuideOpen] = useState(false);
-  const [isBandHCouponOpen, setIsBandHCouponOpen] = useState(false);
+  const [isFlashSaleCouponOpen, setIsFlashSaleCouponOpen] = useState(false);
+  const [flashSaleCouponCopied, setFlashSaleCouponCopied] = useState(false);
   const [selectedBandHGuideMethod, setSelectedBandHGuideMethod] =
     useState<BandHInstallationGuideMethod | null>(null);
   const [selectedRollerBandFGuideMethod, setSelectedRollerBandFGuideMethod] =
@@ -243,6 +311,36 @@ const ProductPage = ({
   // Collapsible sections state
   const [isMeasureOpen, setIsMeasureOpen] = useState(true);
   const [isCustomizeOpen, setIsCustomizeOpen] = useState(true);
+
+  // Required-option validation UX: buttons stay clickable even when options are
+  // missing; on click we reveal red "Please select" markers and scroll to the
+  // first missing field instead of just disabling the buttons.
+  const [showValidationErrors, setShowValidationErrors] = useState(false);
+  const fieldRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  const registerFieldRef = (key: string, el: HTMLDivElement | null) => {
+    if (el) {
+      fieldRefs.current.set(key, el);
+    } else {
+      fieldRefs.current.delete(key);
+    }
+  };
+
+  // Desktop: show the sticky checkout bar except while the inline Add to
+  // Cart/Buy Now buttons are themselves on screen, so we never show two
+  // identical button rows at once. Mobile always shows it regardless, since
+  // the inline buttons are far above the fold there anyway.
+  const [isInlineCtaVisible, setIsInlineCtaVisible] = useState(false);
+  useEffect(() => {
+    const target = document.getElementById('add-to-cart-cta');
+    if (!target) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => setIsInlineCtaVisible(entry.isIntersecting)
+    );
+    observer.observe(target);
+
+    return () => observer.disconnect();
+  }, []);
 
   // Selected optional customization cards (multi-select)
   const [selectedOptionalCards, setSelectedOptionalCards] = useState<{
@@ -259,15 +357,25 @@ const ProductPage = ({
 
   // Preselect motorization when arriving from a motorised collection page (e.g. Motorised EclipseCore)
   const preselectMotorization = searchParams.get('motorized') === 'true';
+  // Preselect a specific control option when arriving from a control-specific
+  // collection card (e.g. the Cordless honeycomb sub-category card).
+  const preselectControlOption = searchParams.get('control');
+  // Preselect the "Upgrade to No Drill System" option when arriving from the
+  // No Drill honeycomb sub-collection.
+  const preselectNoDrillUpgrade = searchParams.get('noDrill') === 'true';
   const defaultMotorizationOption = isBandHProduct
     ? DAY_NIGHT_BAND_H_MOTORIZATION_OPTIONS[0]?.id ?? null
     : isRollerBandF
     ? ROLLER_BAND_F_MOTORIZATION_OPTIONS[0]?.id ?? null
+    : isHoneycombCellular
+    ? HONEYCOMB_CELLULAR_MOTORIZATION_OPTIONS[0]?.id ?? null
     : MOTORIZATION_OPTIONS.find((option) => option.id !== 'none')?.id ?? null;
   const activeMotorizationOptions = isBandHProduct
     ? DAY_NIGHT_BAND_H_MOTORIZATION_OPTIONS
     : isRollerBandF
     ? ROLLER_BAND_F_MOTORIZATION_OPTIONS
+    : isHoneycombCellular
+    ? HONEYCOMB_CELLULAR_MOTORIZATION_OPTIONS
     : MOTORIZATION_OPTIONS.filter((option) => option.id !== 'none');
   const canUseMotorization = product.features.hasMotorization || preselectMotorization;
   const isMotorizationActive =
@@ -313,6 +421,30 @@ const ProductPage = ({
         motorization: prev.motorization && prev.motorization !== 'none'
           ? prev.motorization
           : defaultMotorizationOption,
+      }));
+    }
+
+    // Preselect a control option when arriving from a control-specific collection
+    // card (e.g. the Cordless honeycomb card). Validated against this product's
+    // own option list so an arbitrary query string can't inject config.
+    if (preselectControlOption && isHoneycombCellular) {
+      const valid = HONEYCOMB_CELLULAR_CONTROL_OPTIONS.some((o) => o.id === preselectControlOption);
+      if (valid) {
+        setConfig((prev) => ({
+          ...prev,
+          controlOption: preselectControlOption,
+          controlSide: null,
+          motorization: null,
+        }));
+      }
+    }
+
+    // Pre-check the No Drill System upgrade when arriving from the No Drill
+    // honeycomb sub-collection.
+    if (preselectNoDrillUpgrade && isHoneycombCellular) {
+      setConfig((prev) => ({
+        ...prev,
+        noDrillUpgrade: HONEYCOMB_CELLULAR_NO_DRILL_UPGRADE_OPTION.id,
       }));
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -414,8 +546,8 @@ const ProductPage = ({
   }, [product.category]);
 
   const bandHColorVariants = useMemo(
-    () => (isBandHProduct || isRollerBandF) ? (product.variants ?? []).filter((variant) => variant.image) : [],
-    [isBandHProduct, isRollerBandF, product.variants]
+    () => (isBandHProduct || isRollerBandF || isHoneycombCellular) ? (product.variants ?? []).filter((variant) => variant.image) : [],
+    [isBandHProduct, isRollerBandF, isHoneycombCellular, product.variants]
   );
   const selectedBandHVariant = useMemo(
     () => (config.selectedVariantId
@@ -442,7 +574,9 @@ const ProductPage = ({
 
   // No auto-preselection: user must explicitly pick a color variant.
 
-  const installationOptions = isDayNight
+  const installationOptions = isHoneycombCellular
+    ? HONEYCOMB_CELLULAR_INSTALLATION_OPTIONS
+    : isDayNight
     ? ZEBRA_INSTALLATION_OPTIONS
     : isRollerOrDayNight
     ? ROLLER_INSTALLATION_OPTIONS
@@ -510,6 +644,26 @@ const ProductPage = ({
       };
     }
 
+    if (isHoneycombCellular) {
+      return {
+        showSize: true,
+        showHeadrail: false,
+        showHeadrailColour: false,
+        showInstallationMethod: true,
+        showControlOption: !isMotorizationActive,
+        showStacking: false,
+        showControlSide: config.controlOption === 'hc-continuous-chain' && !isMotorizationActive,
+        showBottomChain: false,
+        showBracketType: false,
+        showMotorization: isMotorizationActive,
+        showBlindColor: false,
+        showFrameColor: false,
+        showOpeningDirection: false,
+        showBottomBar: false,
+        showRollStyle: false,
+      };
+    }
+
     // For roller blinds and day/night blinds - use product.features settings
     if (isRollerOrDayNight) {
       return {
@@ -546,8 +700,10 @@ const ProductPage = ({
       // Control Option for Classic and Platinum
       showControlOption: product.features.hasControlOption && (headrail === 'classic' || headrail === 'platinum'),
 
-      // Stacking for Classic and Platinum
-      showStacking: product.features.hasStacking && (headrail === 'classic' || headrail === 'platinum'),
+      // Stacking for Classic and Platinum — only once a control option is
+      // picked, since the available stacking options depend on it (empty
+      // list otherwise, so there'd be nothing to satisfy the requirement).
+      showStacking: product.features.hasStacking && (headrail === 'classic' || headrail === 'platinum') && Boolean(config.controlOption),
 
       // Control Side for Classic and Platinum
       showControlSide: product.features.hasControlSide && (headrail === 'classic' || headrail === 'platinum'),
@@ -564,7 +720,7 @@ const ProductPage = ({
       showBottomBar: product.features.hasBottomBar,
       showRollStyle: product.features.hasRollStyle,
     };
-  }, [config.controlOption, config.headrail, isBandHProduct, isRollerBandF, isMotorizationActive, isRollerOrDayNight, product.features]);
+  }, [config.controlOption, config.headrail, isBandHProduct, isRollerBandF, isHoneycombCellular, isMotorizationActive, isRollerOrDayNight, product.features]);
 
   // Build list of selected customizations for pricing
   const selectedCustomizations = useMemo(() => {
@@ -593,8 +749,9 @@ const ProductPage = ({
       rollStyle: visibleOptions.showRollStyle ? config.rollStyle : null,
       roomDarkening: cartConfiguration.roomDarkening,
       rollOption: cartConfiguration.rollOption,
+      noDrillUpgrade: isHoneycombCellular ? config.noDrillUpgrade : null,
     });
-  }, [cartConfiguration, config, isBandHProduct, isRollerBandF, product.features.hasRollerCassette, visibleOptions]);
+  }, [cartConfiguration, config, isBandHProduct, isRollerBandF, isHoneycombCellular, product.features.hasRollerCassette, visibleOptions]);
 
   const requiredCustomizationVisibility = useMemo(() => {
     if (isBandHProduct) {
@@ -619,6 +776,16 @@ const ProductPage = ({
       };
     }
 
+    if (isHoneycombCellular) {
+      return {
+        ...visibleOptions,
+        showWrappedCassette: false,
+        showChainColor: false,
+        showCassetteMatchingBar: false,
+        showMotorization: isMotorizationActive,
+      };
+    }
+
     const requiresManualChain =
       product.features.hasChainColor &&
       !isMotorizationActive;
@@ -640,6 +807,7 @@ const ProductPage = ({
     config.headrail,
     isBandHProduct,
     isRollerBandF,
+    isHoneycombCellular,
     isMotorizationActive,
     product.features.hasCassetteMatchingBar,
     product.features.hasChainColor,
@@ -650,6 +818,14 @@ const ProductPage = ({
   ]);
 
   const sizeRanges = useMemo(() => {
+    // Honeycomb Cellular's selectable range is fixed to the supplier catalogue's
+    // stated spec (see HONEYCOMB_CELLULAR_SIZE_LIMITS), not to what the price grid
+    // happens to cover — sizes outside the grid are still priced correctly via the
+    // ceiling-to-nearest-band / clamp-to-max-band logic in calculateDimensionPrice
+    // (client) and findCeilingWidthBand/findCeilingHeightBand (server).
+    if (isHoneycombCellular) {
+      return null;
+    }
     if (!priceMatrix || !priceMatrix.widthBands || !priceMatrix.heightBands) {
       return null;
     }
@@ -666,11 +842,49 @@ const ProductPage = ({
         : bandMaxWidth;
     const minHeight = Math.min(...heightBands.map(b => b.inches));
     const maxHeight = Math.max(...heightBands.map(b => b.inches));
-    if (process.env.NODE_ENV === 'development') {
-      console.log('Size ranges calculated:', { minWidth, maxWidth, minHeight, maxHeight, priceMatrix: priceMatrix.name });
-    }
     return { minWidth, maxWidth, minHeight, maxHeight };
-  }, [priceMatrix]);
+  }, [priceMatrix, isHoneycombCellular]);
+
+  // Zebra/Day-and-Night's selectable range is fixed to the supplier spec
+  // sheet's per-control-system numbers (CCL / Cordless / Motorized), not to
+  // what the price grid happens to cover — sizes outside the grid are still
+  // priced correctly via the ceiling-to-nearest-band / clamp-to-max-band logic
+  // in calculateDimensionPrice (client) and findCeilingWidthBand/
+  // findCeilingHeightBand (server). The only price-matrix input that still
+  // narrows the range is the genuine per-color fabric max-width cap.
+  // Non-Band-H day-and-night products (Band A-G) only ever offer Continuous
+  // Chain or Motorization, never Cordless.
+  const bandHSizeLimits = useMemo(() => {
+    if (!isDayAndNightProduct) return null;
+    const controlOption = isBandHProduct ? cartConfiguration.controlOption : 'continuous-chain';
+    const limits = getDayNightBandHSizeLimits(controlOption, isMotorizationActive);
+    return capDayNightBandHSizeLimits(limits, priceMatrix?.maxWidthInches);
+  }, [isDayAndNightProduct, isBandHProduct, cartConfiguration.controlOption, isMotorizationActive, priceMatrix]);
+
+  // Roller's selectable range is fixed to the supplier spec sheet's
+  // per-control-system numbers (CCL / Cordless / No-Drill / Motorized), not to
+  // what the price grid happens to cover — sizes outside the grid are still
+  // priced correctly via the ceiling-to-nearest-band / clamp-to-max-band logic
+  // in calculateDimensionPrice (client) and findCeilingWidthBand/
+  // findCeilingHeightBand (server). Room Darkening + Flat Headrail still caps
+  // max height, and the price matrix's genuine per-color fabric max-width cap
+  // still applies. Non-Band-F roller products (Band A-E) only ever offer
+  // Continuous Chain or Motorization.
+  const rollerSizeLimits = useMemo(() => {
+    if (!isRollerProduct) return null;
+    const controlOption = isRollerBandF ? cartConfiguration.controlOption : 'roller-f-continuous-chain';
+    const limits = getRollerBandFSizeLimits(controlOption, isMotorizationActive, cartConfiguration.headrail);
+    const darkened = applyRollerBandFRoomDarkeningCap(limits, cartConfiguration.headrail, cartConfiguration.roomDarkening);
+    return capRollerBandFSizeLimits(darkened, priceMatrix?.maxWidthInches);
+  }, [
+    isRollerProduct,
+    isRollerBandF,
+    cartConfiguration.controlOption,
+    cartConfiguration.headrail,
+    cartConfiguration.roomDarkening,
+    isMotorizationActive,
+    priceMatrix,
+  ]);
 
   const missingRequiredCustomizations = useMemo(() => {
     const missingCustomizations = getMissingRequiredCustomizations(
@@ -678,7 +892,11 @@ const ProductPage = ({
       requiredCustomizationVisibility
     );
 
-    const isBandProduct = isBandHProduct || isRollerBandF;
+    if (bandHColorVariants.length > 0 && !config.selectedVariantId) {
+      missingCustomizations.push({ key: 'colorVariant', label: 'color' });
+    }
+
+    const isBandProduct = isDayAndNightProduct || isRollerProduct || isHoneycombCellular;
     if (!isBandProduct || cartConfiguration.width <= 0 || cartConfiguration.height <= 0) {
       return missingCustomizations;
     }
@@ -694,9 +912,14 @@ const ProductPage = ({
       cartConfiguration.heightUnit
     );
     // Use variant-specific sizeRanges (includes per-color maxWidthInches cap) when available,
-    // fall back to static product-type limits.
-    const staticLimits = isBandHProduct ? DAY_NIGHT_BAND_H_SIZE_LIMITS : ROLLER_BAND_F_SIZE_LIMITS;
-    const limits = sizeRanges ?? staticLimits;
+    // fall back to static product-type limits. Day-and-Night and Roller products
+    // additionally narrow by the selected control system (see bandHSizeLimits /
+    // rollerSizeLimits above).
+    const limits = isDayAndNightProduct
+      ? bandHSizeLimits ?? DAY_NIGHT_BAND_H_SIZE_LIMITS
+      : isRollerProduct
+      ? rollerSizeLimits ?? ROLLER_BAND_F_SIZE_LIMITS
+      : sizeRanges ?? HONEYCOMB_CELLULAR_SIZE_LIMITS;
     const isOutOfRange =
       widthInches < limits.minWidth ||
       widthInches > limits.maxWidth ||
@@ -704,11 +927,81 @@ const ProductPage = ({
       heightInches > limits.maxHeight;
 
     return isOutOfRange
-      ? [...missingCustomizations, isBandHProduct ? 'valid Band H size' : 'valid Roller Band F size']
+      ? [
+          ...missingCustomizations,
+          {
+            key: 'size',
+            label: isBandHProduct
+              ? 'valid Band H size'
+              : isRollerBandF
+              ? 'valid Roller Band F size'
+              : 'valid size',
+          },
+        ]
       : missingCustomizations;
-  }, [cartConfiguration, isBandHProduct, isRollerBandF, requiredCustomizationVisibility, sizeRanges]);
+  }, [
+    bandHColorVariants,
+    bandHSizeLimits,
+    rollerSizeLimits,
+    cartConfiguration,
+    config.selectedVariantId,
+    isBandHProduct,
+    isDayAndNightProduct,
+    isRollerBandF,
+    isRollerProduct,
+    isHoneycombCellular,
+    requiredCustomizationVisibility,
+    sizeRanges,
+  ]);
 
-  const isAddToCartDisabled = isValidating || missingRequiredCustomizations.length > 0;
+  const missingFieldKeys = useMemo(
+    () => new Set(missingRequiredCustomizations.map((item) => item.key)),
+    [missingRequiredCustomizations]
+  );
+
+  // Standard-flow products with hasChainColor offer manual (Continuous Chain)
+  // and powered (Motorization) as two equally-valid ways to satisfy the same
+  // control requirement — neither card is "more correct" than the other, so
+  // both must show the same error state until either one is chosen.
+  const needsControlMethod =
+    showValidationErrors &&
+    !isMotorizationActive &&
+    !selectedOptionalCards.continuousChain &&
+    !selectedOptionalCards.motorization &&
+    (missingFieldKeys.has('chainColor') || missingFieldKeys.has('controlSide'));
+
+  const resolveFieldRef = (key: string): HTMLDivElement | null => {
+    // The color-variant selector renders two instances (mobile + desktop, toggled
+    // via CSS display), each registered under its own key — pick whichever is
+    // actually visible in the current viewport.
+    if (key === 'colorVariant') {
+      const mobile = fieldRefs.current.get('colorVariant-mobile') ?? null;
+      const desktop = fieldRefs.current.get('colorVariant-desktop') ?? null;
+      if (mobile && mobile.offsetParent !== null) return mobile;
+      if (desktop && desktop.offsetParent !== null) return desktop;
+      return mobile ?? desktop;
+    }
+    return fieldRefs.current.get(key) ?? null;
+  };
+
+  const scrollToFirstMissingField = () => {
+    const firstKey = missingRequiredCustomizations[0]?.key;
+
+    setIsMeasureOpen(true);
+    setIsCustomizeOpen(true);
+
+    // Wait a tick for collapsed sections to re-render/mount before looking up the ref.
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const target = firstKey ? resolveFieldRef(firstKey) : null;
+        if (target) {
+          target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } else {
+          document.getElementById('add-to-cart-cta')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      });
+    });
+  };
 
   const openBandHInstallationGuide = (language: BandHInstallationGuideLanguage) => {
     if (!selectedBandHGuideMethod) return;
@@ -768,30 +1061,38 @@ const ProductPage = ({
     return product.price;
   }, [priceCalculation, oversizeSurcharge, product.price]);
 
-  // Minimum price from the currently-loaded matrix (the selected variant's band
-  // for multi-table products), used as the "from" price before a size is entered.
-  const matrixMinPrice = useMemo(() => {
-    if (!priceMatrix || priceMatrix.prices.length === 0) return null;
-    return priceMatrix.prices.reduce(
-      (min, cell) => (cell.price < min ? cell.price : min),
-      priceMatrix.prices[0].price
-    );
-  }, [priceMatrix]);
-
   // Show minimum price indicator when no dimensions selected
   const showMinPriceIndicator = config.width === 0 || config.height === 0;
-  // Multi-table products (Roller Band F / Dayandnight Band H) show the selected
-  // variant's band minimum until a size is entered, then the computed price.
+  // Blackout context adds a surcharge on top of the base price, matching the
+  // collection card's price so the two don't disagree before a size is entered.
+  const blackoutSurcharge = isBlackoutContext
+    ? ROLLER_BAND_F_ROOM_DARKENING_OPTIONS.find((o) => o.id === 'blackout')?.price ?? 0
+    : 0;
+  // Use the same cross-group minimum price as the collection card (product.price)
+  // as the "from" price before a size is entered, so the two always agree.
   const displayedPrice = showMinPriceIndicator
-    ? isMultiTableProduct
-      ? matrixMinPrice ?? product.price
-      : product.price
+    ? product.price + blackoutSurcharge
     : totalPrice;
-  const bandHPromoCompareAtPrice = displayedPrice / (1 - BAND_H_PROMO_DISCOUNT_PERCENT / 100);
+  const compareAtPrice = displayedPrice / (1 - FLASH_SALE_DISCOUNT_PERCENT / 100);
+
+  const honeycombControlOptionName = (() => {
+    if (isMotorizationActive) {
+      return HONEYCOMB_CELLULAR_MOTORIZATION_OPTIONS.find((o) => o.id === config.motorization)?.name ?? 'Motorized Wand';
+    }
+    const optionName = HONEYCOMB_CELLULAR_CONTROL_OPTIONS.find((o) => o.id === config.controlOption)?.name;
+    if (!optionName) return null;
+    if (config.controlOption === 'hc-continuous-chain' && config.controlSide) {
+      const sideName = CONTROL_SIDE_OPTIONS.find((o) => o.id === config.controlSide)?.name;
+      return sideName ? `${optionName} – ${sideName}` : optionName;
+    }
+    return optionName;
+  })();
 
   // Calculate dynamic size ranges from price band
   const handleAddToCart = async () => {
     if (missingRequiredCustomizations.length > 0) {
+      setShowValidationErrors(true);
+      scrollToFirstMissingField();
       return;
     }
 
@@ -829,14 +1130,14 @@ const ProductPage = ({
           ...product,
           price: validation.calculatedPrice,
         };
-        addToCart(productWithPrice, cartConfiguration);
+        addToCart(productWithPrice, cartConfiguration, quantity);
       } else {
         // Price matches, proceed with cart
         const productWithPrice = {
           ...product,
           price: totalPrice,
         };
-        addToCart(productWithPrice, cartConfiguration);
+        addToCart(productWithPrice, cartConfiguration, quantity);
       }
     } catch (error) {
       console.error('Price validation failed:', error);
@@ -845,20 +1146,98 @@ const ProductPage = ({
         ...product,
         price: totalPrice,
       };
-      addToCart(productWithPrice, cartConfiguration);
+      addToCart(productWithPrice, cartConfiguration, quantity);
     } finally {
       setIsValidating(false);
     }
   };
 
-  const renderBandHColorSelector = (className: string) => {
-    if ((!isBandHProduct && !isRollerBandF) || bandHColorVariants.length === 0) return null;
+  // Buy Now: validate the configuration, create a single-item checkout, and go
+  // straight to payment. The cart is not touched.
+  const handleBuyNow = async () => {
+    if (missingRequiredCustomizations.length > 0) {
+      setShowValidationErrors(true);
+      scrollToFirstMissingField();
+      return;
+    }
+    if (isBuyingNow || isValidating) return;
+
+    setIsBuyingNow(true);
+    setBuyNowError(null);
+
+    try {
+      const widthInches = getTotalInches(config.width, config.widthFraction, config.widthUnit);
+      const heightInches = getTotalInches(config.height, config.heightFraction, config.heightUnit);
+
+      // Server-side re-price first so the checkout request always matches.
+      let price = totalPrice;
+      try {
+        const validation = await validateCartPrice(
+          {
+            handle: product.slug,
+            widthInches,
+            heightInches,
+            customizations: selectedCustomizations,
+            ...(isMultiTableProduct
+              ? {
+                  variantId: config.selectedVariantId,
+                  variantLabel: config.selectedVariantOptionValue,
+                }
+              : {}),
+          },
+          totalPrice
+        );
+        if (!validation.valid) {
+          price = validation.calculatedPrice;
+        }
+      } catch {
+        // Validation endpoint unavailable — proceed with the client price; the
+        // checkout API re-validates anyway.
+      }
+
+      const storeSession = getStoreSessionContext();
+      trackStoreCheckoutInitiated(
+        [{ id: 'buy-now', product, configuration: cartConfiguration, quantity, addedAt: new Date() }],
+        price
+      );
+
+      const result = await createCheckout(
+        [buildCheckoutItem(product.slug, cartConfiguration, quantity, price)],
+        undefined,
+        storeSession?.sessionId,
+        storeSession
+      );
+
+      window.location.href = result.checkoutUrl;
+    } catch (error) {
+      console.error('Buy Now failed:', error);
+      setBuyNowError(
+        "We couldn't start your checkout. Please try again, or add the blind to your cart — " +
+        'or call +1 832-670-6705 and we’ll take your order directly.'
+      );
+      setIsBuyingNow(false);
+    }
+  };
+
+  const renderBandHColorSelector = (className: string, refKey: string) => {
+    if ((!isBandHProduct && !isRollerBandF && !isHoneycombCellular) || bandHColorVariants.length === 0) return null;
 
     return (
-      <div className={className}>
+      <RequiredFieldWrapper
+        fieldKey={refKey}
+        label="color"
+        error={showValidationErrors && missingFieldKeys.has('colorVariant')}
+        registerFieldRef={registerFieldRef}
+        className={className}
+      >
         <div className="mb-5 flex items-center justify-between gap-3">
           <h3 className="min-w-0 text-lg font-semibold text-[#1f1f1f] sm:text-xl">
-            Color - {selectedBandHVariantOption?.value ?? 'Select Color'}
+            {selectedBandHVariantOption
+              ? (() => {
+                  const { code, name } = getVariantCodeAndName(selectedBandHVariantOption.value);
+                  return `Color - ${code ? `${code} ` : ''}${name}`;
+                })()
+              : 'Color - Select Color'}
           </h3>
           {productSampleEligible && sampleCount > 0 && (
             <Link
@@ -873,6 +1252,7 @@ const ProductPage = ({
         <div className="grid grid-cols-5 gap-3 sm:grid-cols-6">
           {bandHColorVariants.map((variant) => {
             const option = getVariantDisplayOption(variant);
+            const { code: variantCode, name: variantName } = getVariantCodeAndName(option.value);
             const isSelected = config.selectedVariantId === variant.id;
             const inSampleBasket = isInBasket(variant.id);
 
@@ -906,6 +1286,14 @@ const ProductPage = ({
                     unoptimized
                   />
                 </button>
+
+                {variantCode && (
+                  <span className="text-center text-[11px] leading-tight text-gray-600">
+                    <span className="font-semibold text-[#00473c]">{variantCode}</span>
+                    {' '}
+                    {variantName}
+                  </span>
+                )}
 
                 {productSampleEligible && (
                   <button
@@ -946,44 +1334,31 @@ const ProductPage = ({
             );
           })}
         </div>
-      </div>
+      </RequiredFieldWrapper>
     );
   };
 
   return (
-    <div className={(isBandHProduct || isRollerBandF) ? 'bg-white pb-20 lg:pb-0' : 'bg-white'}>
-      {isBandHProduct && (
-        <>
-          <button
-            type="button"
-            onClick={() => setIsBandHCouponOpen(true)}
-            className="fixed right-0 top-1/2 z-40 -translate-y-1/2 rounded-l-md border border-r-0 border-[#0f5f52] bg-[#00473c] px-2.5 py-3 text-white shadow-lg transition-colors hover:bg-[#003830] lg:px-3 lg:py-4"
-            aria-label="Open 15 percent off coupon"
-          >
-            <span
-              className="block text-xs font-semibold uppercase tracking-wide text-white/90 lg:text-sm"
-              style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}
-            >
-              Extra 15% off
-            </span>
-          </button>
-
-          <div className="fixed bottom-4 left-4 z-40 w-24 overflow-hidden rounded-md border border-[#c8ded9] bg-white text-center text-[#00473c] shadow-lg lg:bottom-5 lg:left-5 lg:w-28">
-            <div className="border-b border-[#dcebe7] bg-[#f6fffd] px-2 py-1.5">
-              <span className="block text-[10px] font-semibold uppercase tracking-wide text-[#4d6b65]">
-                Summer Sale
-              </span>
-            </div>
-            <div className="px-2 py-2">
-              <span className="block text-xl font-black leading-none lg:text-2xl">50%</span>
-              <span className="mt-0.5 block text-[11px] font-bold uppercase tracking-wide">Off</span>
-              <span className="mt-1.5 block rounded bg-[#e8f5f2] px-1.5 py-1 text-[9px] font-bold uppercase tracking-wide">
-                Ends Today
-              </span>
-            </div>
-          </div>
-        </>
-      )}
+    <div className="bg-white pb-28 lg:pb-0">
+      {/* Fixed tab, vertically centered on the right edge, on every breakpoint.
+          top-1/2 is safe on mobile (unlike an earlier top-20 offset) because
+          it centers in the viewport instead of anchoring near the variable-
+          height title/rating/price block at the top of the page. The
+          bottom-left Flash Sale countdown stays desktop-only: it would sit
+          under the mobile sticky checkout bar. */}
+      <button
+        type="button"
+        onClick={() => setIsFlashSaleCouponOpen(true)}
+        className="fixed right-0 top-1/2 z-40 -translate-y-1/2 rounded-l-md border border-r-0 border-[#0f5f52] bg-[#00473c] px-2.5 py-3 text-white shadow-lg transition-colors hover:bg-[#003830] lg:px-3 lg:py-4"
+        aria-label={`Open ${PROMO_CODE_PERCENT} percent off coupon`}
+      >
+        <span
+          className="block text-xs font-semibold uppercase tracking-wide text-white/90 lg:text-sm"
+          style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}
+        >
+          Extra {PROMO_CODE_PERCENT}% off
+        </span>
+      </button>
 
       {/* Breadcrumb */}
       <div className="px-4 md:px-6 lg:px-20 py-3 md:py-4">
@@ -1005,26 +1380,36 @@ const ProductPage = ({
                 {displayProductName}
               </h1>
 
-              <div className="flex items-center gap-1 mb-4">
-                <StarRating rating={product.rating} />
+              <div className="flex items-center flex-wrap gap-x-3 gap-y-1 mb-4">
+                <div className="flex items-center gap-1.5">
+                  <StarRating rating={product.reviewCount > 0 ? product.rating : 0} />
+                  <a href="#reviews" className="text-xs text-gray-500 hover:text-[#00473c] underline-offset-2 hover:underline">
+                    {product.reviewCount > 0
+                      ? `(${product.reviewCount} ${product.reviewCount === 1 ? 'review' : 'reviews'})`
+                      : '(No reviews yet)'}
+                  </a>
+                </div>
+                <button
+                  type="button"
+                  onClick={openReviewForm}
+                  className="text-xs font-medium text-[#00473c] hover:underline underline-offset-2"
+                >
+                  Write a review
+                </button>
               </div>
 
               <div className="border border-gray-200 rounded-lg p-4 mb-4">
                 <div className="flex flex-col items-start">
                   <div className="flex flex-wrap items-baseline gap-2">
-                    {isBandHProduct && (
-                      <span className="text-sm font-medium text-gray-400 line-through">
-                        {formatPriceWithCurrency(formatPrice(bandHPromoCompareAtPrice), product.currency)}
-                      </span>
-                    )}
+                    <span className="text-sm font-medium text-gray-400 line-through">
+                      {formatPriceWithCurrency(formatPrice(compareAtPrice), product.currency)}
+                    </span>
                     <span className="text-2xl font-bold text-[#3a3a3a]">
                       {formatPriceWithCurrency(formatPrice(displayedPrice), product.currency)}
                     </span>
-                    {isBandHProduct && (
-                      <span className="rounded-md bg-[#00473c] px-2.5 py-1 text-xs font-semibold text-white">
-                        {BAND_H_PROMO_DISCOUNT_PERCENT}% Off Summer Sale - Ends Today
-                      </span>
-                    )}
+                    <span className="rounded-md bg-[#00473c] px-2.5 py-1 text-xs font-semibold text-white">
+                      {FLASH_SALE_DISCOUNT_PERCENT}% Off Flash Sale
+                    </span>
                   </div>
                   {priceCalculation && !showMinPriceIndicator && (
                     <div className="mt-3 text-xs text-gray-400">
@@ -1041,7 +1426,7 @@ const ProductPage = ({
                 images={productGalleryImages}
                 videos={product.videos}
                 productName={displayProductName}
-                selectedIndex={(isBandHProduct || isRollerBandF) ? selectedBandHVariantImageIndex : undefined}
+                selectedIndex={(isBandHProduct || isRollerBandF || isHoneycombCellular) ? selectedBandHVariantImageIndex : undefined}
               />
             </div>
 
@@ -1058,11 +1443,25 @@ const ProductPage = ({
               </p>
 
               {/* Rating */}
-              <div className="hidden lg:flex items-center gap-1 mb-4 md:mb-6">
-                <StarRating rating={product.rating} />
+              <div className="hidden lg:flex items-center flex-wrap gap-x-3 gap-y-1 mb-4 md:mb-6">
+                <div className="flex items-center gap-1.5">
+                  <StarRating rating={product.reviewCount > 0 ? product.rating : 0} />
+                  <a href="#reviews" className="text-xs text-gray-500 hover:text-[#00473c] underline-offset-2 hover:underline">
+                    {product.reviewCount > 0
+                      ? `(${product.reviewCount} ${product.reviewCount === 1 ? 'review' : 'reviews'})`
+                      : '(No reviews yet)'}
+                  </a>
+                </div>
+                <button
+                  type="button"
+                  onClick={openReviewForm}
+                  className="text-xs font-medium text-[#00473c] hover:underline underline-offset-2"
+                >
+                  Write a review
+                </button>
               </div>
 
-              {renderBandHColorSelector('mb-4 lg:hidden')}
+              {renderBandHColorSelector('mb-4 lg:hidden', 'colorVariant-mobile')}
 
               {/* Shipping Info Box */}
               <div className="flex items-center border border-gray-200 rounded-lg mb-4 md:mb-6 px-3 md:px-4 py-2 md:py-3">
@@ -1072,17 +1471,11 @@ const ProductPage = ({
                   </svg>
                 </div>
                 <div className="ml-2 md:ml-3">
-                  <div className="text-[10px] md:text-xs text-gray-500">Estimated Delivery Date</div>
+                  <div className="text-[10px] md:text-xs text-gray-500">Estimated Dispatch Date</div>
                   <div className="text-xs md:text-sm font-semibold text-[#00473c]">
-                    {(() => {
-                      const fmt = (d: Date) => d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
-                      const addDays = (d: Date, n: number) => { const r = new Date(d); r.setDate(r.getDate() + n); return r; };
-                      const today = new Date();
-                      if (isBandHProduct) {
-                        return `${fmt(addDays(today, 5))} - ${fmt(addDays(today, 7))}`;
-                      }
-                      return fmt(addDays(today, 12));
-                    })()}
+                    {isBandHProduct || isHoneycombCellular
+                      ? getEstimatedDispatchDateRange(5, 7)
+                      : getEstimatedDispatchDateRange(8, 12)}
                   </div>
                 </div>
               </div>
@@ -1091,21 +1484,15 @@ const ProductPage = ({
               <div className="hidden lg:block border border-gray-200 rounded-lg p-4 md:p-5 mb-4 md:mb-6">
                 <div className="flex flex-col items-center lg:items-start">
                   <div className="flex flex-wrap items-baseline justify-center gap-2 mb-3 md:mb-4 lg:justify-start">
-                    {isBandHProduct && (
-                      <span className="text-sm font-medium text-gray-400 line-through">
-                        {formatPriceWithCurrency(formatPrice(bandHPromoCompareAtPrice), product.currency)}
-                      </span>
-                    )}
+                    <span className="text-sm font-medium text-gray-400 line-through">
+                      {formatPriceWithCurrency(formatPrice(compareAtPrice), product.currency)}
+                    </span>
                     <span className="text-xl md:text-2xl font-bold text-[#3a3a3a]">
                       {formatPriceWithCurrency(formatPrice(displayedPrice), product.currency)}
                     </span>
-                    {isBandHProduct && (
-                      <>
-                        <span className="rounded-md bg-[#00473c] px-2.5 py-1 text-xs font-semibold text-white">
-                          {BAND_H_PROMO_DISCOUNT_PERCENT}% Off Summer Sale - Ends Today
-                        </span>
-                      </>
-                    )}
+                    <span className="rounded-md bg-[#00473c] px-2.5 py-1 text-xs font-semibold text-white">
+                      {FLASH_SALE_DISCOUNT_PERCENT}% Off Flash Sale
+                    </span>
                   </div>
                   {priceCalculation && !showMinPriceIndicator && (
                     <div className="text-xs text-gray-400 mb-3">
@@ -1115,7 +1502,7 @@ const ProductPage = ({
                 </div>
               </div>
 
-              {renderBandHColorSelector('hidden lg:block mb-4 md:mb-6')}
+              {renderBandHColorSelector('hidden lg:block mb-4 md:mb-6', 'colorVariant-desktop')}
 
               {/* Customization Sections */}
               <div className="space-y-4">
@@ -1149,54 +1536,77 @@ const ProductPage = ({
                   </button>
 
                   {isMeasureOpen && (
-                    <div className="p-4 md:p-6 space-y-6">
+                    <div className="p-4 md:p-6 space-y-5 md:space-y-6">
                       {/* Size Selector */}
                       {product.features.hasSize && (
-                        <SizeSelector
-                          width={config.width}
-                          widthFraction={config.widthFraction}
-                          height={config.height}
-                          heightFraction={config.heightFraction}
-                          unit={config.widthUnit}
-                          onWidthChange={(value) => setConfig({ ...config, width: value })}
-                          onWidthFractionChange={(value) => setConfig({ ...config, widthFraction: value })}
-                          onHeightChange={(value) => setConfig({ ...config, height: value })}
-                          onHeightFractionChange={(value) => setConfig({ ...config, heightFraction: value })}
-                          onUnitChange={(unit) => setConfig({ ...config, widthUnit: unit, heightUnit: unit })}
-                          minWidth={sizeRanges?.minWidth ?? (isBandHProduct ? DAY_NIGHT_BAND_H_SIZE_LIMITS.minWidth : isRollerBandF ? ROLLER_BAND_F_SIZE_LIMITS.minWidth : undefined)}
-                          maxWidth={sizeRanges?.maxWidth ?? (isBandHProduct ? DAY_NIGHT_BAND_H_SIZE_LIMITS.maxWidth : isRollerBandF ? ROLLER_BAND_F_SIZE_LIMITS.maxWidth : undefined)}
-                          minHeight={sizeRanges?.minHeight ?? (isBandHProduct ? DAY_NIGHT_BAND_H_SIZE_LIMITS.minHeight : isRollerBandF ? ROLLER_BAND_F_SIZE_LIMITS.minHeight : undefined)}
-                          maxHeight={sizeRanges?.maxHeight ?? (isBandHProduct ? DAY_NIGHT_BAND_H_SIZE_LIMITS.maxHeight : isRollerBandF ? ROLLER_BAND_F_SIZE_LIMITS.maxHeight : undefined)}
-                        />
+                        <RequiredFieldWrapper
+                          fieldKey="size"
+                          label="width and height"
+                          error={showValidationErrors && missingFieldKeys.has('size')}
+                          registerFieldRef={registerFieldRef}
+                        >
+                          <SizeSelector
+                            width={config.width}
+                            widthFraction={config.widthFraction}
+                            height={config.height}
+                            heightFraction={config.heightFraction}
+                            unit={config.widthUnit}
+                            onWidthChange={(value) => setConfig({ ...config, width: value })}
+                            onWidthFractionChange={(value) => setConfig({ ...config, widthFraction: value })}
+                            onHeightChange={(value) => setConfig({ ...config, height: value })}
+                            onHeightFractionChange={(value) => setConfig({ ...config, heightFraction: value })}
+                            onUnitChange={(unit) => setConfig({ ...config, widthUnit: unit, heightUnit: unit })}
+                            minWidth={isDayAndNightProduct ? bandHSizeLimits?.minWidth : isRollerProduct ? rollerSizeLimits?.minWidth : sizeRanges?.minWidth ?? (isHoneycombCellular ? HONEYCOMB_CELLULAR_SIZE_LIMITS.minWidth : undefined)}
+                            maxWidth={isDayAndNightProduct ? bandHSizeLimits?.maxWidth : isRollerProduct ? rollerSizeLimits?.maxWidth : sizeRanges?.maxWidth ?? (isHoneycombCellular ? HONEYCOMB_CELLULAR_SIZE_LIMITS.maxWidth : undefined)}
+                            minHeight={isDayAndNightProduct ? bandHSizeLimits?.minHeight : isRollerProduct ? rollerSizeLimits?.minHeight : sizeRanges?.minHeight ?? (isHoneycombCellular ? HONEYCOMB_CELLULAR_SIZE_LIMITS.minHeight : undefined)}
+                            maxHeight={isDayAndNightProduct ? bandHSizeLimits?.maxHeight : isRollerProduct ? rollerSizeLimits?.maxHeight : sizeRanges?.maxHeight ?? (isHoneycombCellular ? HONEYCOMB_CELLULAR_SIZE_LIMITS.maxHeight : undefined)}
+                          />
+                        </RequiredFieldWrapper>
                       )}
 
                       {/* Installation Method Selector */}
                       {product.features.hasInstallationMethod && visibleOptions.showInstallationMethod && (
-                        <InstallationMethodSelector
-                          options={installationOptions}
-                          selectedMethod={config.installationMethod}
-                          onMethodChange={(methodId) => setConfig({ ...config, installationMethod: methodId })}
-                        />
+                        <RequiredFieldWrapper
+                          fieldKey="installationMethod"
+                          label="installation method"
+                          error={showValidationErrors && missingFieldKeys.has('installationMethod')}
+                          registerFieldRef={registerFieldRef}
+                        >
+                          <InstallationMethodSelector
+                            options={installationOptions}
+                            selectedMethod={config.installationMethod}
+                            onMethodChange={(methodId) => setConfig({ ...config, installationMethod: methodId })}
+                          />
+                        </RequiredFieldWrapper>
                       )}
 
 
 
-                      {/* Blind Name Selector (Room Type dropdown AND input) */}
-                      <RoomTypeSelector
-                        options={ROOM_TYPE_OPTIONS}
-                        selectedRoomType={config.roomType}
-                        onRoomTypeChange={(roomTypeId) => setConfig({ ...config, roomType: roomTypeId })}
-                        blindName={config.blindName}
-                        onBlindNameChange={(value) => setConfig({ ...config, blindName: value || null })}
-                      />
+                      {/* Blind Name Selector (Room Type dropdown AND input) — not used for Honeycomb Cellular */}
+                      {!isHoneycombCellular && (
+                        <RoomTypeSelector
+                          options={ROOM_TYPE_OPTIONS}
+                          selectedRoomType={config.roomType}
+                          onRoomTypeChange={(roomTypeId) => setConfig({ ...config, roomType: roomTypeId })}
+                          blindName={config.blindName}
+                          onBlindNameChange={(value) => setConfig({ ...config, blindName: value || null })}
+                        />
+                      )}
 
                       {/* Roll Style Selector */}
                       {product.features.hasRollStyle && visibleOptions.showRollStyle && (
-                        <RollStyleSelector
-                          options={ROLL_STYLE_OPTIONS}
-                          selectedRollStyle={config.rollStyle}
-                          onRollStyleChange={(styleId) => setConfig({ ...config, rollStyle: styleId })}
-                        />
+                        <RequiredFieldWrapper
+                          fieldKey="rollStyle"
+                          label="roll style"
+                          error={showValidationErrors && missingFieldKeys.has('rollStyle')}
+                          registerFieldRef={registerFieldRef}
+                        >
+                          <RollStyleSelector
+                            options={ROLL_STYLE_OPTIONS}
+                            selectedRollStyle={config.rollStyle}
+                            onRollStyleChange={(styleId) => setConfig({ ...config, rollStyle: styleId })}
+                          />
+                        </RequiredFieldWrapper>
                       )}
                     </div>
                   )}
@@ -1224,7 +1634,7 @@ const ProductPage = ({
                   </button>
 
                   {isCustomizeOpen && (
-                    <div className="p-4 md:p-6 space-y-6 divide-y divide-gray-100">
+                    <div className="p-4 md:p-6 space-y-5 md:space-y-6 divide-y divide-gray-100">
                       {isBandHProduct ? (
                         <DayNightBandHSelector
                           config={config}
@@ -1239,6 +1649,8 @@ const ProductPage = ({
                               bottomBar: false,
                             }))
                           }
+                          missingFieldKeys={showValidationErrors ? missingFieldKeys : EMPTY_MISSING_FIELD_KEYS}
+                          registerFieldRef={registerFieldRef}
                         />
                       ) : isRollerBandF ? (
                         <RollerBandFSelector
@@ -1254,79 +1666,141 @@ const ProductPage = ({
                               bottomBar: false,
                             }))
                           }
+                          missingFieldKeys={showValidationErrors ? missingFieldKeys : EMPTY_MISSING_FIELD_KEYS}
+                          registerFieldRef={registerFieldRef}
+                        />
+                      ) : isHoneycombCellular ? (
+                        <HoneycombCellularSelector
+                          config={config}
+                          updateConfig={(updates) => setConfig((prev) => ({ ...prev, ...updates }))}
+                          isMotorizationSelected={selectedOptionalCards.motorization}
+                          onMotorizationSelectedChange={(selected) =>
+                            setSelectedOptionalCards((prev) => ({
+                              ...prev,
+                              motorization: selected,
+                              continuousChain: false,
+                              cassette: false,
+                              bottomBar: false,
+                            }))
+                          }
+                          missingFieldKeys={showValidationErrors ? missingFieldKeys : EMPTY_MISSING_FIELD_KEYS}
+                          registerFieldRef={registerFieldRef}
+                          cordlessOnly={isTopDownBottomUpContext}
                         />
                       ) : (
                         <>
                       {/* Headrail Selector */}
                       {product.features.hasHeadrail && (
-                        <div className="pt-0 first:pt-0 pb-6">
+                        <RequiredFieldWrapper
+                          fieldKey="headrail"
+                          label="headrail"
+                          error={showValidationErrors && missingFieldKeys.has('headrail')}
+                          registerFieldRef={registerFieldRef}
+                          className="pt-0 first:pt-0 pb-5 md:pb-6"
+                        >
                           <HeadrailSelector
                             options={HEADRAIL_OPTIONS}
                             selectedHeadrail={config.headrail}
                             onHeadrailChange={(headrailId) => setConfig({ ...config, headrail: headrailId })}
                           />
-                        </div>
+                        </RequiredFieldWrapper>
                       )}
 
                       {/* Headrail Colour Selector */}
                       {product.features.hasHeadrailColour && visibleOptions.showHeadrailColour && (
-                        <div className="pt-6">
+                        <RequiredFieldWrapper
+                          fieldKey="headrailColour"
+                          label="headrail colour"
+                          error={showValidationErrors && missingFieldKeys.has('headrailColour')}
+                          registerFieldRef={registerFieldRef}
+                          className="pt-5 md:pt-6"
+                        >
                           <HeadrailColourSelector
                             options={HEADRAIL_COLOUR_OPTIONS}
                             selectedColour={config.headrailColour}
                             onColourChange={(colourId) => setConfig({ ...config, headrailColour: colourId })}
                           />
-                        </div>
+                        </RequiredFieldWrapper>
                       )}
 
                       {/* Control Option Selector */}
                       {product.features.hasControlOption && visibleOptions.showControlOption && (
-                        <div className="pt-6">
+                        <RequiredFieldWrapper
+                          fieldKey="controlOption"
+                          label="control option"
+                          error={showValidationErrors && missingFieldKeys.has('controlOption')}
+                          registerFieldRef={registerFieldRef}
+                          className="pt-5 md:pt-6"
+                        >
                           <ControlOptionSelector
                             options={controlOptions}
                             selectedOption={config.controlOption}
                             onOptionChange={(optionId) => setConfig({ ...config, controlOption: optionId })}
                           />
-                        </div>
+                        </RequiredFieldWrapper>
                       )}
 
                       {/* Stacking Selector */}
                       {product.features.hasStacking && visibleOptions.showStacking && (
-                        <div className="pt-6">
+                        <RequiredFieldWrapper
+                          fieldKey="stacking"
+                          label="stacking option"
+                          error={showValidationErrors && missingFieldKeys.has('stacking')}
+                          registerFieldRef={registerFieldRef}
+                          className="pt-5 md:pt-6"
+                        >
                           <StackingSelector
                             options={stackingOptions}
                             selectedStacking={config.stacking}
                             onStackingChange={(stackingId) => setConfig({ ...config, stacking: stackingId })}
                           />
-                        </div>
+                        </RequiredFieldWrapper>
                       )}
 
 
                       {/* Bottom Chain Selector */}
                       {product.features.hasBottomChain && visibleOptions.showBottomChain && (
-                        <div className="pt-6">
+                        <RequiredFieldWrapper
+                          fieldKey="bottomChain"
+                          label="bottom chain"
+                          error={showValidationErrors && missingFieldKeys.has('bottomChain')}
+                          registerFieldRef={registerFieldRef}
+                          className="pt-5 md:pt-6"
+                        >
                           <BottomChainSelector
                             options={BOTTOM_CHAIN_OPTIONS.filter(opt => !('pvcOnly' in opt) || product.features.hasPvcFabric)}
                             selectedChain={config.bottomChain}
                             onChainChange={(chainId) => setConfig({ ...config, bottomChain: chainId })}
                           />
-                        </div>
+                        </RequiredFieldWrapper>
                       )}
 
                       {/* Bracket Type Selector */}
                       {product.features.hasBracketType && visibleOptions.showBracketType && (
-                        <div className="pt-6">
+                        <RequiredFieldWrapper
+                          fieldKey="bracketType"
+                          label="bracket type"
+                          error={showValidationErrors && missingFieldKeys.has('bracketType')}
+                          registerFieldRef={registerFieldRef}
+                          className="pt-5 md:pt-6"
+                        >
                           <BracketTypeSelector
                             options={BRACKET_TYPE_OPTIONS}
                             selectedBracket={config.bracketType}
                             onBracketChange={(bracketId) => setConfig({ ...config, bracketType: bracketId })}
                           />
-                        </div>
+                        </RequiredFieldWrapper>
                       )}
 
                       {/* Blind Color Selector */}
                       {product.features.hasBlindColor && visibleOptions.showBlindColor && (
-                        <div className="pt-6">
+                        <RequiredFieldWrapper
+                          fieldKey="blindColor"
+                          label="blind colour"
+                          error={showValidationErrors && missingFieldKeys.has('blindColor')}
+                          registerFieldRef={registerFieldRef}
+                          className="pt-5 md:pt-6"
+                        >
                           <h3 className="text-sm font-medium text-[#3a3a3a] mb-3">Blind Color</h3>
                           <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
                             {BLIND_COLOR_OPTIONS.map((option) => (
@@ -1348,12 +1822,18 @@ const ProductPage = ({
                               </button>
                             ))}
                           </div>
-                        </div>
+                        </RequiredFieldWrapper>
                       )}
 
                       {/* Frame Color Selector */}
                       {product.features.hasFrameColor && visibleOptions.showFrameColor && (
-                        <div className="pt-6">
+                        <RequiredFieldWrapper
+                          fieldKey="frameColor"
+                          label="frame colour"
+                          error={showValidationErrors && missingFieldKeys.has('frameColor')}
+                          registerFieldRef={registerFieldRef}
+                          className="pt-5 md:pt-6"
+                        >
                           <h3 className="text-sm font-medium text-[#3a3a3a] mb-3">Frame Color</h3>
                           <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
                             {FRAME_COLOR_OPTIONS.map((option) => (
@@ -1375,21 +1855,27 @@ const ProductPage = ({
                               </button>
                             ))}
                           </div>
-                        </div>
+                        </RequiredFieldWrapper>
                       )}
 
                       {/* Opening Direction Selector */}
                       {product.features.hasOpeningDirection && visibleOptions.showOpeningDirection && (
-                        <div className="pt-6">
+                        <RequiredFieldWrapper
+                          fieldKey="openingDirection"
+                          label="opening direction"
+                          error={showValidationErrors && missingFieldKeys.has('openingDirection')}
+                          registerFieldRef={registerFieldRef}
+                          className="pt-5 md:pt-6"
+                        >
                           <SimpleDropdown
                             label="Opening Direction"
-                            options={OPENING_DIRECTION_OPTIONS}
+                            options={isPleated ? OPENING_DIRECTION_OPTIONS_ECLIPSECORE : OPENING_DIRECTION_OPTIONS}
                             selectedValue={config.openingDirection}
                             onChange={(optionId) => setConfig({ ...config, openingDirection: optionId })}
                             placeholder="Select opening direction"
                             onInfoClick={() => setIsOpeningDirectionGuideOpen(true)}
                           />
-                        </div>
+                        </RequiredFieldWrapper>
                       )}
 
                       {isOpeningDirectionGuideOpen && (
@@ -1397,7 +1883,7 @@ const ProductPage = ({
                       )}
 
                       {/* Optional Customization Cards Row */}
-                      <div className="pt-6 pb-6 border-b border-gray-200">
+                      <div className="pt-5 pb-5 border-b border-gray-200 md:pt-6 md:pb-6">
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
 
                           {/* Bottom Bar Card - Only for products with hasBottomBar */}
@@ -1416,7 +1902,7 @@ const ProductPage = ({
                                   });
                                 }
                               }}
-                              className={`relative border-2 rounded-lg p-5 transition-all duration-300 text-left group cursor-pointer h-full flex flex-col ${selectedOptionalCards.bottomBar
+                              className={`relative border-2 rounded-lg p-4 md:p-5 transition-all duration-300 text-left group cursor-pointer h-full flex flex-col ${selectedOptionalCards.bottomBar
                                 ? 'border-[#00473c] bg-gradient-to-br from-[#f6fffd] to-[#e8f5f3] shadow-md'
                                 : 'border-gray-300 bg-white hover:border-[#00473c] hover:shadow-sm'
                                 }`}
@@ -1428,43 +1914,52 @@ const ProductPage = ({
                                   </svg>
                                 </div>
                               )}
-                              {BOTTOM_BAR_CARD?.image && (
-                                <div className={`relative h-[120px] w-full mb-3 rounded-lg overflow-hidden flex items-center justify-center transition-all duration-300 ${selectedOptionalCards.bottomBar
-                                  ? 'bg-gradient-to-br from-[#e8f5f3] to-[#d0ebe8] shadow-inner'
-                                  : 'bg-gradient-to-br from-gray-50 to-gray-100 group-hover:from-gray-100 group-hover:to-gray-150'
-                                  }`}>
-                                  <Image
-                                    src={BOTTOM_BAR_CARD.image}
-                                    alt={BOTTOM_BAR_CARD.name}
-                                    width={120}
-                                    height={120}
-                                    className="object-contain"
-                                  />
+                              <div className="flex flex-row items-center gap-3 md:flex-col md:items-stretch">
+                                {BOTTOM_BAR_CARD?.image && (
+                                  <div className={`relative h-16 w-16 shrink-0 rounded-lg overflow-hidden flex items-center justify-center transition-all duration-300 md:h-[120px] md:w-full md:mb-3 ${selectedOptionalCards.bottomBar
+                                    ? 'bg-gradient-to-br from-[#e8f5f3] to-[#d0ebe8] shadow-inner'
+                                    : 'bg-gradient-to-br from-gray-50 to-gray-100 group-hover:from-gray-100 group-hover:to-gray-150'
+                                    }`}>
+                                    <Image
+                                      src={BOTTOM_BAR_CARD.image}
+                                      alt={BOTTOM_BAR_CARD.name}
+                                      width={120}
+                                      height={120}
+                                      className="object-contain"
+                                    />
+                                  </div>
+                                )}
+                                <div className="min-w-0 flex-1">
+                                  <h4 className="text-base font-semibold text-[#3a3a3a] mb-1.5 pr-8">
+                                    {BOTTOM_BAR_CARD?.name || 'Bottom Bar Option'}
+                                  </h4>
+                                  {BOTTOM_BAR_CARD?.description && (
+                                    <p className="text-xs text-gray-600 leading-relaxed mb-2">{BOTTOM_BAR_CARD.description}</p>
+                                  )}
                                 </div>
-                              )}
-                              <h4 className="text-base font-semibold text-[#3a3a3a] mb-1.5 pr-8">
-                                {BOTTOM_BAR_CARD?.name || 'Bottom Bar Option'}
-                              </h4>
-                              {BOTTOM_BAR_CARD?.description && (
-                                <p className="text-xs text-gray-600 leading-relaxed mb-2">{BOTTOM_BAR_CARD.description}</p>
-                              )}
+                              </div>
 
                               {/* Dropdowns inside the card */}
                               {selectedOptionalCards.bottomBar && (
-                                <div
-                                  className="mt-4 space-y-3 pt-3 border-t border-gray-200/50"
-                                  onClick={(e) => e.stopPropagation()}
-                                >
-                                  <SimpleDropdown
-                                    label="Select Bottom Bar"
-                                    options={BOTTOM_BAR_OPTIONS}
-                                    selectedValue={config.bottomBar}
-                                    onChange={(optionId) => setConfig({ ...config, bottomBar: optionId })}
-                                    placeholder="Select bottom bar style"
-                                    portal
-                                    menuMinWidth={360}
-                                    portalPlacement="bottom"
-                                  />
+                                <div onClick={(e) => e.stopPropagation()}>
+                                  <RequiredFieldWrapper
+                                    fieldKey="bottomBar"
+                                    label="bottom bar"
+                                    error={showValidationErrors && missingFieldKeys.has('bottomBar')}
+                                    registerFieldRef={registerFieldRef}
+                                    className="mt-4 space-y-3 pt-3 border-t border-gray-200/50"
+                                  >
+                                    <SimpleDropdown
+                                      label="Select Bottom Bar"
+                                      options={BOTTOM_BAR_OPTIONS}
+                                      selectedValue={config.bottomBar}
+                                      onChange={(optionId) => setConfig({ ...config, bottomBar: optionId })}
+                                      placeholder="Select bottom bar style"
+                                      portal
+                                      menuMinWidth={360}
+                                      portalPlacement="bottom"
+                                    />
+                                  </RequiredFieldWrapper>
                                 </div>
                               )}
                             </div>
@@ -1472,6 +1967,17 @@ const ProductPage = ({
                           {/* Continuous Chain - Select Location Card */}
                           {product.features.hasChainColor && (
                             <div
+                              ref={(el) => {
+                                // While collapsed, the card itself is the thing that must be
+                                // opened to satisfy the chainColor/controlSide requirement —
+                                // register it as their scroll target. Once expanded, the nested
+                                // dropdowns below register themselves under the same keys and
+                                // take over automatically.
+                                if (!selectedOptionalCards.continuousChain) {
+                                  registerFieldRef('controlSide', el);
+                                  registerFieldRef('chainColor', el);
+                                }
+                              }}
                               onClick={() => {
                                 const newValue = !selectedOptionalCards.continuousChain;
                                 setSelectedOptionalCards((prev) => ({
@@ -1487,7 +1993,9 @@ const ProductPage = ({
                               }}
                               className={`relative border-2 rounded-lg p-5 transition-all duration-300 text-left group cursor-pointer h-full flex flex-col ${selectedOptionalCards.continuousChain
                                 ? 'border-[#00473c] bg-gradient-to-br from-[#f6fffd] to-[#e8f5f3] shadow-md'
-                                : 'border-gray-300 bg-white hover:border-[#00473c] hover:shadow-sm'
+                                : needsControlMethod
+                                  ? 'border-red-400 bg-red-50/40'
+                                  : 'border-gray-300 bg-white hover:border-[#00473c] hover:shadow-sm'
                                 }`}
                             >
                               {selectedOptionalCards.continuousChain && (
@@ -1497,30 +2005,40 @@ const ProductPage = ({
                                   </svg>
                                 </div>
                               )}
-                              {continuousChainCard.image && (
-                                <div className={`relative h-[120px] w-full mb-3 rounded-lg overflow-hidden flex items-center justify-center transition-all duration-300 ${selectedOptionalCards.continuousChain
-                                  ? 'bg-gradient-to-br from-[#e8f5f3] to-[#d0ebe8] shadow-inner'
-                                  : 'bg-gradient-to-br from-gray-50 to-gray-100 group-hover:from-gray-100 group-hover:to-gray-150'
-                                  }`}>
-                                  <Image
-                                    src={continuousChainCard.image}
-                                    alt={continuousChainCard.name}
-                                    width={120}
-                                    height={120}
-                                    className="object-contain"
-                                  />
+                              <div className="flex flex-row items-center gap-3 md:flex-col md:items-stretch">
+                                {continuousChainCard.image && (
+                                  <div className={`relative h-16 w-16 shrink-0 rounded-lg overflow-hidden flex items-center justify-center transition-all duration-300 md:h-[120px] md:w-full md:mb-3 ${selectedOptionalCards.continuousChain
+                                    ? 'bg-gradient-to-br from-[#e8f5f3] to-[#d0ebe8] shadow-inner'
+                                    : 'bg-gradient-to-br from-gray-50 to-gray-100 group-hover:from-gray-100 group-hover:to-gray-150'
+                                    }`}>
+                                    <Image
+                                      src={continuousChainCard.image}
+                                      alt={continuousChainCard.name}
+                                      width={120}
+                                      height={120}
+                                      className="object-contain"
+                                    />
+                                  </div>
+                                )}
+                                <div className="min-w-0 flex-1">
+                                  <h4 className="text-base font-semibold text-[#3a3a3a] mb-1.5 pr-8">
+                                    {continuousChainCard.name}
+                                  </h4>
+                                  {continuousChainCard.description && (
+                                    <p className="text-xs text-gray-600 leading-relaxed mb-2">{continuousChainCard.description}</p>
+                                  )}
                                 </div>
-                              )}
-                              <h4 className="text-base font-semibold text-[#3a3a3a] mb-1.5 pr-8">
-                                {continuousChainCard.name}
-                              </h4>
-                              {continuousChainCard.description && (
-                                <p className="text-xs text-gray-600 leading-relaxed mb-2">{continuousChainCard.description}</p>
-                              )}
+                              </div>
                               {continuousChainCard.price > 0 && (
                                 <span className="absolute bottom-4 right-4 bg-[#00473c] text-white text-xs font-semibold px-3 py-1.5 rounded-lg shadow-md">
                                   +${continuousChainCard.price.toFixed(2)}
                                 </span>
+                              )}
+
+                              {needsControlMethod && (
+                                <p className="mt-2 text-xs font-medium text-red-500">
+                                  Please select: continuous chain or motorization
+                                </p>
                               )}
 
                               {/* Dropdowns inside the card */}
@@ -1529,26 +2047,40 @@ const ProductPage = ({
                                   className="mt-4 space-y-3 pt-3 border-t border-gray-200/50"
                                   onClick={(e) => e.stopPropagation()}
                                 >
-                                  <SimpleDropdown
-                                    label="Select Location"
-                                    options={CONTROL_SIDE_OPTIONS}
-                                    selectedValue={config.controlSide}
-                                    onChange={(sideId) => setConfig({ ...config, controlSide: sideId })}
-                                    placeholder="Select location"
-                                    portal
-                                    menuMinWidth={320}
-                                    portalPlacement="bottom"
-                                  />
-                                  <SimpleDropdown
-                                    label="Chain Color"
-                                    options={CHAIN_COLOR_OPTIONS}
-                                    selectedValue={config.chainColor}
-                                    onChange={(colorId) => setConfig({ ...config, chainColor: colorId })}
-                                    placeholder="Select chain color"
-                                    portal
-                                    menuMinWidth={320}
-                                    portalPlacement="bottom"
-                                  />
+                                  <RequiredFieldWrapper
+                                    fieldKey="controlSide"
+                                    label="control location"
+                                    error={showValidationErrors && missingFieldKeys.has('controlSide')}
+                                    registerFieldRef={registerFieldRef}
+                                  >
+                                    <SimpleDropdown
+                                      label="Select Location"
+                                      options={CONTROL_SIDE_OPTIONS}
+                                      selectedValue={config.controlSide}
+                                      onChange={(sideId) => setConfig({ ...config, controlSide: sideId })}
+                                      placeholder="Select location"
+                                      portal
+                                      menuMinWidth={320}
+                                      portalPlacement="bottom"
+                                    />
+                                  </RequiredFieldWrapper>
+                                  <RequiredFieldWrapper
+                                    fieldKey="chainColor"
+                                    label="chain colour"
+                                    error={showValidationErrors && missingFieldKeys.has('chainColor')}
+                                    registerFieldRef={registerFieldRef}
+                                  >
+                                    <SimpleDropdown
+                                      label="Chain Color"
+                                      options={CHAIN_COLOR_OPTIONS}
+                                      selectedValue={config.chainColor}
+                                      onChange={(colorId) => setConfig({ ...config, chainColor: colorId })}
+                                      placeholder="Select chain color"
+                                      portal
+                                      menuMinWidth={320}
+                                      portalPlacement="bottom"
+                                    />
+                                  </RequiredFieldWrapper>
                                 </div>
                               )}
                             </div>
@@ -1583,26 +2115,30 @@ const ProductPage = ({
                                   </svg>
                                 </div>
                               )}
-                              {cassetteCard.image && (
-                                <div className={`relative h-[120px] w-full mb-3 rounded-lg overflow-hidden flex items-center justify-center transition-all duration-300 ${selectedOptionalCards.cassette
-                                  ? 'bg-gradient-to-br from-[#e8f5f3] to-[#d0ebe8] shadow-inner'
-                                  : 'bg-gradient-to-br from-gray-50 to-gray-100 group-hover:from-gray-100 group-hover:to-gray-150'
-                                  }`}>
-                                  <Image
-                                    src={cassetteCard.image}
-                                    alt={cassetteCard.name}
-                                    width={120}
-                                    height={120}
-                                    className="object-contain"
-                                  />
+                              <div className="flex flex-row items-center gap-3 md:flex-col md:items-stretch">
+                                {cassetteCard.image && (
+                                  <div className={`relative h-16 w-16 shrink-0 rounded-lg overflow-hidden flex items-center justify-center transition-all duration-300 md:h-[120px] md:w-full md:mb-3 ${selectedOptionalCards.cassette
+                                    ? 'bg-gradient-to-br from-[#e8f5f3] to-[#d0ebe8] shadow-inner'
+                                    : 'bg-gradient-to-br from-gray-50 to-gray-100 group-hover:from-gray-100 group-hover:to-gray-150'
+                                    }`}>
+                                    <Image
+                                      src={cassetteCard.image}
+                                      alt={cassetteCard.name}
+                                      width={120}
+                                      height={120}
+                                      className="object-contain"
+                                    />
+                                  </div>
+                                )}
+                                <div className="min-w-0 flex-1">
+                                  <h4 className="text-base font-semibold text-[#3a3a3a] mb-1.5 pr-8">
+                                    {cassetteCard.name}
+                                  </h4>
+                                  {cassetteCard.description && (
+                                    <p className="text-xs text-gray-600 leading-relaxed mb-2">{cassetteCard.description}</p>
+                                  )}
                                 </div>
-                              )}
-                              <h4 className="text-base font-semibold text-[#3a3a3a] mb-1.5 pr-8">
-                                {cassetteCard.name}
-                              </h4>
-                              {cassetteCard.description && (
-                                <p className="text-xs text-gray-600 leading-relaxed mb-2">{cassetteCard.description}</p>
-                              )}
+                              </div>
                               {cassetteCard.price > 0 && (
                                 <span className="absolute bottom-4 right-4 bg-[#00473c] text-white text-xs font-semibold px-3 py-1.5 rounded-lg shadow-md">
                                   +${cassetteCard.price.toFixed(2)}
@@ -1616,40 +2152,61 @@ const ProductPage = ({
                                   onClick={(e) => e.stopPropagation()}
                                 >
                                   {product.features.hasWrappedCassette && (
-                                    <SimpleDropdown
-                                      label="Cassette Color"
-                                      options={WRAPPED_CASSETTE_OPTIONS}
-                                      selectedValue={config.wrappedCassette}
-                                      onChange={(optionId) => setConfig({ ...config, wrappedCassette: optionId })}
-                                      placeholder="Select cassette color"
-                                      portal
-                                      menuMinWidth={360}
-                                      portalPlacement="bottom"
-                                    />
+                                    <RequiredFieldWrapper
+                                      fieldKey="wrappedCassette"
+                                      label="cassette option"
+                                      error={showValidationErrors && missingFieldKeys.has('wrappedCassette')}
+                                      registerFieldRef={registerFieldRef}
+                                    >
+                                      <SimpleDropdown
+                                        label="Cassette Color"
+                                        options={WRAPPED_CASSETTE_OPTIONS}
+                                        selectedValue={config.wrappedCassette}
+                                        onChange={(optionId) => setConfig({ ...config, wrappedCassette: optionId })}
+                                        placeholder="Select cassette color"
+                                        portal
+                                        menuMinWidth={360}
+                                        portalPlacement="bottom"
+                                      />
+                                    </RequiredFieldWrapper>
                                   )}
                                   {product.features.hasCassetteMatchingBar && (
-                                    <SimpleDropdown
-                                      label="Cassette and Bottom Matching Bar"
-                                      options={CASSETTE_MATCHING_BAR_OPTIONS}
-                                      selectedValue={config.cassetteMatchingBar}
-                                      onChange={(optionId) => setConfig({ ...config, cassetteMatchingBar: optionId })}
-                                      placeholder="Select cassette and bottom bar"
-                                      portal
-                                      menuMinWidth={360}
-                                      portalPlacement="bottom"
-                                    />
+                                    <RequiredFieldWrapper
+                                      fieldKey="cassetteMatchingBar"
+                                      label="cassette and bottom bar"
+                                      error={showValidationErrors && missingFieldKeys.has('cassetteMatchingBar')}
+                                      registerFieldRef={registerFieldRef}
+                                    >
+                                      <SimpleDropdown
+                                        label="Cassette and Bottom Matching Bar"
+                                        options={CASSETTE_MATCHING_BAR_OPTIONS}
+                                        selectedValue={config.cassetteMatchingBar}
+                                        onChange={(optionId) => setConfig({ ...config, cassetteMatchingBar: optionId })}
+                                        placeholder="Select cassette and bottom bar"
+                                        portal
+                                        menuMinWidth={360}
+                                        portalPlacement="bottom"
+                                      />
+                                    </RequiredFieldWrapper>
                                   )}
                                   {product.features.hasRollerCassette && (
-                                    <SimpleDropdown
-                                      label="Cassette and Bottom Matching Bar"
-                                      options={ROLLER_CASSETTE_OPTIONS}
-                                      selectedValue={config.cassetteMatchingBar}
-                                      onChange={(optionId) => setConfig({ ...config, cassetteMatchingBar: optionId })}
-                                      placeholder="Select cassette color"
-                                      portal
-                                      menuMinWidth={360}
-                                      portalPlacement="bottom"
-                                    />
+                                    <RequiredFieldWrapper
+                                      fieldKey="cassetteMatchingBar"
+                                      label="cassette and bottom bar"
+                                      error={showValidationErrors && missingFieldKeys.has('cassetteMatchingBar')}
+                                      registerFieldRef={registerFieldRef}
+                                    >
+                                      <SimpleDropdown
+                                        label="Cassette and Bottom Matching Bar"
+                                        options={ROLLER_CASSETTE_OPTIONS}
+                                        selectedValue={config.cassetteMatchingBar}
+                                        onChange={(optionId) => setConfig({ ...config, cassetteMatchingBar: optionId })}
+                                        placeholder="Select cassette color"
+                                        portal
+                                        menuMinWidth={360}
+                                        portalPlacement="bottom"
+                                      />
+                                    </RequiredFieldWrapper>
                                   )}
                                 </div>
                               )}
@@ -1681,7 +2238,9 @@ const ProductPage = ({
                               }}
                               className={`relative border-2 rounded-lg p-5 transition-all duration-300 text-left group cursor-pointer h-full flex flex-col ${selectedOptionalCards.motorization
                                 ? 'border-[#00473c] bg-gradient-to-br from-[#f6fffd] to-[#e8f5f3] shadow-md'
-                                : 'border-gray-300 bg-white hover:border-[#00473c] hover:shadow-sm'
+                                : needsControlMethod
+                                  ? 'border-red-400 bg-red-50/40'
+                                  : 'border-gray-300 bg-white hover:border-[#00473c] hover:shadow-sm'
                                 }`}
                             >
                               {selectedOptionalCards.motorization && (
@@ -1691,31 +2250,41 @@ const ProductPage = ({
                                   </svg>
                                 </div>
                               )}
-                              {MOTORIZATION_CARD.image && (
-                                <div className={`relative h-[120px] w-full mb-3 rounded-lg overflow-hidden flex items-center justify-center transition-all duration-300 ${selectedOptionalCards.motorization
-                                  ? 'bg-gradient-to-br from-[#e8f5f3] to-[#d0ebe8] shadow-inner'
-                                  : 'bg-gradient-to-br from-gray-50 to-gray-100 group-hover:from-gray-100 group-hover:to-gray-150'
-                                  }`}>
-                                  <Image
-                                    src={MOTORIZATION_CARD.image}
-                                    alt={MOTORIZATION_CARD.name}
-                                    width={120}
-                                    height={120}
-                                    className="object-contain"
-                                  />
-                                </div>
-                              )}
-                              <h4 className="text-base font-semibold text-[#3a3a3a] mb-1.5 pr-8">
-                                {MOTORIZATION_CARD.name}
-                              </h4>
-                              {MOTORIZATION_CARD.description && (
-                                <p className="text-xs text-gray-600 leading-relaxed mb-2">{MOTORIZATION_CARD.description}</p>
-                              )}
+                              <div className="flex flex-row items-center gap-3 md:flex-col md:items-stretch">
+                                {MOTORIZATION_CARD.image && (
+                                  <div className={`relative h-16 w-16 shrink-0 rounded-lg overflow-hidden flex items-center justify-center transition-all duration-300 md:h-[120px] md:w-full md:mb-3 ${selectedOptionalCards.motorization
+                                    ? 'bg-gradient-to-br from-[#e8f5f3] to-[#d0ebe8] shadow-inner'
+                                    : 'bg-gradient-to-br from-gray-50 to-gray-100 group-hover:from-gray-100 group-hover:to-gray-150'
+                                    }`}>
+                                    <Image
+                                      src={MOTORIZATION_CARD.image}
+                                      alt={MOTORIZATION_CARD.name}
+                                      width={120}
+                                      height={120}
+                                      className="object-contain"
+                                    />
+                                  </div>
+                                )}
+                                <div className="min-w-0 flex-1">
+                                  <h4 className="text-base font-semibold text-[#3a3a3a] mb-1.5 pr-8">
+                                    {MOTORIZATION_CARD.name}
+                                  </h4>
+                                  {MOTORIZATION_CARD.description && (
+                                    <p className="text-xs text-gray-600 leading-relaxed mb-2">{MOTORIZATION_CARD.description}</p>
+                                  )}
 
-                              {/* Simple Price Text */}
-                              <div className="mt-2 text-sm font-medium text-[#00473c]">
-                                +$95.00 (Remote)
+                                  {/* Simple Price Text */}
+                                  <div className="mt-2 text-sm font-medium text-[#00473c]">
+                                    +$95.00 (Remote)
+                                  </div>
+                                </div>
                               </div>
+
+                              {needsControlMethod && (
+                                <p className="mt-2 text-xs font-medium text-red-500">
+                                  Please select: continuous chain or motorization
+                                </p>
+                              )}
 
                               {/* Dropdowns inside the card */}
                               {selectedOptionalCards.motorization && (
@@ -1723,16 +2292,23 @@ const ProductPage = ({
                                   className="mt-4 pt-3 border-t border-gray-200/50"
                                   onClick={(e) => e.stopPropagation()}
                                 >
-                                  <SimpleDropdown
-                                    label="Motorization Option"
-                                    options={activeMotorizationOptions}
-                                    selectedValue={config.motorization}
-                                    onChange={(optionId) => setConfig({ ...config, motorization: optionId })}
-                                    placeholder="Select motorization"
-                                    portal
-                                    menuMinWidth={360}
-                                    portalPlacement="bottom"
-                                  />
+                                  <RequiredFieldWrapper
+                                    fieldKey="motorization"
+                                    label="motorization option"
+                                    error={showValidationErrors && missingFieldKeys.has('motorization')}
+                                    registerFieldRef={registerFieldRef}
+                                  >
+                                    <SimpleDropdown
+                                      label="Motorization Option"
+                                      options={activeMotorizationOptions}
+                                      selectedValue={config.motorization}
+                                      onChange={(optionId) => setConfig({ ...config, motorization: optionId })}
+                                      placeholder="Select motorization"
+                                      portal
+                                      menuMinWidth={360}
+                                      portalPlacement="bottom"
+                                    />
+                                  </RequiredFieldWrapper>
                                 </div>
                               )}
                             </div>
@@ -1746,17 +2322,112 @@ const ProductPage = ({
                 </div>
               </div>
 
-              {/* Add to Cart Button */}
-              <button
-                onClick={handleAddToCart}
-                disabled={isAddToCartDisabled}
-                className={`w-full mt-4 md:mt-6 py-2.5 md:py-3 px-4 md:px-6 rounded-lg text-sm md:text-base font-medium transition-colors ${isAddToCartDisabled
-                  ? 'bg-gray-400 text-white cursor-not-allowed'
-                  : 'bg-[#00473c] text-white hover:bg-[#003830]'
-                  }`}
-              >
-                {isValidating ? 'Adding to Cart...' : 'Add to Cart'}
-              </button>
+              {isHoneycombCellular ? (
+                <div id="add-to-cart-cta" className="mt-4 md:mt-6">
+                  <ReviewSelectionsPanel
+                    colorName={selectedBandHVariantOption?.value ?? null}
+                    colorImage={selectedBandHVariant?.image ?? null}
+                    measurementsLabel={
+                      config.width > 0 && config.height > 0
+                        ? `${getTotalInches(config.width, config.widthFraction, config.widthUnit).toFixed(2).replace(/\.00$/, '')}"w x ${getTotalInches(config.height, config.heightFraction, config.heightUnit).toFixed(2).replace(/\.00$/, '')}"h`
+                        : null
+                    }
+                    installationMethodName={installationOptions.find((o) => o.id === config.installationMethod)?.name ?? null}
+                    controlOptionName={honeycombControlOptionName}
+                    price={totalPrice}
+                    compareAtPrice={compareAtPrice}
+                    currency={product.currency}
+                    quantity={quantity}
+                    onQuantityChange={setQuantity}
+                    onAddToCart={handleAddToCart}
+                    onBuyNow={handleBuyNow}
+                    isAddingToCart={isValidating}
+                    isBuyingNow={isBuyingNow}
+                    buyNowError={buyNowError}
+                  />
+                </div>
+              ) : (
+                <>
+              {/* Quantity Selector */}
+              <div className="flex items-center gap-3 mt-4 md:mt-6">
+                <span className="text-sm text-gray-600">Quantity:</span>
+                <div className="flex items-center border border-gray-300 rounded-lg">
+                  <button
+                    type="button"
+                    onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                    disabled={quantity <= 1}
+                    className="px-3 py-1.5 hover:bg-gray-100 transition-colors disabled:opacity-40 disabled:hover:bg-transparent disabled:cursor-not-allowed"
+                    aria-label="Decrease quantity"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+                    </svg>
+                  </button>
+                  <span className="px-4 py-1.5 text-sm font-medium min-w-[40px] text-center">
+                    {quantity}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setQuantity((q) => Math.min(99, q + 1))}
+                    disabled={quantity >= 99}
+                    className="px-3 py-1.5 hover:bg-gray-100 transition-colors disabled:opacity-40 disabled:hover:bg-transparent disabled:cursor-not-allowed"
+                    aria-label="Increase quantity"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              {/* Add to Cart + Buy Now */}
+              <div id="add-to-cart-cta" className="flex flex-col sm:flex-row gap-3 mt-4 md:mt-6">
+                <button
+                  onClick={handleAddToCart}
+                  disabled={isValidating || isBuyingNow}
+                  className={`flex-1 py-2.5 md:py-3 px-4 md:px-6 rounded-lg text-sm md:text-base font-medium transition-colors ${isValidating || isBuyingNow
+                    ? 'bg-gray-400 text-white cursor-not-allowed'
+                    : 'bg-[#00473c] text-white hover:bg-[#003830]'
+                    }`}
+                >
+                  {isValidating ? 'Adding to Cart...' : 'Add to Cart'}
+                </button>
+                <button
+                  onClick={handleBuyNow}
+                  disabled={isValidating || isBuyingNow}
+                  className={`flex-1 py-2.5 md:py-3 px-4 md:px-6 rounded-lg text-sm md:text-base font-medium transition-colors border ${isValidating || isBuyingNow
+                    ? 'border-gray-300 text-gray-400 cursor-not-allowed'
+                    : 'border-[#00473c] text-[#00473c] hover:bg-[#f0fdf9]'
+                    }`}
+                >
+                  {isBuyingNow ? 'Preparing Checkout...' : 'Buy Now'}
+                </button>
+              </div>
+
+              {buyNowError && (
+                <div
+                  className="mt-3 flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3"
+                  role="alert"
+                >
+                  <svg
+                    className="mt-0.5 h-5 w-5 shrink-0 text-red-500"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"
+                    />
+                  </svg>
+                  <p className="text-sm font-medium text-red-800">{buyNowError}</p>
+                </div>
+              )}
+                </>
+              )}
 
               {/* Installation & Measurement Guide Buttons */}
               {guideType && (
@@ -1994,13 +2665,13 @@ const ProductPage = ({
                 </div>
               )}
 
-              {isBandHProduct && isBandHCouponOpen && (
+              {isFlashSaleCouponOpen && (
                 <div
                   className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 py-6"
                   role="dialog"
                   aria-modal="true"
-                  aria-labelledby="band-h-coupon-title"
-                  onClick={() => setIsBandHCouponOpen(false)}
+                  aria-labelledby="flash-sale-coupon-title"
+                  onClick={() => setIsFlashSaleCouponOpen(false)}
                 >
                   <div
                     className="w-full max-w-md overflow-hidden rounded-lg bg-white shadow-xl"
@@ -2012,13 +2683,13 @@ const ProductPage = ({
                           <p className="text-xs font-semibold uppercase tracking-wide text-[#00473c]">
                             Limited-time saving
                           </p>
-                          <h3 id="band-h-coupon-title" className="mt-1 text-2xl font-bold text-[#2f2f2f]">
-                            Take an extra 15% off
+                          <h3 id="flash-sale-coupon-title" className="mt-1 text-2xl font-bold text-[#2f2f2f]">
+                            Take an extra {PROMO_CODE_PERCENT}% off
                           </h3>
                         </div>
                         <button
                           type="button"
-                          onClick={() => setIsBandHCouponOpen(false)}
+                          onClick={() => setIsFlashSaleCouponOpen(false)}
                           className="flex h-8 w-8 items-center justify-center rounded-md border border-[#d6e7e3] text-gray-500 hover:bg-white hover:text-gray-700"
                           aria-label="Close coupon dialog"
                         >
@@ -2040,7 +2711,7 @@ const ProductPage = ({
                           Checkout code
                         </p>
                         <p className="mt-1 text-3xl font-black tracking-wide text-[#00473c]">
-                          {BAND_H_COUPON_CODE}
+                          {FLASH_SALE_COUPON_CODE}
                         </p>
                         <p className="mt-2 text-xs text-gray-500">
                           Apply this code in the discount field while the offer is available.
@@ -2050,18 +2721,46 @@ const ProductPage = ({
                       <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
                         <button
                           type="button"
-                          onClick={() => {
-                            if (typeof navigator !== 'undefined') {
-                              navigator.clipboard?.writeText(BAND_H_COUPON_CODE);
+                          onClick={async () => {
+                            let copied = false;
+                            try {
+                              if (typeof navigator !== 'undefined' && navigator.clipboard) {
+                                await navigator.clipboard.writeText(FLASH_SALE_COUPON_CODE);
+                                copied = true;
+                              }
+                            } catch {
+                              copied = false;
+                            }
+                            if (!copied && typeof document !== 'undefined') {
+                              const textarea = document.createElement('textarea');
+                              textarea.value = FLASH_SALE_COUPON_CODE;
+                              textarea.style.position = 'fixed';
+                              textarea.style.opacity = '0';
+                              document.body.appendChild(textarea);
+                              textarea.focus();
+                              textarea.select();
+                              try {
+                                copied = document.execCommand('copy');
+                              } catch {
+                                copied = false;
+                              }
+                              document.body.removeChild(textarea);
+                            }
+                            if (copied) {
+                              setFlashSaleCouponCopied(true);
+                              setTimeout(() => setFlashSaleCouponCopied(false), 2000);
                             }
                           }}
                           className="rounded-lg border border-[#00473c] px-4 py-3 text-sm font-semibold text-[#00473c] transition-colors hover:bg-[#f0fdf9]"
                         >
-                          Copy Coupon
+                          {flashSaleCouponCopied ? 'Copied!' : 'Copy Coupon'}
                         </button>
                         <button
                           type="button"
-                          onClick={() => setIsBandHCouponOpen(false)}
+                          onClick={() => {
+                            setIsFlashSaleCouponOpen(false);
+                            setFlashSaleCouponCopied(false);
+                          }}
                           className="rounded-lg bg-[#00473c] px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#003830]"
                         >
                           Continue
@@ -2174,6 +2873,11 @@ const ProductPage = ({
         </section>
       )}
 
+      {/* Long-form copy from the custom.product_content metafield, when present */}
+      {product.productContent && (
+        <ProductContentSections content={product.productContent} productName={displayProductName} />
+      )}
+
       {/* Product Details Section - Full Width */}
       <CategoryInfoSection
         categorySlug={
@@ -2184,18 +2888,19 @@ const ProductPage = ({
         productTags={product.tags}
       />
 
-      {/* Reviews Section — hidden */}
-      {false && product.slug !== 'non-driii-honeycomb-blackout-blinds' && (
-        <section className="px-4 md:px-6 lg:px-20 py-8 md:py-12 bg-white border-t border-gray-100">
-          <div className="max-w-[1400px] mx-auto px-4 md:px-6 lg:px-8">
-            <ProductReviews
-              reviews={product.reviews}
-              averageRating={product.rating}
-              totalReviews={product.reviewCount}
-            />
-          </div>
-        </section>
-      )}
+      {/* Reviews Section */}
+      <section className="px-4 md:px-6 lg:px-20 py-8 md:py-12 bg-white border-t border-gray-100">
+        <div className="max-w-[1400px] mx-auto px-4 md:px-6 lg:px-8">
+          <ProductReviews
+            productHandle={product.slug}
+            productName={displayProductName}
+            productExternalId={product.id?.match(/(\d+)\s*$/)?.[1] ?? null}
+            initialReviews={product.reviews}
+            formOpen={reviewFormOpen}
+            onFormOpenChange={setReviewFormOpen}
+          />
+        </div>
+      </section>
 
       {/* Related Products */}
       {product.slug !== 'non-driii-honeycomb-blackout-blinds' && relatedProducts.length > 0 && (
@@ -2205,6 +2910,21 @@ const ProductPage = ({
           </div>
         </section>
       )}
+
+      {/* Keep price + Add to Cart/Buy Now visible while scrolling the configurator.
+          Always shown on mobile; on desktop it hides only while the inline
+          CTA is itself on screen, so the two never show at once. */}
+      <StickyBottomBar
+        price={totalPrice}
+        additionalCost={0}
+        compareAtPrice={compareAtPrice}
+        currency={product.currency}
+        disabled={isValidating || isBuyingNow}
+        isBusy={isValidating || isBuyingNow}
+        onAddToCartClick={handleAddToCart}
+        onBuyClick={handleBuyNow}
+        showOnDesktop={!isInlineCtaVisible}
+      />
     </div>
   );
 };
