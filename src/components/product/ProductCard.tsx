@@ -43,16 +43,19 @@ interface ProductCardProps {
 }
 
 const ROLLER_BAND_F_TAG_CLIENT = 'roller-band-f';
+const TOP_DOWN_BOTTOM_UP_THUMBNAIL = '/products/topdownbottomup.webp';
 
 export default function ProductCard({ product, className = '', preselectedMotorization = false, preselectedControlOption, preselectedNoDrillUpgrade = false, collectionContext, layout = 'carousel' }: ProductCardProps) {
   const router = useRouter();
-  const imageUrl = product.image || product.images?.[0] || '';
   const currency = product.currency || 'USD';
   const motorizedParam = preselectedMotorization ? '&motorized=true' : '';
 
   const isBandF = product.tags?.includes(ROLLER_BAND_F_TAG_CLIENT);
   const isHoneycombCellular = product.tags?.includes(HONEYCOMB_CELLULAR_TAG);
   const isTopDownBottomUpContext = isHoneycombCellular && collectionContext === 'top-down-bottom-up';
+  const imageUrl = isTopDownBottomUpContext
+    ? TOP_DOWN_BOTTOM_UP_THUMBNAIL
+    : product.image || product.images?.[0] || '';
   const controlParam = preselectedControlOption
     ? `control=${encodeURIComponent(preselectedControlOption)}`
     : '';
