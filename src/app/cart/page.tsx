@@ -58,6 +58,7 @@ import {
   HONEYCOMB_CELLULAR_CONTROL_OPTIONS,
   HONEYCOMB_CELLULAR_MOTORIZATION_OPTIONS,
   HONEYCOMB_CELLULAR_NO_DRILL_UPGRADE_OPTION,
+  HONEYCOMB_CELLULAR_TDBU_SHEER_UPGRADE_OPTION,
 } from '@/data/honeycombCellular';
 import { ROOM_TYPE_OPTIONS } from '@/data/roomTypes';
 
@@ -223,6 +224,7 @@ export default function CartPage() {
       { key: 'cassetteMatchingBar', label: 'Cassette Bar', options: [...CASSETTE_MATCHING_BAR_OPTIONS, ...ROLLER_CASSETTE_OPTIONS] },
       { key: 'motorization', label: 'Motorisation', options: [...MOTORIZATION_OPTIONS, ...DAY_NIGHT_BAND_H_MOTORIZATION_OPTIONS, ...ROLLER_BAND_F_MOTORIZATION_OPTIONS, ...HONEYCOMB_CELLULAR_MOTORIZATION_OPTIONS] },
       { key: 'noDrillUpgrade', label: 'No Drill Upgrade', options: [HONEYCOMB_CELLULAR_NO_DRILL_UPGRADE_OPTION] },
+      { key: 'tdbuSheerUpgrade', label: 'Additional Sheer', options: [HONEYCOMB_CELLULAR_TDBU_SHEER_UPGRADE_OPTION] },
       { key: 'blindColor', label: 'Blind Color', options: BLIND_COLOR_OPTIONS },
       { key: 'frameColor', label: 'Frame Color', options: FRAME_COLOR_OPTIONS },
       { key: 'openingDirection', label: 'Opening Direction', options: OPENING_DIRECTION_OPTIONS },
@@ -362,6 +364,14 @@ export default function CartPage() {
     // No Drill System upgrade (Honeycomb Cellular)
     if (config.noDrillUpgrade) {
       const option = [HONEYCOMB_CELLULAR_NO_DRILL_UPGRADE_OPTION].find(opt => opt.id === config.noDrillUpgrade);
+      if (option?.price && option.price > 0) {
+        costs.push({ label: option.name, price: option.price });
+      }
+    }
+
+    // Additional Sheer upgrade (Top Down Bottom Up Cordless)
+    if (config.tdbuSheerUpgrade) {
+      const option = [HONEYCOMB_CELLULAR_TDBU_SHEER_UPGRADE_OPTION].find(opt => opt.id === config.tdbuSheerUpgrade);
       if (option?.price && option.price > 0) {
         costs.push({ label: option.name, price: option.price });
       }

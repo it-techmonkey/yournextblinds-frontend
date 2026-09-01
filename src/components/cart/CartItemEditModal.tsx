@@ -447,6 +447,7 @@ const CartItemEditModal = ({ item, onClose, onSave }: CartItemEditModalProps) =>
     roomDarkening: normalizedConfig.roomDarkening,
     rollOption: normalizedConfig.rollOption,
     noDrillUpgrade: normalizedConfig.noDrillUpgrade,
+    tdbuSheerUpgrade: normalizedConfig.tdbuSheerUpgrade,
   }), [isBandHProduct, isRollerBandF, normalizedConfig, product.features.hasRollerCassette, visibleOptions]);
 
   const priceCalculation = useMemo(() => {

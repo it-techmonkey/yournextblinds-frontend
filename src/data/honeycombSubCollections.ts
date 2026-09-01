@@ -83,6 +83,17 @@ const SUB_COLLECTION_COPY: Record<string, { slug: string; description: string }>
   },
 };
 
+/**
+ * "top-down-bottom-up" is deliberately excluded from routing through this
+ * file even though it keeps a card in HONEYCOMB_SUBCATEGORY_CARDS: those
+ * products are now standalone Shopify products selected by tag, not a filter
+ * over the 19 base honeycomb products, so the slug is defined as a
+ * CuratedCollection instead (src/data/curatedCollections.ts) and page.tsx
+ * falls through to that lookup when getHoneycombSubCollection returns
+ * undefined for it.
+ */
+const TAG_DRIVEN_SUBCATEGORY_IDS = new Set(['top-down-bottom-up']);
+
 export const HONEYCOMB_SUB_COLLECTIONS: HoneycombSubCollection[] = HONEYCOMB_SUBCATEGORY_CARDS
   .filter((card) => card.id !== 'all')
   .map((card) => {
@@ -100,10 +111,14 @@ export const HONEYCOMB_SUB_COLLECTIONS: HoneycombSubCollection[] = HONEYCOMB_SUB
     };
   });
 
-export const HONEYCOMB_SUB_COLLECTION_SLUGS = HONEYCOMB_SUB_COLLECTIONS.map((c) => c.slug);
+export const HONEYCOMB_SUB_COLLECTION_SLUGS = HONEYCOMB_SUB_COLLECTIONS
+  .filter((c) => !TAG_DRIVEN_SUBCATEGORY_IDS.has(c.subCategoryId))
+  .map((c) => c.slug);
 
 const BY_SLUG: Record<string, HoneycombSubCollection> = Object.fromEntries(
-  HONEYCOMB_SUB_COLLECTIONS.map((c) => [c.slug, c])
+  HONEYCOMB_SUB_COLLECTIONS
+    .filter((c) => !TAG_DRIVEN_SUBCATEGORY_IDS.has(c.subCategoryId))
+    .map((c) => [c.slug, c])
 );
 
 export function getHoneycombSubCollection(slug: string): HoneycombSubCollection | undefined {

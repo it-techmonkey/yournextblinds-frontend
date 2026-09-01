@@ -6,6 +6,7 @@ import {
   HONEYCOMB_CELLULAR_CONTROL_OPTIONS,
   HONEYCOMB_CELLULAR_MOTORIZATION_OPTIONS,
   HONEYCOMB_CELLULAR_NO_DRILL_UPGRADE_OPTION,
+  HONEYCOMB_CELLULAR_TDBU_SHEER_UPGRADE_OPTION,
 } from '@/data/honeycombCellular';
 import { CONTROL_SIDE_OPTIONS } from '@/data/customizations';
 import SimpleDropdown from './SimpleDropdown';
@@ -19,10 +20,13 @@ interface HoneycombCellularSelectorProps {
   missingFieldKeys: Set<string>;
   registerFieldRef: (key: string, el: HTMLDivElement | null) => void;
   /**
-   * Top Down Bottom Up headrail only supports cordless lift — hides the
-   * Continuous Chain control option and the Motorized Wand card entirely.
+   * Top Down Bottom Up Cordless products: cordless operation is built into the
+   * product itself (not a choice), so the whole Control Options section
+   * (continuous chain, cordless, motorized wand) is hidden.
    */
-  cordlessOnly?: boolean;
+  hideControlOptions?: boolean;
+  /** Top Down Bottom Up Cordless products only: shows the "with Additional Sheer" upgrade card. */
+  showTdbuSheerUpgrade?: boolean;
 }
 
 const selectedClass = 'border-[#00473c] bg-[#f6fffd] shadow-sm';
@@ -35,12 +39,9 @@ const HoneycombCellularSelector = ({
   onMotorizationSelectedChange,
   missingFieldKeys,
   registerFieldRef,
-  cordlessOnly = false,
+  hideControlOptions = false,
+  showTdbuSheerUpgrade = false,
 }: HoneycombCellularSelectorProps) => {
-  const controlOptions = cordlessOnly
-    ? HONEYCOMB_CELLULAR_CONTROL_OPTIONS.filter((option) => option.id !== 'hc-continuous-chain')
-    : HONEYCOMB_CELLULAR_CONTROL_OPTIONS;
-
   const selectControlOption = (optionId: string) => {
     onMotorizationSelectedChange(false);
     updateConfig({
@@ -51,6 +52,7 @@ const HoneycombCellularSelector = ({
   };
 
   const isNoDrillUpgradeSelected = config.noDrillUpgrade === HONEYCOMB_CELLULAR_NO_DRILL_UPGRADE_OPTION.id;
+  const isTdbuSheerUpgradeSelected = config.tdbuSheerUpgrade === HONEYCOMB_CELLULAR_TDBU_SHEER_UPGRADE_OPTION.id;
 
   const selectMotorization = () => {
     onMotorizationSelectedChange(true);
@@ -63,7 +65,9 @@ const HoneycombCellularSelector = ({
 
   return (
     <div className="space-y-6 md:space-y-8">
-      {/* Control Options */}
+      {/* Control Options — cordless is built into Top Down Bottom Up Cordless
+          products, so this whole section is skipped for them. */}
+      {!hideControlOptions && (
       <RequiredFieldWrapper
         fieldKey="controlOption"
         label="control option"
@@ -73,7 +77,7 @@ const HoneycombCellularSelector = ({
         <section className="space-y-4">
           <h3 className="text-lg font-medium text-[#3a3a3a]">Control Options</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {controlOptions.map((option) => {
+            {HONEYCOMB_CELLULAR_CONTROL_OPTIONS.map((option) => {
               const isSelected = config.controlOption === option.id && !isMotorizationSelected;
               return (
                 <div
@@ -133,7 +137,6 @@ const HoneycombCellularSelector = ({
             })}
 
             {/* Motorization card */}
-            {!cordlessOnly && (
               <div
                 className={`relative flex flex-col border-2 rounded-lg p-4 text-left transition-all ${isMotorizationSelected ? selectedClass : unselectedClass}`}
               >
@@ -161,10 +164,10 @@ const HoneycombCellularSelector = ({
                   </div>
                 </button>
               </div>
-            )}
           </div>
         </section>
       </RequiredFieldWrapper>
+      )}
 
       {/* No Drill System upgrade */}
       <section className="space-y-3">
@@ -194,6 +197,48 @@ const HoneycombCellularSelector = ({
           </span>
         </label>
       </section>
+
+      {/* Top Down Bottom Up with Additional Sheer upgrade — TDBU Cordless products only */}
+      {showTdbuSheerUpgrade && (
+        <section className="space-y-3">
+          <label
+            className={`flex cursor-pointer items-start gap-3 rounded-lg border-2 p-4 transition-all ${isTdbuSheerUpgradeSelected ? selectedClass : unselectedClass}`}
+          >
+            <input
+              type="checkbox"
+              className="mt-0.5 h-5 w-5 shrink-0 accent-[#00473c]"
+              checked={isTdbuSheerUpgradeSelected}
+              onChange={(e) =>
+                updateConfig({
+                  tdbuSheerUpgrade: e.target.checked ? HONEYCOMB_CELLULAR_TDBU_SHEER_UPGRADE_OPTION.id : null,
+                })
+              }
+            />
+            {HONEYCOMB_CELLULAR_TDBU_SHEER_UPGRADE_OPTION.image && (
+              <div className="relative h-16 w-16 shrink-0 rounded-md bg-gray-50 overflow-hidden flex items-center justify-center">
+                <Image
+                  src={HONEYCOMB_CELLULAR_TDBU_SHEER_UPGRADE_OPTION.image}
+                  alt={HONEYCOMB_CELLULAR_TDBU_SHEER_UPGRADE_OPTION.name}
+                  width={64}
+                  height={64}
+                  className="object-contain"
+                />
+              </div>
+            )}
+            <span className="min-w-0">
+              <span className="block text-base font-semibold text-[#3a3a3a]">
+                {HONEYCOMB_CELLULAR_TDBU_SHEER_UPGRADE_OPTION.name}
+              </span>
+              <span className="mt-1 block text-sm text-gray-500">
+                {HONEYCOMB_CELLULAR_TDBU_SHEER_UPGRADE_OPTION.description}
+              </span>
+              <span className="mt-3 inline-flex w-fit rounded-md bg-[#00473c] px-2.5 py-1 text-xs font-semibold text-white">
+                +${HONEYCOMB_CELLULAR_TDBU_SHEER_UPGRADE_OPTION.price.toFixed(2)}
+              </span>
+            </span>
+          </label>
+        </section>
+      )}
     </div>
   );
 };

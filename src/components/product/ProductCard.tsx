@@ -7,9 +7,8 @@ import { StarRating } from '@/components/product';
 import { formatPrice, formatPriceWithCurrency } from '@/lib/api';
 import { ROLLER_BAND_F_ROOM_DARKENING_OPTIONS } from '@/data/rollerBandF';
 import { FLASH_SALE_DISCOUNT_PERCENT } from '@/data/promo';
-import { HONEYCOMB_CELLULAR_TAG } from '@/data/honeycombCellular';
 
-export type CollectionContext = 'light-filtering' | 'blackout' | 'top-down-bottom-up' | undefined;
+export type CollectionContext = 'light-filtering' | 'blackout' | undefined;
 
 const BLACKOUT_ROOM_DARKENING_SURCHARGE =
   ROLLER_BAND_F_ROOM_DARKENING_OPTIONS.find((option) => option.id === 'blackout')?.price ?? 0;
@@ -43,25 +42,20 @@ interface ProductCardProps {
 }
 
 const ROLLER_BAND_F_TAG_CLIENT = 'roller-band-f';
-const TOP_DOWN_BOTTOM_UP_THUMBNAIL = '/products/topdownbottomup.webp';
 
 export default function ProductCard({ product, className = '', preselectedMotorization = false, preselectedControlOption, preselectedNoDrillUpgrade = false, collectionContext, layout = 'carousel' }: ProductCardProps) {
   const router = useRouter();
+  const imageUrl = product.image || product.images?.[0] || '';
   const currency = product.currency || 'USD';
   const motorizedParam = preselectedMotorization ? '&motorized=true' : '';
 
   const isBandF = product.tags?.includes(ROLLER_BAND_F_TAG_CLIENT);
-  const isHoneycombCellular = product.tags?.includes(HONEYCOMB_CELLULAR_TAG);
-  const isTopDownBottomUpContext = isHoneycombCellular && collectionContext === 'top-down-bottom-up';
-  const imageUrl = isTopDownBottomUpContext
-    ? TOP_DOWN_BOTTOM_UP_THUMBNAIL
-    : product.image || product.images?.[0] || '';
   const controlParam = preselectedControlOption
     ? `control=${encodeURIComponent(preselectedControlOption)}`
     : '';
   const noDrillParam = preselectedNoDrillUpgrade ? 'noDrill=true' : '';
   const contextParam = [
-    (isBandF || isTopDownBottomUpContext) && collectionContext ? `collectionContext=${collectionContext}` : '',
+    isBandF && collectionContext ? `collectionContext=${collectionContext}` : '',
     controlParam,
     noDrillParam,
   ].filter(Boolean).join('&');
@@ -74,8 +68,6 @@ export default function ProductCard({ product, className = '', preselectedMotori
     ? `Light Filtering ${product.name}`
     : isBandF && collectionContext === 'blackout'
     ? `Blackout ${product.name}`
-    : isTopDownBottomUpContext
-    ? `Top Down Bottom Up ${product.name}`
     : product.name;
 
   const compareAtPrice = formatPrice(displayPrice / (1 - FLASH_SALE_DISCOUNT_PERCENT / 100));
