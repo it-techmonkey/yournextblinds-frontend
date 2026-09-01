@@ -6,6 +6,16 @@ export const HONEYCOMB_CELLULAR_TAG = 'honeycomb-cellular-shades';
 /** Collection page slug. Also the curated collection's tagSlug. */
 export const HONEYCOMB_CELLULAR_COLLECTION_SLUG = 'honeycomb-cellular-shades';
 
+/**
+ * Tag carried by the standalone "Top Down Bottom Up Cordless" products —
+ * separate, real Shopify products (not a filtered view of the 19 above), one
+ * per non-sheer honeycomb base product. They're deliberately NOT tagged
+ * HONEYCOMB_CELLULAR_TAG so they stay off the main /collections/honeycomb-
+ * cellular-shades page; this tag alone drives the Top Down Bottom Up
+ * collection (see curatedCollections.ts) and the bespoke PDP.
+ */
+export const TOP_DOWN_BOTTOM_UP_CORDLESS_TAG = 'top-down-bottom-up-cordless';
+
 // Selectable size range for this product family, taken directly from the supplier
 // catalogue's "Size Considerations for All Shades" table
 // (HoneyComb_ProductCatalog_032626.pdf, p.1): min width 9" (Cordless), max width 96"
@@ -84,10 +94,29 @@ export const HONEYCOMB_CELLULAR_NO_DRILL_UPGRADE_OPTION = {
   price: 39,
 };
 
+/** Top Down Bottom Up Cordless only: optional sheer fabric layer added above the cellular shade. */
+export const HONEYCOMB_CELLULAR_TDBU_SHEER_UPGRADE_OPTION = {
+  id: 'hc-tdbu-sheer',
+  name: 'Top Down Bottom Up with Additional Sheer',
+  description: 'Adds a sheer fabric layer above the cellular shade for softened light with the top section lowered.',
+  price: 35.99,
+  image: '/products/control/top-down-bottom-up-sheer.webp',
+};
+
 /**
  * Tag-only: all 19 products carry HONEYCOMB_CELLULAR_TAG, and each has its own
- * handle, so there is no single product handle to match on.
+ * handle, so there is no single product handle to match on. The Top Down
+ * Bottom Up Cordless products also count — they use the same bespoke PDP,
+ * just with the control-options section hidden (see
+ * isTopDownBottomUpCordlessProduct).
  */
 export function isHoneycombCellularProduct(product: Pick<Product, 'tags'>) {
-  return product.tags.some((tag) => tag.toLowerCase() === HONEYCOMB_CELLULAR_TAG);
+  return product.tags.some(
+    (tag) => tag.toLowerCase() === HONEYCOMB_CELLULAR_TAG || tag.toLowerCase() === TOP_DOWN_BOTTOM_UP_CORDLESS_TAG
+  );
+}
+
+/** True for the standalone Top Down Bottom Up Cordless products (cordless-only, no control-option picker). */
+export function isTopDownBottomUpCordlessProduct(product: Pick<Product, 'tags'>) {
+  return product.tags.some((tag) => tag.toLowerCase() === TOP_DOWN_BOTTOM_UP_CORDLESS_TAG);
 }

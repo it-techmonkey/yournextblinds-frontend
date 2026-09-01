@@ -23,10 +23,16 @@ const IMG = '/collections/honeycomb-cellular';
  * The 10 sub-category cards, in the order given in new-products.md.
  *
  * `preselect` carries a control choice through to the PDP. Only cordless and
- * motorized have a matching option in HoneycombCellularSelector; No Drill and
- * Top Down Bottom Up are browse-only entry points until those control systems
- * are modelled (see the surcharge note in honeycombCellular.ts).
+ * motorized have a matching option in HoneycombCellularSelector; No Drill is a
+ * browse-only entry point.
+ *
+ * `top-down-bottom-up` is exempt from the "every card must match a product"
+ * check below: those are standalone Shopify products (Top Down Bottom Up
+ * Cordless, one per non-sheer base product here) selected by the
+ * `top-down-bottom-up-cordless` tag, not by subCategories membership on these
+ * 19 products — see src/data/curatedCollections.ts and honeycombCellular.ts.
  */
+const TAG_DRIVEN_CARD_IDS = new Set(['top-down-bottom-up']);
 const CARDS = [
   { id: 'all', label: 'Cellular Honeycomb Shades', image: `${IMG}/all.webp` },
   { id: 'light-filtering', label: 'Light Filtering Cellular Shades', image: `${IMG}/light-filtering.webp` },
@@ -51,7 +57,10 @@ function main() {
   const cardIds = new Set(CARDS.map((c) => c.id));
   const usedIds = new Set(products.flatMap((p) => p.subCategories));
   for (const id of usedIds) if (!cardIds.has(id)) throw new Error(`Product references unknown sub-category "${id}"`);
-  for (const id of cardIds) if (!usedIds.has(id)) throw new Error(`Card "${id}" matches no products`);
+  for (const id of cardIds) {
+    if (TAG_DRIVEN_CARD_IDS.has(id)) continue;
+    if (!usedIds.has(id)) throw new Error(`Card "${id}" matches no products`);
+  }
 
   const counts = Object.fromEntries(
     CARDS.map((c) => [c.id, products.filter((p) => p.subCategories.includes(c.id)).length])

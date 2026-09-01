@@ -42,6 +42,7 @@ export function buildCheckoutItem(
     selectedVariantOptionName: config.selectedVariantOptionName || undefined,
     selectedVariantOptionValue: config.selectedVariantOptionValue || undefined,
     noDrillUpgrade: config.noDrillUpgrade || undefined,
+    tdbuSheerUpgrade: config.tdbuSheerUpgrade || undefined,
   };
 
   return {

@@ -150,6 +150,8 @@ export interface ProductConfiguration {
   selectedVariantOptionValue: string | null;
   /** Honeycomb Cellular only: optional "Upgrade to No Drill System" checkbox. */
   noDrillUpgrade: string | null;
+  /** Top Down Bottom Up Cordless only: optional "with Additional Sheer" upgrade. */
+  tdbuSheerUpgrade: string | null;
 }
 
 export const DEFAULT_CONFIGURATION: ProductConfiguration = {
@@ -186,6 +188,7 @@ export const DEFAULT_CONFIGURATION: ProductConfiguration = {
   selectedVariantOptionName: null,
   selectedVariantOptionValue: null,
   noDrillUpgrade: null,
+  tdbuSheerUpgrade: null,
 };
 
 // ============================================

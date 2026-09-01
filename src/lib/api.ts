@@ -22,7 +22,7 @@ import {
   HIDDEN_TEST_PRODUCT_TAG,
 } from '@/data/dayNightBandH';
 import { ROLLER_BAND_F_TAG } from '@/data/rollerBandF';
-import { HONEYCOMB_CELLULAR_TAG } from '@/data/honeycombCellular';
+import { HONEYCOMB_CELLULAR_TAG, TOP_DOWN_BOTTOM_UP_CORDLESS_TAG } from '@/data/honeycombCellular';
 import type { CuratedCollection, CuratedClause, CuratedRule } from '@/data/curatedCollections';
 import type { StoreSessionContext } from '@/lib/store-events';
 
@@ -650,9 +650,12 @@ export function transformProduct(apiProduct: ApiProduct): Product {
     }
   }
 
-  // Honeycomb Cellular Shades: the 19 products live in a curated collection rather
-  // than a real Shopify collection, so force the feature category from the tag.
-  const isHoneycombCellular = apiTagSlugs.includes(HONEYCOMB_CELLULAR_TAG);
+  // Honeycomb Cellular Shades: the 19 base products (and the standalone Top
+  // Down Bottom Up Cordless products, tagged separately so they stay off the
+  // main collection) live in curated/tag collections rather than a real
+  // Shopify collection, so force the feature category from either tag.
+  const isHoneycombCellular =
+    apiTagSlugs.includes(HONEYCOMB_CELLULAR_TAG) || apiTagSlugs.includes(TOP_DOWN_BOTTOM_UP_CORDLESS_TAG);
   if (isHoneycombCellular && !categorySlugs.includes('honeycomb-cellular-shades')) {
     categorySlugs = ['honeycomb-cellular-shades', ...categorySlugs];
   }

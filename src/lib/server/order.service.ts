@@ -35,6 +35,8 @@ export interface CheckoutItemRequest {
     bottomBar?: string;
     rollStyle?: string;
     roomDarkening?: string;
+    noDrillUpgrade?: string;
+    tdbuSheerUpgrade?: string;
     selectedVariantId?: string;
     selectedVariantTitle?: string;
     selectedVariantImage?: string;
@@ -122,6 +124,7 @@ function configToCustomizations(config: CheckoutItemRequest['configuration']): P
     rollStyle: 'roll-style',
     roomDarkening: 'room-darkening',
     noDrillUpgrade: 'no-drill-upgrade',
+    tdbuSheerUpgrade: 'tdbu-sheer-upgrade',
   };
 
   for (const [configKey, category] of Object.entries(mappings)) {
@@ -176,6 +179,7 @@ function buildLineItemProperties(
     rollStyle: 'Roll Style',
     roomDarkening: 'Room Darkening',
     noDrillUpgrade: 'No Drill Upgrade',
+    tdbuSheerUpgrade: 'Additional Sheer',
   };
 
   for (const [key, label] of Object.entries(labelMap)) {

@@ -107,6 +107,7 @@ import {
   HONEYCOMB_CELLULAR_INSTALLATION_OPTIONS,
   HONEYCOMB_CELLULAR_NO_DRILL_UPGRADE_OPTION,
   isHoneycombCellularProduct,
+  isTopDownBottomUpCordlessProduct,
 } from '@/data/honeycombCellular';
 import { ROOM_TYPE_OPTIONS } from '@/data/roomTypes';
 import { HONEYCOMB_CELLULAR_COLOR_CODES } from '@/data/honeycombCellularColorCodes';
@@ -241,6 +242,12 @@ const ProductPage = ({
   const isRollerBandF = useMemo(() => isRollerBandFProduct(product), [product]);
   const isRollerProduct = useMemo(() => isRollerCategoryProduct(product), [product]);
   const isHoneycombCellular = useMemo(() => isHoneycombCellularProduct(product), [product]);
+  // Standalone "Top Down Bottom Up Cordless" products — real, separately
+  // tagged Shopify products (not the 19 base honeycomb products), so this is
+  // a property of the product itself rather than which collection page linked
+  // here. Cordless operation is built in, so the control-options picker is
+  // hidden entirely (see HoneycombCellularSelector's hideControlOptions).
+  const isTopDownBottomUpCordless = useMemo(() => isTopDownBottomUpCordlessProduct(product), [product]);
   const [reviewFormOpen, setReviewFormOpen] = useState(false);
 
   const openReviewForm = () => {
@@ -251,15 +258,12 @@ const ProductPage = ({
   };
 
   // Context set by the collection page the user navigated from — affects name prefix and room darkening
-  const collectionContext = searchParams.get('collectionContext') as 'light-filtering' | 'blackout' | 'top-down-bottom-up' | null;
+  const collectionContext = searchParams.get('collectionContext') as 'light-filtering' | 'blackout' | null;
   const isBlackoutContext = isRollerBandF && collectionContext === 'blackout';
-  const isTopDownBottomUpContext = isHoneycombCellular && collectionContext === 'top-down-bottom-up';
   const displayProductName = isRollerBandF && collectionContext === 'light-filtering'
     ? `Light Filtering ${product.name}`
     : isBlackoutContext
     ? `Blackout ${product.name}`
-    : isTopDownBottomUpContext
-    ? `Top Down Bottom Up ${product.name}`
     : product.name;
 
   useEffect(() => {
@@ -377,7 +381,7 @@ const ProductPage = ({
     : isHoneycombCellular
     ? HONEYCOMB_CELLULAR_MOTORIZATION_OPTIONS
     : MOTORIZATION_OPTIONS.filter((option) => option.id !== 'none');
-  const canUseMotorization = product.features.hasMotorization || preselectMotorization;
+  const canUseMotorization = !isTopDownBottomUpCordless && (product.features.hasMotorization || preselectMotorization);
   const isMotorizationActive =
     canUseMotorization && selectedOptionalCards.motorization;
   const cartConfiguration = useMemo<ProductConfiguration>(() => ({
@@ -427,7 +431,7 @@ const ProductPage = ({
     // Preselect a control option when arriving from a control-specific collection
     // card (e.g. the Cordless honeycomb card). Validated against this product's
     // own option list so an arbitrary query string can't inject config.
-    if (preselectControlOption && isHoneycombCellular) {
+    if (preselectControlOption && isHoneycombCellular && !isTopDownBottomUpCordless) {
       const valid = HONEYCOMB_CELLULAR_CONTROL_OPTIONS.some((o) => o.id === preselectControlOption);
       if (valid) {
         setConfig((prev) => ({
@@ -650,7 +654,7 @@ const ProductPage = ({
         showHeadrail: false,
         showHeadrailColour: false,
         showInstallationMethod: true,
-        showControlOption: !isMotorizationActive,
+        showControlOption: !isMotorizationActive && !isTopDownBottomUpCordless,
         showStacking: false,
         showControlSide: config.controlOption === 'hc-continuous-chain' && !isMotorizationActive,
         showBottomChain: false,
@@ -720,7 +724,7 @@ const ProductPage = ({
       showBottomBar: product.features.hasBottomBar,
       showRollStyle: product.features.hasRollStyle,
     };
-  }, [config.controlOption, config.headrail, isBandHProduct, isRollerBandF, isHoneycombCellular, isMotorizationActive, isRollerOrDayNight, product.features]);
+  }, [config.controlOption, config.headrail, isBandHProduct, isRollerBandF, isHoneycombCellular, isMotorizationActive, isRollerOrDayNight, isTopDownBottomUpCordless, product.features]);
 
   // Build list of selected customizations for pricing
   const selectedCustomizations = useMemo(() => {
@@ -750,8 +754,9 @@ const ProductPage = ({
       roomDarkening: cartConfiguration.roomDarkening,
       rollOption: cartConfiguration.rollOption,
       noDrillUpgrade: isHoneycombCellular ? config.noDrillUpgrade : null,
+      tdbuSheerUpgrade: isTopDownBottomUpCordless ? config.tdbuSheerUpgrade : null,
     });
-  }, [cartConfiguration, config, isBandHProduct, isRollerBandF, isHoneycombCellular, product.features.hasRollerCassette, visibleOptions]);
+  }, [cartConfiguration, config, isBandHProduct, isRollerBandF, isHoneycombCellular, isTopDownBottomUpCordless, product.features.hasRollerCassette, visibleOptions]);
 
   const requiredCustomizationVisibility = useMemo(() => {
     if (isBandHProduct) {
@@ -1076,6 +1081,9 @@ const ProductPage = ({
   const compareAtPrice = displayedPrice / (1 - FLASH_SALE_DISCOUNT_PERCENT / 100);
 
   const honeycombControlOptionName = (() => {
+    // Cordless is built into the product, not a picked option — nothing sets
+    // config.controlOption for these, so name it explicitly.
+    if (isTopDownBottomUpCordless) return 'Cordless';
     if (isMotorizationActive) {
       return HONEYCOMB_CELLULAR_MOTORIZATION_OPTIONS.find((o) => o.id === config.motorization)?.name ?? 'Motorized Wand';
     }
@@ -1685,7 +1693,8 @@ const ProductPage = ({
                           }
                           missingFieldKeys={showValidationErrors ? missingFieldKeys : EMPTY_MISSING_FIELD_KEYS}
                           registerFieldRef={registerFieldRef}
-                          cordlessOnly={isTopDownBottomUpContext}
+                          hideControlOptions={isTopDownBottomUpCordless}
+                          showTdbuSheerUpgrade={isTopDownBottomUpCordless}
                         />
                       ) : (
                         <>

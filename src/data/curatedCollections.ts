@@ -392,6 +392,24 @@ export const CURATED_COLLECTIONS: Record<string, CuratedCollection> = {
     tagSlug: 'honeycomb-cellular-shades',
     include: { anyOf: [{ tagsAny: ['honeycomb-cellular-shades'] }] },
   },
+
+  // Standalone "Top Down Bottom Up Cordless" products — real, separately
+  // created Shopify products (one per non-sheer honeycomb base product),
+  // tagged `top-down-bottom-up-cordless` and deliberately NOT tagged
+  // `honeycomb-cellular-shades`, so they show up here but not on the main
+  // Honeycomb/Cellular page above. See src/data/honeycombCellular.ts.
+  'top-down-bottom-up-cellular-shades': {
+    slug: 'top-down-bottom-up-cellular-shades',
+    title: 'Top Down Bottom Up Cellular Shades',
+    description:
+      'Cellular honeycomb shades with a top-down bottom-up headrail, so you can lower the shade from the top for daylight and privacy at once. Cordless operation is built in — available across the honeycomb fabric range.',
+    heroImage: '/collections/honeycomb-cellular/top-down-bottom-up.webp',
+    group: 'product-family',
+    navLabel: 'Top Down Bottom Up Cellular Shades',
+    navIcon: '/collections/honeycomb-cellular/top-down-bottom-up.webp',
+    tagSlug: 'top-down-bottom-up-cordless',
+    include: { anyOf: [{ tagsAny: ['top-down-bottom-up-cordless'] }] },
+  },
 };
 
 export const CURATED_COLLECTION_SLUGS = Object.keys(CURATED_COLLECTIONS);
