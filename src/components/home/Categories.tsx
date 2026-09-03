@@ -12,9 +12,9 @@ const categories = [
   { id: 6,  name: 'Blackout Vertical Blinds',          href: '/collections/blackout-vertical-blinds',          image: '/home/categories/blackout%20vertical%20blinds.webp' },
   { id: 7,  name: 'Waterproof Vertical Blinds',        href: '/collections/waterproof-blackout-vertical-blinds', image: '/home/categories/water%20proof%20vertical%20blinds.webp' },
   { id: 8,  name: 'EclipseCore Shades',                href: '/collections/eclipsecore-shades',                image: '/home/categories/eclipse%20core%20shades.webp' },
-  { id: 9,  name: 'Motorised Roller Shades',           href: '/collections/motorised-roller-shades',           image: '/home/categories/Motorised%20roller%20shades.webp' },
-  { id: 10, name: 'Motorised Dual Zebra Shades',       href: '/collections/motorised-dual-zebra-shades',       image: '/home/categories/motorised%20zebra%20dual%20shades.webp' },
-  { id: 11, name: 'Motorised EclipseCore',             href: '/collections/motorised-eclipsecore',             image: '/home/categories/motorised%20eclipsecore.webp' },
+  { id: 9,  name: 'Motorized Roller Shades',           href: '/collections/motorised-roller-shades',           image: '/home/categories/Motorised%20roller%20shades.webp' },
+  { id: 10, name: 'Motorized Dual Zebra Shades',       href: '/collections/motorised-dual-zebra-shades',       image: '/home/categories/motorised%20zebra%20dual%20shades.webp' },
+  { id: 11, name: 'Motorized EclipseCore',             href: '/collections/motorised-eclipsecore',             image: '/home/categories/motorised%20eclipsecore.webp' },
 ];
 
 const Categories = () => {

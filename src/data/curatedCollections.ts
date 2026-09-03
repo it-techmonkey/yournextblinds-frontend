@@ -100,51 +100,6 @@ export const CURATED_COLLECTIONS: Record<string, CuratedCollection> = {
     // wider cassettes leave visible gaps at the mullions.
     include: { anyOf: [{ categories: ['vertical-blinds', 'roller-blinds'] }] },
   },
-  'conservatory-window-blinds': {
-    slug: 'conservatory-window-blinds',
-    title: 'Conservatory Window Blinds',
-    description:
-      'Blinds built for the glass-heavy rooms that overheat in summer and lose warmth in winter. Insulating honeycomb and light-filtering fabrics take the glare off without shutting out the view.',
-    group: 'window-type',
-    navLabel: 'Conservatory Window',
-    navIcon: '/nav-icons/conservatory-window.svg',
-    tagSlug: 'conservatory-window',
-    // Narrower than the Conservatory *room* page: this one is about the glazing
-    // itself, so it leads with the insulating honeycomb and glare-cutting
-    // light-filtering fabrics rather than the room's full style range.
-    include: {
-      anyOf: [
-        { categories: ['pleated-blinds'] },
-        { categories: ['roller-blinds', 'day-and-night-blinds'], tagsAny: ['light-filtering'] },
-      ],
-    },
-  },
-  'tilt-and-turn-window-blinds': {
-    slug: 'tilt-and-turn-window-blinds',
-    title: 'Tilt & Turn Window Blinds',
-    description:
-      'Tilt and turn windows swing inward, so a blind mounted to the wall gets in the way. These fit directly to the sash with no drilling, and travel with the window when you open it.',
-    group: 'window-type',
-    navLabel: 'Tilt & Turn Window',
-    navIcon: '/nav-icons/tilt-turn-window.svg',
-    tagSlug: 'tilt-and-turn',
-    // Must mount to the sash and travel with it, which needs the no-drill headrail.
-    include: { anyOf: CORDLESS_CAPABLE },
-  },
-  'bi-fold-window-blinds': {
-    slug: 'bi-fold-window-blinds',
-    title: 'Bi-Fold Window Blinds',
-    description:
-      'A slim blind fitted to each bi-fold panel, so the run still folds back fully. The no-drill headrail clamps to the frame and moves with the door instead of hanging off the wall above it.',
-    group: 'window-type',
-    navLabel: 'Bi-Fold Window',
-    navIcon: '/nav-icons/bi-fold-window.svg',
-    tagSlug: 'bi-fold',
-    // Same constraint as tilt & turn: the blind travels with a moving panel, so
-    // only the no-drill headrail ranges qualify. A bracket-mounted roller would
-    // swing away from the glass every time the door folds.
-    include: { anyOf: CORDLESS_CAPABLE },
-  },
   'french-door-blinds': {
     slug: 'french-door-blinds',
     title: 'French Door Blinds',

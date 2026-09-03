@@ -2,7 +2,7 @@ import Link from 'next/link';
 
 const USPS = [
   {
-    title: 'Made to Measure',
+    title: 'Custom Made',
     description: 'Cut to your exact size',
     href: '/collections',
   },

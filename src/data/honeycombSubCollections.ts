@@ -54,7 +54,7 @@ const SUB_COLLECTION_COPY: Record<string, { slug: string; description: string }>
   motorized: {
     slug: 'motorized-cellular-shades',
     description:
-      'Motorised cellular honeycomb shades operated by remote — ideal for hard-to-reach or large windows. Choose any honeycomb fabric, from light filtering through to full room darkening.',
+      'Motorized cellular honeycomb shades operated by remote — ideal for hard-to-reach or large windows. Choose any honeycomb fabric, from light filtering through to full room darkening.',
   },
   cordless: {
     slug: 'cordless-cellular-shades',
