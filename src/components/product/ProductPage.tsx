@@ -16,6 +16,8 @@ import CategoryInfoSection from '@/components/collection/CategoryInfoSection';
 import { formatPrice, formatPriceWithCurrency, fetchPriceMatrix, fetchCustomizationPricing, validateCartPrice, createCheckout } from '@/lib/api';
 import { buildCheckoutItem } from '@/lib/checkout';
 import StickyBottomBar from './StickyBottomBar';
+import { FitGuaranteeTrustBlock, MeasureReassurance, FitGuaranteeIcon } from '@/components/fit-guarantee';
+import { FIT_GUARANTEE_PATH } from '@/data/fitGuarantee';
 import { PRODUCT_GUIDES } from '@/data/guides';
 import { PROMO_CODE, PROMO_CODE_PERCENT, FLASH_SALE_DISCOUNT_PERCENT } from '@/data/promo';
 import { trackShopifyProductView } from '@/lib/shopify-analytics';
@@ -542,12 +544,19 @@ const ProductPage = ({
   }, [product.category]);
 
   const guideType = useMemo(() => {
+    if (isHoneycombCellular)                                                    return 'honeycomb' as const;
     const cat = product.category.toLowerCase();
     if (cat.includes('vertical'))                                               return 'vertical' as const;
     if (cat.includes('zebra') || cat.includes('day') || cat.includes('night')) return 'zebra' as const;
     if (cat.includes('roller'))                                                return 'roller' as const;
     return null;
-  }, [product.category]);
+  }, [isHoneycombCellular, product.category]);
+
+  // Not every guide has an installation PDF yet (e.g. honeycomb/cellular has
+  // only a measurement guide), so this may be undefined even when guideType is set.
+  const guideInstallationHref: string | undefined = guideType
+    ? (PRODUCT_GUIDES[guideType] as { installation?: string }).installation
+    : undefined;
 
   const bandHColorVariants = useMemo(
     () => (isBandHProduct || isRollerBandF || isHoneycombCellular) ? (product.variants ?? []).filter((variant) => variant.image) : [],
@@ -1405,27 +1414,6 @@ const ProductPage = ({
                   Write a review
                 </button>
               </div>
-
-              <div className="border border-gray-200 rounded-lg p-4 mb-4">
-                <div className="flex flex-col items-start">
-                  <div className="flex flex-wrap items-baseline gap-2">
-                    <span className="text-sm font-medium text-gray-400 line-through">
-                      {formatPriceWithCurrency(formatPrice(compareAtPrice), product.currency)}
-                    </span>
-                    <span className="text-2xl font-bold text-[#3a3a3a]">
-                      {formatPriceWithCurrency(formatPrice(displayedPrice), product.currency)}
-                    </span>
-                    <span className="rounded-md bg-[#00473c] px-2.5 py-1 text-xs font-semibold text-white">
-                      {FLASH_SALE_DISCOUNT_PERCENT}% Off Flash Sale
-                    </span>
-                  </div>
-                  {priceCalculation && !showMinPriceIndicator && (
-                    <div className="mt-3 text-xs text-gray-400">
-                      Size: {priceCalculation.widthBand?.inches}" × {priceCalculation.heightBand?.inches}"
-                    </div>
-                  )}
-                </div>
-              </div>
             </div>
 
             {/* Left - Gallery with Thumbnails on Left */}
@@ -1471,6 +1459,41 @@ const ProductPage = ({
 
               {renderBandHColorSelector('mb-4 lg:hidden', 'colorVariant-mobile')}
 
+              {/* Price card (mobile) — below the image and variant picker, above the dispatch box */}
+              <div className="lg:hidden border border-gray-200 rounded-lg p-4 mb-4">
+                <div className="flex flex-col items-start">
+                  <div className="flex flex-wrap items-baseline gap-2">
+                    <span className="text-sm font-medium text-gray-400 line-through">
+                      {formatPriceWithCurrency(formatPrice(compareAtPrice), product.currency)}
+                    </span>
+                    <span className="text-2xl font-bold text-[#3a3a3a]">
+                      {formatPriceWithCurrency(formatPrice(displayedPrice), product.currency)}
+                    </span>
+                    <span className="rounded-md bg-[#00473c] px-2.5 py-1 text-xs font-semibold text-white">
+                      {FLASH_SALE_DISCOUNT_PERCENT}% Off Flash Sale
+                    </span>
+                  </div>
+                  {priceCalculation && !showMinPriceIndicator && (
+                    <div className="mt-3 text-xs text-gray-400">
+                      Size: {priceCalculation.widthBand?.inches}" × {priceCalculation.heightBand?.inches}"
+                    </div>
+                  )}
+                </div>
+
+                {/* Fit Guarantee — kept beside the price on mobile (spec item 17) */}
+                <Link
+                  href={FIT_GUARANTEE_PATH}
+                  className="mt-3 flex items-center gap-2 rounded-md bg-[#00473c]/5 px-3 py-2"
+                >
+                  <FitGuaranteeIcon className="h-4 w-4 shrink-0 text-[#00473c]" />
+                  <span className="text-[11px] leading-tight text-[#00473c]">
+                    <span className="font-semibold">Your Next Fit Guarantee™</span>
+                    {' — '}Measured wrong? We&apos;ll make it right.{' '}
+                    <span className="underline underline-offset-2">Learn more</span>
+                  </span>
+                </Link>
+              </div>
+
               {/* Shipping Info Box */}
               <div className="flex items-center border border-gray-200 rounded-lg mb-4 md:mb-6 px-3 md:px-4 py-2 md:py-3">
                 <div className="w-10 h-10 md:w-12 md:h-12 bg-gray-100 rounded-lg flex items-center justify-center shrink-0">
@@ -1508,6 +1531,19 @@ const ProductPage = ({
                     </div>
                   )}
                 </div>
+
+                {/* Fit Guarantee — kept beside the price (spec items 5 & 17) */}
+                <Link
+                  href={FIT_GUARANTEE_PATH}
+                  className="group mt-3 flex items-center gap-2 rounded-md bg-[#00473c]/5 px-3 py-2 transition-colors hover:bg-[#00473c]/10"
+                >
+                  <FitGuaranteeIcon className="h-4 w-4 shrink-0 text-[#00473c]" />
+                  <span className="text-xs leading-tight text-[#00473c]">
+                    <span className="font-semibold">Your Next Fit Guarantee™</span>
+                    {' — '}Measured wrong? We&apos;ll make it right.{' '}
+                    <span className="underline underline-offset-2 group-hover:no-underline">Learn more</span>
+                  </span>
+                </Link>
               </div>
 
               {renderBandHColorSelector('hidden lg:block mb-4 md:mb-6', 'colorVariant-desktop')}
@@ -1545,6 +1581,11 @@ const ProductPage = ({
 
                   {isMeasureOpen && (
                     <div className="p-4 md:p-6 space-y-5 md:space-y-6">
+                      {/* Reassurance at the exact point shoppers get nervous (spec item 6) */}
+                      <MeasureReassurance
+                        measureGuideHref={guideType ? PRODUCT_GUIDES[guideType].measurement : '/guides'}
+                      />
+
                       {/* Size Selector */}
                       {product.features.hasSize && (
                         <RequiredFieldWrapper
@@ -2354,6 +2395,7 @@ const ProductPage = ({
                     isBuyingNow={isBuyingNow}
                     buyNowError={buyNowError}
                   />
+                  <FitGuaranteeTrustBlock className="mt-4 md:mt-6" />
                 </div>
               ) : (
                 <>
@@ -2435,6 +2477,8 @@ const ProductPage = ({
                   <p className="text-sm font-medium text-red-800">{buyNowError}</p>
                 </div>
               )}
+
+              <FitGuaranteeTrustBlock className="mt-4 md:mt-6" />
                 </>
               )}
 
@@ -2463,16 +2507,16 @@ const ProductPage = ({
                     >
                       Installation Guide
                     </button>
-                  ) : (
+                  ) : guideInstallationHref ? (
                     <a
-                      href={PRODUCT_GUIDES[guideType].installation}
+                      href={guideInstallationHref}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex-1 py-2.5 border border-[#00473c] text-[#00473c] text-sm font-medium rounded-lg text-center hover:bg-[#f0fdf9] transition-colors"
                     >
                       Installation Guide
                     </a>
-                  )}
+                  ) : null}
                   <a
                     href={PRODUCT_GUIDES[guideType].measurement}
                     target="_blank"

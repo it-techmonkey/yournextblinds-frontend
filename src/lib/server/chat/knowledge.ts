@@ -1,6 +1,6 @@
 import { PROMO_CODE, PROMO_CODE_PERCENT, SALE_MAX_PERCENT } from '@/data/promo';
 import { PRODUCT_GUIDES } from '@/data/guides';
-import { REFUND_POLICY, SHIPPING_POLICY, TERMS_AND_CONDITIONS, PRIVACY_POLICY, type Policy } from '@/data/policies';
+import { REFUND_POLICY, SHIPPING_POLICY, TERMS_AND_CONDITIONS, PRIVACY_POLICY, FIT_GUARANTEE, type Policy } from '@/data/policies';
 
 // ============================================
 // Static brand knowledge
@@ -14,10 +14,10 @@ import { REFUND_POLICY, SHIPPING_POLICY, TERMS_AND_CONDITIONS, PRIVACY_POLICY, t
 export const ORDER_STATUS_URL = 'https://account.yournextblinds.com';
 
 const GUIDE_LINES = Object.entries(PRODUCT_GUIDES)
-  .map(
-    ([type, links]) =>
-      `- ${type}: measuring guide ${links.measurement} | installation guide ${links.installation}`
-  )
+  .map(([type, links]) => {
+    const installation = 'installation' in links ? ` | installation guide ${links.installation}` : '';
+    return `- ${type}: measuring guide ${links.measurement}${installation}`;
+  })
   .join('\n');
 
 /**
@@ -88,6 +88,15 @@ ${renderPolicyFull(REFUND_POLICY)}
 ## Shipping policy (general — you CAN answer these questions)
 ${renderPolicyFull(SHIPPING_POLICY)}
 
+## Your Next Fit Guarantee™ (general — you CAN answer these questions)
+An additional commercial guarantee: if a customer makes a genuine measuring
+mistake and their eligible custom-made blind or shade does not fit, Your Next
+Blinds remakes the eligible product to corrected measurements, subject to the
+terms. It is not a cash refund and does not replace warranty or damage rights.
+A claim is filed on the online form at /your-next-fit-guarantee/claim within 30
+days of delivery; submitting it is not the same as it being approved.
+${renderPolicyFull(FIT_GUARANTEE)}
+
 ## Terms & conditions (summary — for narrow legal/account questions only)
 ${renderPolicySummary(TERMS_AND_CONDITIONS)}
 Do not recite specific clauses verbatim or invent legal terms not shown here —
@@ -128,6 +137,8 @@ height (largest of 3). Outside mount: add 3-6" to frame width and 5-10" to heigh
 - All products: /collections
 - Free samples: /samples
 - Measuring & installation guides: /guides
+- Your Next Fit Guarantee: /your-next-fit-guarantee
+- File a Fit Guarantee claim: /your-next-fit-guarantee/claim
 - Contact us: /contact
 - Cart: /cart
 - Account & order history: ${ORDER_STATUS_URL}
